@@ -29,7 +29,8 @@ const path = require('node:path');
       const page = await context.newPage();
       const errors = [];
       page.on('pageerror', e => errors.push(e.message));
-      await page.goto('http://127.0.0.1:4173/', { waitUntil: 'networkidle' });
+      await page.goto('http://127.0.0.1:4173/', { waitUntil: 'domcontentloaded' });
+      await page.locator('#scan').waitFor();
       assert.equal(await page.locator('.extreme-weather').count(), 0, 'Missing minimum temperature must not create cold alerts');
       const file = path.resolve('public/pwa-192x192.png');
       const input = page.locator('#scan input[type=file]');
@@ -47,6 +48,17 @@ const path = require('node:path');
       await page.getByRole('button', { name: 'New scan', exact: true }).click();
       assert.equal(await input.isDisabled(), false);
       assert.equal(await page.locator('.field-path .done').count(), 0);
+      await context.route('**/api/disease/predict', r => r.fulfill({ json: {
+        label: 'healthy', labels: { en: 'Healthy', bn: 'ভালো' }, confidence: 0.95,
+        quality_warning: false, quality: { brightness: 100, contrast: 40, issues: [] },
+        rejection_reasons: [], field_validated: false,
+        probabilities: { healthy: 0.95, early_blight: 0.03, late_blight: 0.02 },
+        next_steps: { en: [], bn: [] }
+      } }));
+      await input.setInputFiles(file);
+      await analyze.click();
+      await page.locator('.field-summary').waitFor();
+      assert.equal(await page.getByRole('button', { name: 'Take next photo' }).count(), 0, 'Clear first photo completes immediately');
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
       assert.deepEqual(errors, []);
       await page.screenshot({ path: `test-results/review-${width}.png`, fullPage: true });

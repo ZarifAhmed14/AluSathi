@@ -14,6 +14,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import FarmerTools from "@/components/FarmerTools";
 import ColdStorage from "@/components/ColdStorage";
+import HarvestMarket from "@/components/HarvestMarket";
 import { useDemo } from "@/contexts/DemoContext";
 import ScanInsights from "@/components/ScanInsights";
 import TuberScan from "@/components/TuberScan";
@@ -49,18 +50,18 @@ const COPY = {
     heroKicker: "বাংলাদেশের আলুচাষির ডিজিটাল সাথী",
     heroTitle: "পাতার ছবি দিন।", heroAccent: "ঝুঁকি আগে জানুন।",
     heroBody: "পাতা বা আলুর ছবি দেখুন। আবহাওয়া জানুন, জমির হিসাব রাখুন এবং সহজ পরামর্শ পান।",
-    quick: "৩টি ছবি দিয়ে দেখুন", quickHint: "সামনে · পেছনে · পুরো গাছ",
-    full: "পুরো জমি দেখুন", fullHint: "৫ জায়গা · বেশি ভরসা",
+    quick: "১টি ছবি দিয়ে শুরু করুন", quickHint: "প্রয়োজন হলে আরও ছবি চাইব",
+    full: "৩ ছবির পরীক্ষা", fullHint: "একই পাতার ৩টি ছবি",
     trust: "AI ফল নিশ্চিত রোগ নির্ণয় নয়",
     weatherLoading: "আবহাওয়া দেখা হচ্ছে…", weatherGood: "আজ নজর রাখুন",
     weatherRisk: "রোগ বাড়ার মতো আবহাওয়া", weatherUnavailable: "আবহাওয়া এখন পাওয়া যাচ্ছে না", humidity: "আর্দ্রতা", cachedWeather: "শেষ সেভ করা আবহাওয়া",
     alertTitle: "প্রতিকূল আবহাওয়ার সতর্কতা", alertSource: "৩ দিনের পূর্বাভাস",
-    scanKicker: "৩ ছবির পরীক্ষা", scanTitle: "একই গাছের ৩টি ছবি দিন",
-    scanBody: "একবারে একটি ছবি দিন। তিনটি ছবি একসাথে দেখে ফল তৈরি হবে।",
-    guidedInstructions: ["পাতার সামনের দিক কাছে থেকে", "একই পাতার পেছনের দিক", "পুরো গাছ বা পাশের আরেকটি গাছ"],
-    fieldTitle: "জমির ৫ জায়গা দেখুন", fieldBody: "একবারে শুধু একটি জায়গা দেখানো হবে। প্রতিটি জায়গায় একটি পাতা তুলুন।",
-    point: "ধাপ", of: "এর মধ্যে", photoSaved: "ছবিটি রাখা হয়েছে", photoSavedBody: "এখন পরের নির্দেশনা অনুযায়ী আরেকটি ছবি দিন।",
-    pointInstructions: ["জমির সামনের বাঁ পাশ", "জমির সামনের ডান পাশ", "জমির মাঝখান", "জমির পেছনের বাঁ পাশ", "জমির পেছনের ডান পাশ"],
+    scanKicker: "পাতার পরীক্ষা", scanTitle: "প্রথমে পাতার ১টি ছবি দিন",
+    scanBody: "ফল অস্পষ্ট হলে আরও ১–২টি ছবি চাইব। ঝাপসা হলে ছবিটি আবার তুলুন।",
+    guidedInstructions: ["পাতার সামনের দিক কাছে থেকে", "একই পাতার আরেকটি পরিষ্কার ছবি দিন", "আক্রান্ত অংশ কাছে থেকে দেখান"],
+    fieldTitle: "৩টি ছবি দিয়ে দেখুন", fieldBody: "একটি পাতার তিনটি পরিষ্কার ছবি দিলে আরও তথ্য পাওয়া যায়।",
+    point: "ছবি", of: "এর মধ্যে", photoSaved: "ছবিটি দেখা হয়েছে", photoSavedBody: "ফল পরিষ্কার নয়। আরেকটি ছবি দিন।",
+    pointInstructions: ["পাতার সামনের দিক কাছে থেকে", "একই পাতার আরেকটি পরিষ্কার ছবি", "আক্রান্ত অংশ কাছে থেকে"],
     choose: "ছবি তুলুন বা বাছুন", formats: "JPG, PNG বা WebP · সর্বোচ্চ ৮ MB", replace: "অন্য ছবি দিন",
     analyze: "ছবি পরীক্ষা করুন", analyzing: "ছবি দেখা হচ্ছে…", nextPoint: "পরের ছবি তুলুন", retake: "আবার ছবি তুলুন",
     noResult: "ফল এখানে দেখা যাবে", noResultBody: "আলুসাথী তিনটি অবস্থা দেখে: সুস্থ পাতা, আগাম ধসা ও নাবি ধসা।",
@@ -87,7 +88,7 @@ const COPY = {
     diaryKicker: "রোগের অগ্রগতি", diaryTitle: "আগের ফলের সাথে তুলনা",
     diaryBody: "একই জমি আবার পরীক্ষা করলে উন্নতি হচ্ছে, একই আছে নাকি ঝুঁকি বাড়ছে তা দেখা যাবে।",
     emptyDiary: "এখনও কোনো পরীক্ষা সেভ হয়নি", emptyDiaryBody: "প্রথম ছবি পরীক্ষা করলে ফল এখানে থাকবে।",
-    quickLabel: "৩ ছবির পরীক্ষা", fieldLabel: "৫ জায়গা", scans: "টি ছবি", delete: "মুছুন", clearAll: "সব মুছুন",
+    quickLabel: "পাতার পরীক্ষা", fieldLabel: "৩ ছবির পরীক্ষা", scans: "টি ছবি", delete: "মুছুন", clearAll: "সব মুছুন",
     improving: "আগের চেয়ে ভালো", stable: "প্রায় একই আছে", worsening: "আরও নজর দরকার", firstCheck: "প্রথম পরীক্ষা", checkAgain: "একই জমি আবার দেখুন",
     helpKicker: "আলুর যত্ন", helpTitle: "ভালো আলুর জন্য সহজ যত্ন",
     helpCards: [
@@ -107,33 +108,33 @@ const COPY = {
     navScan: "Scan", navField: "My field", navHelp: "Help", online: "Online", offline: "Offline",
     heroKicker: "A digital companion for Bangladesh potato farmers",
     heroTitle: "Photograph a leaf.", heroAccent: "See risk earlier.",
-    heroBody: "Check leaves or potatoes, follow the weather, calculate field needs and keep useful records.",
-    quick: "Check with 3 photos", quickHint: "Front · back · whole plant", full: "Check whole field", fullHint: "5 places · stronger evidence",
+    heroBody: "Check a leaf or potato photo. See the weather, get simple help and keep useful notes.",
+    quick: "Start with 1 photo", quickHint: "More photos only if needed", full: "Three-photo check", fullHint: "Three views of the same leaf",
     trust: "An AI result is not a confirmed diagnosis",
     weatherLoading: "Checking weather…", weatherGood: "Keep watch today", weatherRisk: "Weather may support disease",
     weatherUnavailable: "Weather is unavailable now", humidity: "Humidity", cachedWeather: "Last saved weather",
     alertTitle: "Extreme-weather message", alertSource: "3-day forecast",
-    scanKicker: "Three-photo check", scanTitle: "Take 3 photos of the same crop",
-    scanBody: "Add one photo at a time. AluSathi combines all three before showing the result.",
-    guidedInstructions: ["Close view of the leaf front", "Back of the same leaf", "Whole plant or a nearby second plant"],
-    fieldTitle: "Check five field places", fieldBody: "Only one place is shown at a time. Photograph one leaf at each place.",
-    point: "Step", of: "of", photoSaved: "Photo saved", photoSavedBody: "Follow the next instruction and add another photograph.",
-    pointInstructions: ["Front-left of the field", "Front-right of the field", "Middle of the field", "Back-left of the field", "Back-right of the field"],
+    scanKicker: "Leaf photo check", scanTitle: "Start with one clear leaf photo",
+    scanBody: "We ask for a second or third photo only when the first result is unclear.",
+    guidedInstructions: ["Close view of the leaf front", "Another clear view of the same leaf", "Close view of the affected area"],
+    fieldTitle: "Check with three photos", fieldBody: "Three clear views of one leaf can give more evidence.",
+    point: "Photo", of: "of", photoSaved: "Photo checked", photoSavedBody: "The result is unclear. Add another clear photo.",
+    pointInstructions: ["Close view of the leaf front", "Another clear view of the same leaf", "Close view of the affected area"],
     choose: "Take or choose a photo", formats: "JPG, PNG or WebP · up to 8 MB", replace: "Choose another",
     analyze: "Check this photo", analyzing: "Checking photo…", nextPoint: "Take next photo", retake: "Take again",
-    noResult: "Your result will appear here", noResultBody: "AluSathi checks three conditions: healthy, early blight and late blight.",
+    noResult: "Your result will appear here", noResultBody: "The AI looks for a healthy leaf, early blight or late blight.",
     error: "The photo could not be checked. Try again with a clear photo.", offlineSaved: "The photo is saved on this phone. It will be checked when internet returns.",
     syncDone: "saved photo(s) checked",
     result: "Your result", healthy: "No supported blight pattern was found", early: "Early-blight signs may be present",
     late: "Late-blight signs may be present", unknown: "The result is unclear",
-    fieldHealthy: "No clear blight signs in these photos", fieldWatch: "These photos need attention",
-    fieldUrgent: "Show this plant to an expert soon", fieldUnknown: "More clear photographs are needed",
+    fieldHealthy: "No clear blight signs in these photos", fieldWatch: "These photos may show a problem",
+    fieldUrgent: "Show this plant to an expert soon", fieldUnknown: "Take another clear photo",
     affected: "Possible problem", clear: "Looks clear", uncertain: "Uncertain",
     now: "Now", tomorrow: "Tomorrow", helpAction: "Get help",
-    todayHealthy: "No immediate action is needed. Remember this place.",
-    todayRisk: "Mark affected-looking leaves. Do not carry wet foliage to another field.",
-    tomorrowHealthy: "Check the same place again tomorrow morning.",
-    tomorrowRisk: "Check nearby plants tomorrow morning and take new photos.",
+    todayHealthy: "No urgent action is needed. Remember this place.",
+    todayRisk: "Mark leaves that look affected. Do not take wet leaves to another field.",
+    tomorrowHealthy: "Check this place again tomorrow morning.",
+    tomorrowRisk: "Check nearby plants tomorrow morning. Take new photos if needed.",
     expertHealthy: "Contact an agricultural expert if symptoms spread.",
     expertRisk: "Confirm with an agricultural expert before using chemicals.",
     todayUnknown: "Retake clear photographs of the same plant.", tomorrowUnknown: "Do not make a treatment decision from these results.", expertUnknown: "Show affected plants to an agricultural expert.",
@@ -142,9 +143,9 @@ const COPY = {
     photoProblem: "Take the photograph again", tooDark: "The photograph was too dark.", tooBright: "The photograph was too bright.", lowContrast: "The leaf was not clear enough.",
     callExpert: "Call an agricultural expert", callCharge: "16123 · charges apply",
     listen: "Listen", stop: "Stop", newScan: "New scan", offlineResult: "AI checked this on your phone",
-    diaryKicker: "Disease progress", diaryTitle: "Compare with previous checks", diaryBody: "Repeat a check for the same field to see whether it is improving, stable or needs more attention.",
+    diaryKicker: "Disease progress", diaryTitle: "Compare past checks", diaryBody: "Check the same field again to see if it looks better, the same, or worse.",
     emptyDiary: "No checks saved yet", emptyDiaryBody: "Your first completed check will appear here.",
-    quickLabel: "3-photo check", fieldLabel: "5 places", scans: "photos", delete: "Delete", clearAll: "Delete all",
+    quickLabel: "Leaf photo check", fieldLabel: "3-photo check", scans: "photos", delete: "Delete", clearAll: "Delete all",
     improving: "Looks better than before", stable: "About the same", worsening: "Needs more attention", firstCheck: "First check", checkAgain: "Check the same field again",
     helpKicker: "Crop care", helpTitle: "Simple care for better potatoes",
     helpCards: [
@@ -180,11 +181,18 @@ function storeDiaryEntry(entry: DiaryEntry, key = DIARY_KEY): DiaryEntry[] {
   return next;
 }
 
+function isScanComplete(results: DiseaseResult[], mode: ScanMode): boolean {
+  if (results.length >= 3) return true;
+  return mode === "quick" && results.length > 0 && results.every(item =>
+    item.label !== "unknown" && !item.quality_warning && !item.rejection_reasons?.length
+  ) && new Set(results.map(item => item.label)).size === 1;
+}
+
 function riskFromResults(results: DiseaseResult[], weather: WeatherData | null): Risk {
   const affected = results.filter((item) => item.label === "early_blight" || item.label === "late_blight").length;
   const uncertain = results.filter((item) => item.label === "unknown").length;
   const weatherPressure = Boolean(weather && weather.humidity >= 80 && weather.temperature >= 14 && weather.temperature <= 24);
-  if (!results.length || uncertain > results.length / 2) return "uncertain";
+  if (!results.length || uncertain > 0 || new Set(results.map(item => item.label)).size > 1 || results.some(item => item.quality_warning || item.rejection_reasons?.length)) return "uncertain";
   if (affected >= 3 || (affected >= 2 && weatherPressure)) return "urgent";
   if (affected >= 1) return "watch";
   return "healthy";
@@ -284,8 +292,8 @@ export default function AluSathiDashboard() {
   const [followUpOf, setFollowUpOf] = useState<string | undefined>();
   const scanRef = useRef<HTMLElement>(null);
   const syncingRef = useRef(false);
-  const scanPoints = GUIDED_POINTS;
-  const scanComplete = fieldResults.length === scanPoints.length;
+  const scanPoints = mode === "quick" ? GUIDED_POINTS.slice(0, Math.min(3, fieldResults.length + 1)) : GUIDED_POINTS;
+  const scanComplete = isScanComplete(fieldResults, mode);
   const fieldRisk = useMemo(() => riskFromResults(fieldResults, weather), [fieldResults, weather]);
 
   const syncPendingScans = useCallback(async () => {
@@ -381,7 +389,11 @@ export default function AluSathiDashboard() {
     try {
       let nextResult: DiseaseResult;
       try {
-        nextResult = online ? await scanPotatoLeaf(file) : await scanPotatoLeafOffline(file);
+        if (!online) nextResult = await scanPotatoLeafOffline(file);
+        else {
+          try { nextResult = await scanPotatoLeaf(file); }
+          catch { nextResult = await scanPotatoLeafOffline(file); }
+        }
       } catch (scanError) {
         if (online) throw scanError;
         await savePendingScan(file, district);
@@ -395,7 +407,7 @@ export default function AluSathiDashboard() {
       if (!fieldResults.length) setReportImage(URL.createObjectURL(file));
       const nextField = [...fieldResults, nextResult];
       setFieldResults(nextField);
-      if (nextField.length === scanPoints.length) {
+      if (isScanComplete(nextField, mode)) {
         const risk = riskFromResults(nextField, weather);
         const affectedCount = nextField.filter((item) => ["early_blight", "late_blight"].includes(item.label)).length;
         saveDiary({
@@ -445,7 +457,7 @@ export default function AluSathiDashboard() {
       <div className="app-shell flex h-16 items-center justify-between gap-3">
         <a href="#top" className="flex items-center gap-3" aria-label="AluSathi home"><span className="brand-mark"><Leaf size={22} /></span><span><strong className="block text-lg leading-none">আলুসাথী</strong><small className="mt-1 hidden text-[11px] font-semibold text-ink/50 sm:block">{copy.brandLine}</small></span></a>
         <nav className="hidden items-center gap-1 md:flex" aria-label="Primary navigation"><a className="top-nav" href="#scan"><Camera size={16} />{copy.navScan}</a>{dashboardAccess && <a className="top-nav" href="#diary"><History size={16} />{copy.navField}</a>}<a className="top-nav" href="#help"><HelpCircle size={16} />{copy.navHelp}</a></nav>
-        <div className="flex items-center gap-2">{dashboardAccess ? <button className="icon-button" onClick={() => { setDemo(false); if (user) signOut().catch(() => setCloudMessage(language === "bn" ? "বের হওয়া যায়নি। ইন্টারনেট দেখে আবার চেষ্টা করুন।" : "Could not sign out. Check your connection and retry.")); }}>{language === "bn" ? "বের হন" : "Sign out"}</button> : <Link className="icon-button" to="/auth">{language === "bn" ? "লগইন" : "Log in"}</Link>}<span className={`connection-chip ${online ? "online" : "offline"}`}>{online ? <ShieldCheck size={14} /> : <WifiOff size={14} />}{online ? copy.online : copy.offline}{pendingCount > 0 ? ` · ${pendingCount}` : ""}</span><button className="icon-button" onClick={() => setLanguage(language === "bn" ? "en" : "bn")} aria-label="Change language"><Globe2 size={18} /><span>{language === "bn" ? "EN" : "বাংলা"}</span></button><button className="icon-button md:hidden" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen}>{menuOpen ? <X size={19} /> : <Menu size={19} />}</button></div>
+        <div className="flex items-center gap-2">{dashboardAccess ? <button className="icon-button" onClick={() => { setDemo(false); if (user) signOut().catch(() => setCloudMessage(language === "bn" ? "বের হওয়া যায়নি। ইন্টারনেট দেখে আবার চেষ্টা করুন।" : "Could not sign out. Check your connection and retry.")); }}>{language === "bn" ? "বের হন" : "Logout"}</button> : <Link className="icon-button" to="/auth">{language === "bn" ? "লগইন" : "Login"}</Link>}<span className={`connection-chip ${online ? "online" : "offline"}`}>{online ? <ShieldCheck size={14} /> : <WifiOff size={14} />}{online ? copy.online : copy.offline}{pendingCount > 0 ? ` · ${pendingCount}` : ""}</span><button className="icon-button" onClick={() => setLanguage(language === "bn" ? "en" : "bn")} aria-label="Change language"><Globe2 size={18} /><span>{language === "bn" ? "EN" : "বাংলা"}</span></button><button className="icon-button md:hidden" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen}>{menuOpen ? <X size={19} /> : <Menu size={19} />}</button></div>
       </div>
       {menuOpen && <nav className="mobile-menu app-shell" aria-label="Mobile navigation"><a href="#scan" onClick={() => setMenuOpen(false)}>{copy.navScan}</a>{dashboardAccess && <a href="#diary" onClick={() => setMenuOpen(false)}>{copy.navField}</a>}<a href="#help" onClick={() => setMenuOpen(false)}>{copy.navHelp}</a></nav>}
     </header>
@@ -466,7 +478,8 @@ export default function AluSathiDashboard() {
 
       <section id="scan" ref={scanRef} className="app-shell scroll-mt-24 py-16 sm:py-24">
         <div className="section-heading"><div><p className="section-kicker"><ScanLine size={16} />{copy.scanKicker}</p><h2>{copy.scanTitle}</h2><p>{copy.scanBody}</p></div></div>
-        {!scanComplete && <div className="field-progress-card"><div className="field-path" aria-label={`${fieldResults.length} of ${scanPoints.length} completed`}>{scanPoints.map((point, index) => <span key={point} className={index < fieldResults.length ? "done" : index === fieldResults.length ? "current" : ""}>{index < fieldResults.length ? <Check size={16} /> : point}</span>)}</div><div><p className="text-sm font-bold text-leaf">{copy.point} {fieldResults.length + 1} {copy.of} {scanPoints.length}</p><strong className="mt-1 block text-xl text-ink">{mode === "quick" ? copy.guidedInstructions[fieldResults.length] : copy.pointInstructions[fieldResults.length]}</strong></div></div>}
+        {!fieldResults.length && !file && <button className="secondary-main mb-4" onClick={() => startScan(mode === "quick" ? "field" : "quick")}>{language === "bn" ? (mode === "quick" ? "চাইলে ৩টি ছবি দিয়ে দেখুন" : "১টি ছবি দিয়ে শুরু করুন") : (mode === "quick" ? "Use three photos instead" : "Use one photo instead")}</button>}
+        {!scanComplete && (mode === "field" || fieldResults.length > 0) && <div className="field-progress-card"><div className="field-path" aria-label={`${fieldResults.length} of ${scanPoints.length} completed`}>{scanPoints.map((point, index) => <span key={point} className={index < fieldResults.length ? "done" : index === fieldResults.length ? "current" : ""}>{index < fieldResults.length ? <Check size={16} /> : point}</span>)}</div><div><p className="text-sm font-bold text-leaf">{copy.point} {fieldResults.length + 1} {copy.of} {scanPoints.length}</p><strong className="mt-1 block text-xl text-ink">{mode === "quick" ? copy.guidedInstructions[fieldResults.length] : copy.pointInstructions[fieldResults.length]}</strong></div></div>}
         <div className="scan-workspace"><div className="scan-capture"><label className={`camera-stage ${preview ? "has-image" : ""}`}><input disabled={loading || scanComplete || Boolean(result && !result.quality_warning)} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={(event) => { chooseFile(event.target.files?.[0]); event.currentTarget.value = ""; }} />{preview ? <img src={preview} alt={language === "bn" ? "বাছাই করা আলু পাতা" : "Selected potato leaf"} /> : <div className="camera-empty"><span className="leaf-frame"><Leaf size={62} /></span><strong>{copy.choose}</strong><small>{copy.formats}</small></div>}{preview && <span className="replace-photo"><RefreshCw size={16} />{copy.replace}</span>}</label><div className="photo-tips"><span><Check />{language === "bn" ? "একটি পাতা" : "One leaf"}</span><span><Check />{language === "bn" ? "দিনের আলো" : "Daylight"}</span><span><Check />{language === "bn" ? "কাছে থেকে" : "Close view"}</span></div>{error && <p className="error-message" role="alert"><AlertTriangle size={18} />{error}</p>}<button className="main-button" disabled={!file || loading || scanComplete || Boolean(result && !result.quality_warning)} onClick={analyze}>{loading ? <Loader2 className="animate-spin" /> : <ScanLine />}{loading ? copy.analyzing : copy.analyze}</button></div>
           <div className="result-stage" aria-live="polite">{scanComplete ? <FieldResult mode={mode} results={fieldResults} risk={fieldRisk} weather={weather} copy={copy} speak={speak} speaking={speaking} restart={() => startScan(mode)} /> : result ? (result.quality_warning ? <SingleResult result={result} language={language} copy={copy} speak={speak} speaking={speaking} retake={retakeCurrent} /> : <PhotoAccepted copy={copy} offline={result.inference_mode === "offline"} />) : <div className="result-empty"><span><Leaf size={42} /></span><h3>{copy.noResult}</h3><p>{copy.noResultBody}</p></div>}{result && !result.quality_warning && !scanComplete && <button className="next-button" onClick={nextFieldPoint}>{copy.nextPoint}<ArrowRight size={18} /></button>}</div></div>
         {scanComplete && <ScanInsights key={fieldResults.map(r => r.confidence).join("-")} results={fieldResults} weather={weather} district={district} image={reportImage} />}
@@ -476,6 +489,7 @@ export default function AluSathiDashboard() {
       <FarmerTools />
       {demo && !user && <p className="app-shell tool-notice" role="status">{language === "bn" ? "ডেমো চলছে। কোনো আসল অ্যাকাউন্টে লগইন হয়নি। খাতা এই ফোনেই থাকবে; অনলাইন সেভ ও পুশ খবর বন্ধ।" : "Demo mode. No real account is signed in. History stays on this device; cloud saving and push alerts are unavailable."}</p>}
       {dashboardAccess && <ColdStorage key={user?.id || "demo"} />}
+      {dashboardAccess && <HarvestMarket storageKey={user?.id || "demo"} />}
       {dashboardAccess && <section id="diary" className="diary-section scroll-mt-20"><div className="app-shell py-16 sm:py-24"><div className="section-heading light"><div><p className="section-kicker"><History size={16} />{copy.diaryKicker}</p><h2>{copy.diaryTitle}</h2><p>{copy.diaryBody}</p><p>{user ? (language === "bn" ? "আপনার ব্যক্তিগত অনলাইন খাতা" : "Your private account history") : (language === "bn" ? "ডেমো: এই ফোনের খাতা; অনলাইনে সেভ হয় না।" : "Demo: this device only; no cloud sync.")}</p>{cloudMessage && <p role="status">{cloudMessage}</p>}</div>{diary.length > 0 && <button className="text-button" onClick={() => removeDiary()}><Trash2 size={16} />{copy.clearAll}</button>}</div>{diary.length === 0 ? <div className="empty-diary"><span><History size={31} /></span><h3>{copy.emptyDiary}</h3><p>{copy.emptyDiaryBody}</p><button className="secondary-main" onClick={() => startScan("quick")}><Camera size={18} />{copy.quick}</button></div> : <div className="diary-grid timeline-grid">{diary.map((entry) => { const previous = entry.followUpOf ? diary.find((item) => item.id === entry.followUpOf) : undefined; return <DiaryCard key={entry.id} entry={entry} trend={trendFromEntries(entry, previous)} language={language} copy={copy} onDelete={() => removeDiary(entry.id)} onRecheck={() => { setDistrict(entry.district); startScan("quick", entry.id); }} />; })}</div>}</div></section>}
 
       <section id="help" className="app-shell scroll-mt-20 py-16 sm:py-24"><div className="section-heading"><div><p className="section-kicker"><HelpCircle size={16} />{copy.helpKicker}</p><h2>{copy.helpTitle}</h2></div></div><div className="help-grid">{copy.helpCards.map(([title, body], index) => <article key={title}><span>{index + 1}</span><h3>{title}</h3><p>{body}</p><button onClick={() => speak(`${title}. ${body}`)}><Ear size={17} />{copy.listen}</button></article>)}</div>

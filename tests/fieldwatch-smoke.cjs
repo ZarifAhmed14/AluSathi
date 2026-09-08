@@ -55,7 +55,7 @@ async function addThreePhotos(page) {
     if (!response || response.status() !== 200) throw new Error(`${viewport.name}: page did not return 200`);
     await page.getByRole("heading", { level: 1 }).waitFor();
     await page.locator(".extreme-weather").waitFor();
-    await page.getByRole("button", { name: /৩টি ছবি দিয়ে দেখুন|Check with 3 photos/ }).first().click();
+    await page.getByRole("button", { name: /৩টি ছবি দিয়ে দেখুন|Use three photos instead/ }).first().click();
     if (await page.locator(".field-path span").count() !== 3) throw new Error(`${viewport.name}: guided scan does not show three steps`);
     await page.screenshot({ path: `test-results/fieldwatch-${viewport.name}.png`, fullPage: true });
     await context.close();
