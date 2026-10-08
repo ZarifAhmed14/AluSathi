@@ -303,6 +303,10 @@
 }
 
 /* Farmer tools keep the field palette and large touch targets. */
+.scan-workspace.scan-workspace-empty { grid-template-columns: minmax(0, 640px); justify-content: center; }
+.tuber-result { padding: 32px; }
+.tuber-result h3 { font-size: 24px; font-weight: 700; margin-bottom: 12px; }
+.tuber-result p { line-height: 1.9; }
 .farmer-tools-grid { display: grid; gap: 1rem; align-items: start; }
 .farmer-tool { border: 1px solid #d3dfd1; border-radius: 1.35rem; background: #fffdf7; overflow: hidden; box-shadow: 0 10px 30px #153c2010; }
 .farmer-tool > summary { display: flex; align-items: center; gap: .8rem; padding: 1.2rem 1.4rem; cursor: pointer; font-weight: 800; font-size: 1.1rem; color: #17553a; list-style: none; min-height: 64px; }

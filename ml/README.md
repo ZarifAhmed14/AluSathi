@@ -45,3 +45,9 @@ Dataset citation: Mohanty, Hughes & Salathe, *Using Deep Learning for Image-Base
 `public/models/alusathi_tuber_binary.onnx` is the browser-ready MobileNetV2 model exported from `Potato_test_train.ipynb`. It accepts one 224×224 RGB image in NHWC layout with pixel values from 0–255 and returns a sigmoid defect score. The app uses the notebook's 0.41 decision threshold and treats scores within 0.10 of it as uncertain.
 
 The matching export metadata and evaluation record are kept in `ml/artifacts/tuber_model_metadata.json` and `ml/artifacts/tuber_test_metrics.json`. Its 99.22% result is an internal holdout score, not independent Bangladesh field validation. It only screens for “healthy” versus “possible visible defect”; it does not identify a disease subtype, certify food safety, or assign a market grade.
+
+## Potato photo and variety checks
+
+The browser first runs `public/models/potato_presence.onnx`. It rejects clear non-potato photos, asks for another view when uncertain, and does not run variety or condition models unless the photo passes that gate. See `ml/POTATO_GATE.md` for training sources, tests, limits, and replay commands.
+
+The experimental two-variety model compares Diamant and Asterix only. The planned five-variety scanner remains data-gated until verified photos exist for every class. See `ml/VARIETY_DATA.md`. The visible-defect model above remains separate.
