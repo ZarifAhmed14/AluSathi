@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { Calculator, Sprout } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -7,7 +6,7 @@ import { areaSquareMetres, dosageAmount, sampleYield, type AreaUnit } from "@/li
 import { writeRecord } from "@/lib/farmer-records";
 
 import TreatmentReminders from "./TreatmentReminders";
-export default function FarmerTools() {
+export default function FarmerTools({ showReminders = true }: { showReminders?: boolean }) {
   const { user } = useAuth(); const { language } = useLanguage(); const bn = language === "bn";
   const [area, setArea] = useState(""); const [unit, setUnit] = useState<AreaUnit>("decimal"); const [bigha, setBigha] = useState("33");
   const [dose, setDose] = useState(""); const [basis, setBasis] = useState<"hectare" | "decimal" | "litre">("decimal"); const [quantityUnit, setQuantityUnit] = useState("g"); const [water, setWater] = useState(""); const [confirmed, setConfirmed] = useState(false);
@@ -38,10 +37,10 @@ export default function FarmerTools() {
       </div></details>
     </div></details>
     <details className="farmer-tool"><summary><Sprout />{bn ? "কত আলু হতে পারে?" : "Yield estimate"}</summary><div className="tool-body"><p>{bn ? "জমির মাপ উপরের হিসাবে দিন। সমান মাপের ৩টি আলাদা জায়গার আলু তুলে ওজন করুন। সেই নমুনা থেকে হিসাব হবে; ভবিষ্যতের AI পূর্বাভাস নয়।" : "Enter your field area in the calculator. Weigh harvested potatoes from three separate, equal-size sample plots. This is a sample-based projection, not a trained future-yield forecast."}</p>
-      <form className="tool-form" onSubmit={projectYield}><label>{bn ? "প্রতিটি নমুনা জায়গার মাপ (বর্গমিটার)" : "Area of each sample plot (m²)"}<input type="number" min="0.01" step="any" required value={sampleArea} onChange={e => { setSampleArea(e.target.value); setYieldResult(null); }} /></label><div className="tool-columns">{weights.map((value, i) => <label key={i}>{bn ? `নমুনা ${i+1} (কেজি)` : `Sample ${i+1} (kg)`}<input type="number" min="0.01" step="any" required value={value} onChange={e => { setWeights(previous => previous.map((w, index) => index === i ? e.target.value : w)); setYieldResult(null); }} /></label>)}</div><button className="secondary-main">{bn ? "হিসাব দেখুন" : "Calculate estimate"}</button></form>
+      <form className="tool-form" onSubmit={projectYield}><label>{bn ? "প্রতিটি নমুনা জায়গার মাপ (বর্গমিটার)" : "Area of each sample plot (m²)"}<input type="number" min="0.01" step="any" required value={sampleArea} onChange={e => { setSampleArea(e.target.value); setYieldResult(null); }} /></label><div className="tool-columns">{weights.map((value, i) => <label key={i}>{bn ? `নমুনা ${(i+1).toLocaleString('bn-BD')} (কেজি)` : `Sample ${i+1} (kg)`}<input type="number" min="0.01" step="any" required value={value} onChange={e => { setWeights(previous => previous.map((w, index) => index === i ? e.target.value : w)); setYieldResult(null); }} /></label>)}</div><button className="secondary-main">{bn ? "হিসাব দেখুন" : "Calculate estimate"}</button></form>
       {yieldResult && <output className="tool-result">{number(yieldResult.low)}–{number(yieldResult.high)} {bn ? "কেজি। নমুনার সবচেয়ে কম ও বেশি ফলনের ভিত্তিতে; নিশ্চিত সীমা নয়।" : "kg, based on the lowest and highest samples; not a confidence interval."}</output>}
-      {!user && <p><Link to="/auth">{bn ? "হিসাব খাতায় রাখতে লগইন করুন" : "Log in to keep yield records"}</Link></p>}
+      {!user && <p>{bn ? "এখন এই হিসাব এখানে দেখায়; পরে দেখতে চাইলে লিখে রাখুন।" : "This estimate is shown here for now; write it down if you need it later."}</p>}
     </div></details>
-    <TreatmentReminders key={user?.id || "guest"} /></div>{message && <p className="tool-notice" role="status">{message}</p>}
+    {showReminders && <TreatmentReminders key={user?.id || "guest"} />}</div>{message && <p className="tool-notice" role="status">{message}</p>}
   </section>;
 }

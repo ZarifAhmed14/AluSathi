@@ -2,7 +2,7 @@
 
 ## Purpose
 
-AluSathi is a Bangla-first potato-leaf screening prototype for Bangladesh farmers. It helps a farmer complete a three-photo leaf check or screen one harvested potato, hear simple guidance, retain a private on-device diary, and recover from poor connectivity.
+AluSathi is a Bangla-first potato field app for Bangladesh farmers. It records leaf photos and symptoms for an expert report, provides weather context and a field diary, and offers a separate experimental harvested-potato scanner.
 
 It is a screening and research system, not a confirmed diagnosis or pesticide-prescription system.
 
@@ -11,19 +11,12 @@ It is a screening and research system, not a confirmed diagnosis or pesticide-pr
 ```mermaid
 flowchart LR
     A[Farmer phone] --> B[React PWA]
-    B --> C[Photo and size checks]
-    B --> D[IndexedDB offline queue]
+    B --> C[Leaf photo usability check]
+    C --> D[Four symptom questions]
     B --> E[Open-Meteo weather context]
-    C --> F[FastAPI upload boundary]
-    F --> G[Decode, type, dimension and quality checks]
-    G --> H[MobileNetV3-Small]
-    H --> I[Confidence and margin policy]
-    I --> J{Field validated?}
-    J -- No --> K[Uncertain result and retake]
-    J -- Future approved model --> L[Screening label and safe actions]
-    K --> M[Voice guidance and 16123]
-    L --> M
-    D --> F
+    D --> F[Report for expert and 16123]
+    E --> F
+    B --> G[Separate experimental tuber scanner]
 ```
 
 ## Active components
@@ -32,22 +25,21 @@ flowchart LR
 | --- | --- | --- |
 | Interface | React 18, TypeScript, Vite | Bangla/English farmer journey |
 | PWA | `vite-plugin-pwa` | Installable shell and weather caching |
-| Offline scans | Browser IndexedDB | Stores pending images only on the farmer's device |
+| Leaf report | Browser UI | Records photos and farmer-observed symptoms; no disease label |
 | Weather | Open-Meteo | Current temperature, humidity and precipitation context |
-| API | FastAPI | Secure upload validation, inference and safe response contract |
-| Vision model | MobileNetV3-Small, PyTorch | Three-class potato-leaf research classifier |
-| Safety policy | Server-side Python | Quality, confidence, margin and field-validation rejection |
+| Research API | FastAPI | Separate research inference boundary; not used by the farmer leaf report |
+| Research model | MobileNetV3-Small, PyTorch | Three-class potato-leaf classifier kept outside public assets |
+| Safety policy | Farmer UI | Do not claim a leaf-disease diagnosis from the unvalidated model |
 
 The active application route is `/`. Legacy source files may remain in the repository, but they are not mounted by `src/App.tsx` and are outside the competition demo path.
 
 ## Farmer flow
 
-1. Choose the three-photo leaf check or the harvested-potato check.
-2. Photograph one potato leaf in daylight from close range.
-3. The server verifies the file before inference.
-4. AluSathi either returns a safe screening response or asks for another photo.
-5. The farmer can hear the instructions, retake the photo or call Agriculture Call Centre 16123.
-6. Cached models run on the device offline. If offline leaf inference fails, the photo is queued in IndexedDB for a later server retry.
+1. Choose a one- or three-photo leaf report, or the separate harvested-potato scanner.
+2. Photograph a leaf in daylight. Very small, dark, or plainly blurred images are rejected.
+3. Answer four visual symptom questions; the app does not name a leaf disease.
+4. Share the report with an agricultural expert or call 16123. Weather context is not a diagnosis.
+5. The research leaf ONNX model is not shipped to the PWA and does not run in this farmer flow.
 
 ## Model state
 
@@ -86,4 +78,4 @@ npm audit --omit=dev
 
 ## Deployment status
 
-Public deployment is deliberately deferred. The repository and local demo are ready; production hosting, HTTPS, environment configuration and operational monitoring belong to the skipped deployment phase.
+The React app has been deployed to Vercel previously. The separate Python API and optional account service require server configuration and are not implied by the static deployment.

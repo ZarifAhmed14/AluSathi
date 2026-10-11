@@ -14,19 +14,19 @@ export default function Auth() {
   const [reset, setReset] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  useEffect(() => { if (user && !recovering) navigate("/", { replace: true }); }, [user, recovering, navigate]);
+  useEffect(() => { if (user && !recovering) navigate("/farmer", { replace: true }); }, [user, recovering, navigate]);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setMessage(""); setBusy(true);
     const fields = new FormData(event.currentTarget);
     try {
       const email = String(fields.get("email")).trim();
       const password = String(fields.get("password"));
-      if (recovering) { await accountRequest("password", {password, access_token: getAccessToken()}); finishRecovery(); navigate("/"); return; }
+      if (recovering) { await accountRequest("password", {password, access_token: getAccessToken()}); finishRecovery(); navigate("/farmer"); return; }
       if (reset) { await accountRequest("recover", {email}); setMessage(bn ? "এই ইমেইলে অ্যাকাউন্ট থাকলে পাসওয়ার্ড বদলানোর লিংক যাবে।" : "If this email has an account, a password-reset link will be sent."); return; }
       const response = register ? await signUp(email, password, String(fields.get("name")).trim()) : await signIn(email, password);
       if (response.error) setMessage(bn ? "লগইন হয়নি। ইমেইল, পাসওয়ার্ড ও ইন্টারনেট দেখুন। নতুন অ্যাকাউন্ট হলে ইমেইলের লিংক খুলুন।" : "Unable to sign in. Check your details and connection. For a new account, open the confirmation email first.");
       else if (register) setMessage(bn ? "ইমেইলে পাঠানো লিংক খুলে অ্যাকাউন্ট চালু করুন।" : "Open the confirmation link sent to your email.");
-      else navigate("/");
+      else navigate("/farmer");
     } catch { setMessage(bn ? "যোগাযোগ হয়নি। একটু পরে চেষ্টা করুন।" : "Connection failed. Please try again."); }
     finally { setBusy(false); }
   }

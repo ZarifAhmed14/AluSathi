@@ -8,6 +8,8 @@ export interface WeatherData {
   observed_at?: string;
   cached?: boolean;
   blight_days?: { date: string; minimum: number; humid_hours: number; hours: number }[];
+  forecastRainMm?: number;
+  forecast?: { date: string; minimum: number; maximum: number; rainMm: number; windKmh: number }[];
 }
 
 export type WeatherAlertType = "heavy_rain" | "strong_wind" | "extreme_heat" | "cold" | "thunderstorm";
@@ -45,11 +47,16 @@ export async function getWeather(location: string): Promise<WeatherData> {
   try { cached = localStorage.getItem(cacheKey); } catch { /* Weather works without storage. */ }
   try {
     const signal = AbortSignal.timeout(8_000);
-    const geocoding = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1&language=en&format=json&countryCode=BD`, { signal });
-    const place = (await geocoding.json()).results?.[0];
-    if (!geocoding.ok || !place) throw new Error("Location not found");
+    const { districtPlaces } = await import(/* @vite-ignore */ new URL("/marketplace/districts.mjs", window.location.origin).href) as { districtPlaces: Record<string, { lat: number; lon: number }> };
+    let coordinates = districtPlaces[location];
+    if (!coordinates) {
+      const geocoding = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1&language=en&format=json&countryCode=BD`, { signal });
+      const place = (await geocoding.json()).results?.[0];
+      if (!geocoding.ok || !place) throw new Error("Location not found");
+      coordinates = { lat: place.latitude, lon: place.longitude };
+    }
 
-    const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code&hourly=temperature_2m,relative_humidity_2m&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_gusts_10m_max,weather_code&forecast_days=3&timezone=Asia%2FDhaka`, { signal });
+    const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coordinates.lat}&longitude=${coordinates.lon}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code&hourly=temperature_2m,relative_humidity_2m&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_gusts_10m_max,weather_code&forecast_days=3&timezone=Asia%2FDhaka`, { signal });
     if (!response.ok) throw new Error(`Weather API Error: ${response.status}`);
 
     const { current, daily, hourly } = await response.json();
@@ -73,6 +80,11 @@ export async function getWeather(location: string): Promise<WeatherData> {
     const weather: WeatherData = {
       temperature: current.temperature_2m,
       rainfall,
+      forecastRainMm: Array.isArray(daily.precipitation_sum) && daily.precipitation_sum.slice(0, 3).every(Number.isFinite) ? daily.precipitation_sum.slice(0, 3).reduce((sum: number, value: number) => sum + value, 0) : undefined,
+      forecast: daily.time.slice(0, 3).flatMap((date: string, index: number) => {
+        const values = [daily.temperature_2m_min?.[index], daily.temperature_2m_max?.[index], daily.precipitation_sum?.[index], daily.wind_gusts_10m_max?.[index]];
+        return values.every(Number.isFinite) ? [{ date, minimum: values[0], maximum: values[1], rainMm: values[2], windKmh: values[3] }] : [];
+      }),
       humidity: current.relative_humidity_2m,
       weather: current.weather_code < 3 ? "Clear" : current.weather_code < 50 ? "Cloudy" : current.weather_code < 70 ? "Rain" : "Storms",
       alerts,

@@ -1,6 +1,8 @@
 import * as ort from "onnxruntime-web/wasm";
 import { potatoImageTensor } from "@/lib/potato-image";
 
+export const POTATO_MATCH_SCORE = 0.8;
+
 let sessionPromise: Promise<ort.InferenceSession> | null = null;
 
 function getSession() {

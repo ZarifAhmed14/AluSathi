@@ -1,5 +1,6 @@
 import * as ort from "onnxruntime-web/wasm";
 import { potatoImageTensor } from "@/lib/potato-image";
+import { POTATO_MATCH_SCORE } from "@/lib/potato-presence-model";
 
 const CLASSES = ["diamant", "asterix"] as const;
 const MODEL_URL = "/models/potato_variety_pair.onnx";
@@ -26,7 +27,8 @@ async function getSession() {
   return sessionPromise;
 }
 
-export async function scanPotatoVarietyOffline(file: File): Promise<{ label: typeof CLASSES[number]; score: number } | null> {
+export async function scanPotatoVarietyOffline(file: File, presence: number): Promise<{ label: typeof CLASSES[number]; score: number } | null> {
+  if (!(presence >= POTATO_MATCH_SCORE)) return null;
   const session = await getSession();
   if (!session) return null;
   const output = await session.run({ [session.inputNames[0]]: await potatoImageTensor(file) });

@@ -1,4 +1,4 @@
-const {chromium}=require('../../node_modules/playwright');
+const {chromium}=require('playwright');
 const fs=require('node:fs');
 const users=JSON.parse(fs.readFileSync('test-results/auth-fixtures.json','utf8'));
 (async()=>{

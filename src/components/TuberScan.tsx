@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Camera, Check, Loader2, ScanLine } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { potatoPresenceScore } from "@/lib/potato-presence-model";
+import { POTATO_MATCH_SCORE, potatoPresenceScore } from "@/lib/potato-presence-model";
 import { scanPotatoTuberOffline, type TuberModelResult } from "@/lib/tuber-offline-model";
 import { scanPotatoVarietyOffline } from "@/lib/variety-offline-model";
 
@@ -11,7 +11,6 @@ const VARIETY_NAMES = {
 };
 const MAX_PHOTOS = 3;
 const REJECT_SCORE = 0.001;
-const ACCEPT_SCORE = 0.8;
 const VARIETY_SCORE = 0.7;
 const AGE_SIGNS = ["none", "sprouts", "shriveled", "both"] as const;
 
@@ -68,9 +67,28 @@ export default function TuberScan() {
   const [checked, setChecked] = useState(false);
   const [status, setStatus] = useState<Status>("empty");
   const [busy, setBusy] = useState(false);
+  const [packStatus, setPackStatus] = useState("");
+  const [packBusy, setPackBusy] = useState(false);
   const text = statusText(status, bn, finalCondition);
 
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+
+  async function saveOfflinePack() {
+    setPackBusy(true);
+    try {
+      const cache = await caches.open("ml-assets");
+      const assets = ["/models/potato_presence.onnx", "/models/potato_variety_pair.onnx", "/models/alusathi_tuber_binary.onnx", "/ort-wasm-simd-threaded.wasm"];
+      for (const asset of assets) {
+        if (await cache.match(asset)) continue;
+        const response = await fetch(asset);
+        if (!response.ok || response.headers.get("content-type")?.includes("text/html")) throw new Error("Download failed");
+        await cache.put(asset, response);
+      }
+      setPackStatus(bn ? "আলুর ছবি পরীক্ষার ফাইল এই ফোনে রাখা হয়েছে।" : "Potato scanner files are saved on this phone.");
+    } catch {
+      setPackStatus(bn ? "ডাউনলোড শেষ হয়নি। ইন্টারনেট দেখে আবার চেষ্টা করুন।" : "Download incomplete. Check your connection and try again.");
+    } finally { setPackBusy(false); }
+  }
 
   function choose(next?: File) {
     if (!next || busy) return;
@@ -100,16 +118,16 @@ export default function TuberScan() {
       }
 
       const reading: Reading = { presence };
-      if (presence >= ACCEPT_SCORE) {
+      if (presence >= POTATO_MATCH_SCORE) {
         const [condition, varietyResult] = await Promise.allSettled([
-          scanPotatoTuberOffline(file), scanPotatoVarietyOffline(file),
+          scanPotatoTuberOffline(file), scanPotatoVarietyOffline(file, presence),
         ]);
         if (condition.status === "fulfilled") reading.condition = condition.value;
         if (varietyResult.status === "fulfilled") reading.variety = varietyResult.value;
       }
       const next = [...previous, reading];
       setReadings(next);
-      const strong = next.filter(item => item.presence >= ACCEPT_SCORE && item.variety && item.variety.score >= VARIETY_SCORE);
+      const strong = next.filter(item => item.presence >= POTATO_MATCH_SCORE && item.variety && item.variety.score >= VARIETY_SCORE);
       const named = new Set(strong.map(item => item.variety!.label));
       const surface = next.find(item => item.condition?.label === "defective")?.condition
         || next.find(item => item.condition?.label === "healthy")?.condition;
@@ -128,7 +146,7 @@ export default function TuberScan() {
       if (next.length < MAX_PHOTOS) {
         setNeedsMore(true);
         setFile(null); setPreview("");
-        setStatus(presence < ACCEPT_SCORE ? "needs-potato" : "needs-detail");
+        setStatus(presence < POTATO_MATCH_SCORE ? "needs-potato" : "needs-detail");
       } else {
         setNeedsMore(false);
         setStatus("unclear");
@@ -143,10 +161,11 @@ export default function TuberScan() {
   return <section id="scan" className="app-shell potato-scan scroll-mt-24 py-12">
     <span id="tuber" />
     <div className="section-heading"><div><p className="section-kicker"><ScanLine size={16} />{bn ? "আলুর ছবি পরীক্ষা" : "Potato photo check"}</p><h2>{bn ? "প্রথমে আলুর ১টি ছবি দিন" : "Start with one potato photo"}</h2><p>{bn ? "একটি আলুর পরিষ্কার ছবি তুলুন। দরকার হলে পরে আরেকটি ছবি চাইব।" : "Take a clear photo of one potato. If we need another view, we'll ask."}</p></div></div>
+    <div className="mb-5 flex flex-wrap items-center gap-3"><button className="secondary-main" type="button" disabled={packBusy} onClick={saveOfflinePack}>{packBusy ? (bn ? "ডাউনলোড হচ্ছে…" : "Downloading…") : (bn ? "অফলাইনে চালাতে ফাইল নামান · প্রায় ৩৫ MB" : "Download for offline use · about 35 MB")}</button><small>{bn ? "সম্ভব হলে Wi-Fi ব্যবহার করুন।" : "Use Wi-Fi if possible."}</small>{packStatus && <small role="status">{packStatus}</small>}</div>
     <div className={`scan-workspace ${!file && !text ? "scan-workspace-empty" : ""}`}>
       <div className="scan-capture">
         <label className={`camera-stage ${preview ? "has-image" : ""}`}>
-          <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" disabled={busy} onChange={event => { choose(event.target.files?.[0]); event.currentTarget.value = ""; }} />
+          <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={event => { choose(event.target.files?.[0]); event.currentTarget.value = ""; }} />
           {preview ? <img src={preview} alt={bn ? "বেছে নেওয়া ছবি" : "Selected photo"} /> : <div className="camera-empty"><span className="leaf-frame"><Camera size={52} /></span><strong>{needsMore ? (bn ? "আরেকটি ছবি দিন" : "Add another photo") : (bn ? "ছবি তুলুন বা বাছুন" : "Take or choose a photo")}</strong><small>JPG, PNG, WebP · {bn ? "সর্বোচ্চ ৮ MB" : "up to 8 MB"}</small></div>}
           {preview && <span className="replace-photo">{bn ? "অন্য ছবি দিন" : "Choose another photo"}</span>}
         </label>
@@ -161,5 +180,10 @@ export default function TuberScan() {
         {checked && <a className="mt-4 block text-sm underline" href="https://data.mendeley.com/datasets/rgn2d2jb7f/1" target="_blank" rel="noopener noreferrer">{bn ? "জাতের মডেলের ছবির উৎস · CC BY 4.0" : "Variety model photo source · CC BY 4.0"}</a>}
       </div>}
     </div>
+    <details className="mt-5 rounded-xl border border-stone-200 bg-white/80 p-4 text-sm">
+      <summary className="cursor-pointer font-semibold">{bn ? "মডেলের অবস্থা" : "Model status"}</summary>
+      <p className="mt-3">{bn ? "জাত শনাক্ত: potato_variety_pair.onnx · শুধু Diamant ও Asterix · মাঠে যাচাই হয়নি। স্বতন্ত্র, পরিচয়-নিশ্চিত আলুর পরীক্ষার সংখ্যা এখনো পাওয়া যায়নি।" : "Variety: potato_variety_pair.onnx · Diamant and Asterix only · not field validated. The number of independently tested, identity-verified potatoes is not available."}</p>
+      <p className="mt-2">{bn ? "দৃশ্যমান ত্রুটি ও আলু-না-আলু পরীক্ষা আলাদা মডেলে চলে। কোনোটিই বীজের রেকর্ড বা হাতে পরীক্ষা করার বিকল্প নয়।" : "Visible defects and potato presence use separate models. None replaces seed records or hands-on inspection."}</p>
+    </details>
   </section>;
 }

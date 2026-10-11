@@ -45,30 +45,63 @@ function SeverityMeasure({ image, onMeasure }: { image: string; onMeasure: (perc
   </div></details>;
 }
 
-export default function ScanInsights({ results, weather, district, image }: { results: DiseaseResult[]; weather: WeatherData | null; district: string; image: string | null }) {
+export default function ScanInsights({ results, weather, district, image, cropAgeDays }: { results: DiseaseResult[]; weather: WeatherData | null; district: string; image: string | null; cropAgeDays: number | null }) {
   const { language } = useLanguage(); const bn = language === "bn";
   const [severity, setSeverity] = useState<number | null>(null);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [shareError, setShareError] = useState("");
+  const [variety, setVariety] = useState("");
+  const [upazila, setUpazila] = useState("");
+  const [phone, setPhone] = useState("");
   const createdAt = useRef(new Date());
-  const hasProblem = results.some(r => ["early_blight", "late_blight"].includes(r.label)) || (severity !== null && severity > 0);
   const outlook = useMemo(() => spreadOutlook(weather), [weather]);
   const outlookText = !outlook ? (bn ? "নতুন আবহাওয়ার তথ্য পেলে ছড়ানোর অনুকূল অবস্থা দেখা যাবে।" : "Fresh weather data is needed to check conditions for spread.")
     : outlook.high ? (bn ? "সামনের দুই দিনে ঠান্ডা ও দীর্ঘ সময় আর্দ্র আবহাওয়া নাবি ধসা বাড়াতে পারে। কাছের গাছও দেখুন এবং কৃষি বিশেষজ্ঞকে জানান।" : "Two consecutive forecast days meet weather conditions that can favour late blight. Inspect nearby plants and consult an agricultural expert.")
     : (bn ? "পরবর্তী ৩ দিনে এই নিয়মে একটানা অনুকূল আবহাওয়া ধরা পড়েনি। তবু রোগ ছড়াতে পারে—গাছ দেখা চালিয়ে যান।" : "The next three days do not meet this consecutive-day weather rule. Spread is still possible; keep inspecting plants.");
-  const labels = [...new Set(results.map(r => r.labels[language]))].join(", ");
-  const report = [bn ? "আলুসাথী — কৃষকের রিপোর্ট" : "AluSathi — Farmer report", createdAt.current.toLocaleString(bn ? "bn-BD" : "en-GB"), district, `${bn ? "ছবি" : "Photos"}: ${results.length}`, labels,
+  const questions = [
+    { id: "shape", bn: "দাগ কেমন দেখায়?", en: "What shape are the marks?", options: [["round", "গোল বা ছোপ ছোপ", "Round or patchy"], ["irregular", "এলোমেলো কিনারা", "Irregular edges"], ["none", "দাগ নেই", "No marks"], ["unsure", "বুঝতে পারছি না", "Not sure"]] },
+    { id: "wet", bn: "দাগের কিনারা কি ভেজা মনে হয়?", en: "Do the mark edges look water-soaked?", options: [["yes", "হ্যাঁ", "Yes"], ["no", "না", "No"], ["unsure", "বুঝতে পারছি না", "Not sure"]] },
+    { id: "white", bn: "পাতার নিচে সাদা আস্তরণ আছে?", en: "Is there white growth under the leaf?", options: [["yes", "হ্যাঁ", "Yes"], ["no", "না", "No"], ["unsure", "বুঝতে পারছি না", "Not sure"]] },
+    { id: "spread", bn: "গত ১–২ দিনে দাগ কি ছড়িয়েছে?", en: "Have the marks spread in the last 1–2 days?", options: [["fast", "দ্রুত ছড়িয়েছে", "Spread quickly"], ["slow", "একটু ছড়িয়েছে", "Spread a little"], ["no", "ছড়ায়নি", "No spread"], ["unsure", "জানি না", "Don't know"]] },
+  ];
+  const symptomLines = questions.map(q => {
+    const option = q.options.find(([value]) => value === answers[q.id]);
+    return `${bn ? q.bn : q.en} ${option ? option[bn ? 1 : 2] : (bn ? "উত্তর দেওয়া হয়নি" : "Not answered")}`;
+  });
+  const report = [bn ? "আলুসাথী — কৃষকের রিপোর্ট" : "AluSathi — Farmer report", createdAt.current.toLocaleString(bn ? "bn-BD" : "en-GB"), district,
+    upazila.trim() && `${bn ? "উপজেলা" : "Upazila"}: ${upazila.trim()}`, variety.trim() && `${bn ? "আলুর জাত (কৃষকের দেওয়া)" : "Variety (farmer-provided)"}: ${variety.trim()}`,
+    cropAgeDays !== null && `${bn ? "লাগানোর পর" : "Days since planting"}: ${cropAgeDays} ${bn ? "দিন" : "days"}`,
+    phone.trim() && `${bn ? "যোগাযোগ" : "Contact"}: ${phone.trim()}`, `${bn ? "ছবি" : "Photos"}: ${results.length}`, ...symptomLines,
     severity === null ? (bn ? "পাতার ক্ষতির পরিমাণ মাপা হয়নি।" : "Damaged area has not been measured.") : `${bn ? "চিহ্নিত পাতার ক্ষতি" : "Manually marked leaf damage"}: ${severity}%`,
-    hasProblem ? outlookText : "", bn ? "একই রকম দাগ পুষ্টির ঘাটতি, পোকার ক্ষতি বা অন্য রোগেও হয়।" : "Similar marks can come from nutrient stress, pests or other diseases.",
+    outlookText, bn ? "একই রকম দাগ পুষ্টির ঘাটতি, পোকার ক্ষতি বা অন্য রোগেও হয়।" : "Similar marks can come from nutrient stress, pests or other diseases.",
     bn ? "এই রিপোর্ট নিশ্চিত রোগ নির্ণয় নয়। ওষুধ ব্যবহারের আগে কৃষি বিশেষজ্ঞের পরামর্শ নিন। ১৬১২৩।" : "This report is not a confirmed diagnosis. Confirm treatment with an agricultural expert. 16123."].filter(Boolean).join("\n\n");
   async function share() {
-    try { if (navigator.share) await navigator.share({ title: "AluSathi", text: report }); else downloadFile("AluSathi-report.txt", report); }
+    try {
+      if (navigator.share) {
+        const blob = image ? await (await fetch(image)).blob() : null;
+        const photo = blob ? new File([blob], `potato-leaf.${blob.type === "image/png" ? "png" : blob.type === "image/webp" ? "webp" : "jpg"}`, { type: blob.type }) : null;
+        const files = photo && navigator.canShare?.({ files: [photo] }) ? [photo] : undefined;
+        await navigator.share({ title: "AluSathi", text: report, files });
+      } else downloadFile("AluSathi-report.txt", report);
+    }
     catch (e) { if (!(e instanceof DOMException && e.name === "AbortError")) setShareError(bn ? "শেয়ার হয়নি। রিপোর্ট ডাউনলোড করুন।" : "Sharing failed. Download the report instead."); }
   }
   return <div className="scan-insights">
+    <section className="report-context" aria-label={bn ? "রিপোর্টে যোগ করুন" : "Add to report"}>
+      <p>{bn ? "চাইলে বিশেষজ্ঞের জন্য আরও তথ্য দিন। নম্বর লিখলে শুধু পাঠানো রিপোর্টে যাবে।" : "Add details for the expert if you wish. A phone number appears only in the report you share."}</p>
+      <label>{bn ? "উপজেলা" : "Upazila"}<input value={upazila} onChange={event => setUpazila(event.target.value)} maxLength={80} /></label>
+      <label>{bn ? "আলুর জাত" : "Potato variety"}<input value={variety} onChange={event => setVariety(event.target.value)} maxLength={80} /></label>
+      <label>{bn ? "যোগাযোগের নম্বর (ঐচ্ছিক)" : "Contact number (optional)"}<input type="tel" value={phone} onChange={event => setPhone(event.target.value)} maxLength={20} autoComplete="tel" /></label>
+    </section>
+    <section className="symptom-check" aria-labelledby="symptom-title"><p className="section-kicker">{bn ? "বিশেষজ্ঞকে জানানোর আগে" : "Before talking to an expert"}</p><h3 id="symptom-title">{bn ? "পাতায় কী দেখছেন?" : "What do you see on the leaf?"}</h3><p>{bn ? "যা দেখেছেন শুধু সেটাই বাছুন। নিশ্চিত না হলে ‘বুঝতে পারছি না’ দিন।" : "Choose only what you can see. Select ‘Not sure’ when unclear."}</p>
+      {questions.map(q => <fieldset key={q.id}><legend>{bn ? q.bn : q.en}</legend><div className="symptom-options">{q.options.map(([value, bangla, english]) => <label key={value} className={answers[q.id] === value ? "selected" : ""}><input type="radio" name={`symptom-${q.id}`} value={value} checked={answers[q.id] === value} onChange={() => setAnswers(previous => ({ ...previous, [q.id]: value }))} />{bn ? bangla : english}</label>)}</div></fieldset>)}
+      <small>{bn ? "এই উত্তর দেখে আলুসাথী রোগের নাম বা ওষুধ বলে না।" : "These answers do not produce a disease name or treatment."}</small>
+    </section>
     <article className="lookalike-warning"><AlertTriangle /><div><h3>{bn ? "একই রকম দাগ মানেই একই রোগ নয়" : "Similar marks can have different causes"}</h3><p>{bn ? "পুষ্টির ঘাটতি, পোকার ক্ষতি, রোদে পোড়া বা অন্য রোগেও এমন দাগ হয়। পাতার নিচে ও গোড়ায় দেখুন। নিশ্চিত না হয়ে ওষুধ দেবেন না।" : "Nutrient stress, pests, sun damage and other diseases can look alike. Check the leaf underside and plant base. Confirm the cause before treatment."}</p></div></article>
     {image && <SeverityMeasure image={image} onMeasure={setSeverity} />}
     {severity !== null && <p className="tool-result" role="status">{bn ? "আপনার চিহ্নিত পাতার" : "Of your outlined leaf,"} {severity}% {bn ? "অংশে দাগ চিহ্নিত হয়েছে।" : "is marked as damaged."}</p>}
-    {hasProblem && <article className="spread-outlook"><CloudRain /><div><h3>{bn ? "রোগ ছড়ানোর আবহাওয়া" : "Weather outlook for disease spread"}</h3><p>{outlookText}</p><small>{bn ? "নাবি ধসার Hutton আবহাওয়া-নিয়ম; বাংলাদেশের মাঠে যাচাই হয়নি। এটি ছড়ানোর শতাংশ নয়।" : "Hutton late-blight weather rule; not validated for Bangladesh fields. This is not a probability of spread."} <a href="https://potatoes.ahdb.org.uk/development-and-implementation-of-a-new-national-warning-system-for-potato-late-blight-in-great-britain-hutton-criteria" target="_blank" rel="noreferrer">AHDB</a></small></div></article>}
+    <article className="spread-outlook"><CloudRain /><div><h3>{bn ? "আবহাওয়ায় রোগের ঝুঁকি" : "Disease-favouring weather"}</h3><p>{outlookText}</p><small>{bn ? "নাবি ধসার Hutton আবহাওয়া-নিয়ম; বাংলাদেশের মাঠে যাচাই হয়নি। এটি রোগ নির্ণয় বা ছড়ানোর শতাংশ নয়।" : "Hutton late-blight weather rule; not validated for Bangladesh fields. It is neither a diagnosis nor a probability."} <a href="https://potatoes.ahdb.org.uk/development-and-implementation-of-a-new-national-warning-system-for-potato-late-blight-in-great-britain-hutton-criteria" target="_blank" rel="noreferrer">AHDB</a></small></div></article>
+    <p>{bn ? "ছবি ও উত্তর স্থানীয় কৃষি কর্মকর্তাকে পাঠান। জরুরি পরামর্শের জন্য ১৬১২৩-এ কল করুন।" : "Share the photo and answers with a local agricultural officer. Call 16123 for advice."}</p><a className="expert-call" href="tel:16123">{bn ? "কৃষি পরামর্শ · ১৬১২৩" : "Agricultural advice · 16123"}</a>
     <div className="report-actions"><button className="secondary-main" onClick={share}><Share2 size={18} />{bn ? "রিপোর্ট পাঠান" : "Share report"}</button><button className="secondary-main" onClick={() => window.print()}><Printer size={18} />{bn ? "PDF / প্রিন্ট" : "PDF / print"}</button><button className="text-button" onClick={() => downloadFile("AluSathi-report.txt", report)}>{bn ? "ডাউনলোড" : "Download"}</button></div>
     {shareError && <p role="alert">{shareError}</p>}
     <section id="farmer-report" aria-label="Printable farmer report"><h1>আলুসাথী · AluSathi</h1><pre>{report}</pre></section>

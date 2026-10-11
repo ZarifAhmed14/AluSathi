@@ -1,0 +1,110 @@
+const assert = require('node:assert/strict');
+const { chromium } = require('playwright');
+const base = process.env.BASE_URL || 'http://127.0.0.1:4175';
+
+(async () => {
+  const browser = await chromium.launch().catch(() => chromium.launch({ channel: 'chrome' }));
+  try {
+    for (const width of [390, 1280]) {
+      const context = await browser.newContext({ viewport: { width, height: 900 }, timezoneId: 'Asia/Dhaka', serviceWorkers: 'block' });
+      await context.route(/https:\/\/fonts\.(googleapis|gstatic)\.com\//, route => route.abort());
+      await context.addInitScript(() => { sessionStorage.setItem('alusathi-demo', 'true'); sessionStorage.setItem('alusathi-role', 'farmer'); });
+      await context.route('https://api.open-meteo.com/**', route => route.fulfill({ json: {
+        current: { temperature_2m: 23, relative_humidity_2m: 95, precipitation: 0, weather_code: 3 },
+        daily: { time: ['2026-10-09', '2026-10-10', '2026-10-11'], temperature_2m_min: [17, 18, 18], temperature_2m_max: [25, 26, 27], precipitation_sum: [0, 12, 5], wind_gusts_10m_max: [8, 15, 12], weather_code: [3, 61, 3] },
+        hourly: { time: ['2026-10-09', '2026-10-10', '2026-10-11'].flatMap(date => Array.from({ length: 24 }, (_, hour) => `${date}T${String(hour).padStart(2, '0')}:00`)), temperature_2m: Array(72).fill(18), relative_humidity_2m: Array(72).fill(95) },
+      } }));
+      const page = await context.newPage(); const errors = [], modelRequests = [];
+      page.on('pageerror', error => errors.push(error.message));
+      page.on('request', request => { if (/\.onnx|\.wasm/.test(request.url())) modelRequests.push(request.url()); });
+      await page.clock.setFixedTime(new Date('2026-10-10T20:30:00Z'));
+      await page.goto(`${base}/farmer`);
+      await page.locator('.farmer-today').waitFor();
+      assert.equal(await page.locator('.hero-section').count(), 0);
+      assert.equal(await page.locator('#scan').count(), 0);
+      assert.equal(await page.locator('#diary').isVisible(), false);
+      assert.equal(await page.locator('[href="tel:16123"]').count(), 1);
+      await page.locator('.planting-choices').first().getByRole('button', { name: '১–২ মাস', exact: true }).click();
+      assert.equal(await page.evaluate(() => localStorage.getItem('alusathi-planting-date')), null);
+      assert.equal(await page.evaluate(() => localStorage.getItem('alusathi-planting-age')), '30to60');
+      assert.match(await page.locator('.farmer-stage').innerText(), /প্রায় ১–২ মাস/);
+      await page.locator('.planting-edit summary').click();
+      await page.locator('.planting-edit input').fill('2026-09-21');
+      assert.match(await page.locator('.farmer-stage').innerText(), /২০ দিন/);
+      await page.reload();
+      assert.match(await page.locator('.farmer-stage').innerText(), /২০ দিন/);
+      await page.locator('.farmer-day-card.risk-high').waitFor();
+      assert.deepEqual(modelRequests, []);
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+      await page.screenshot({ path: `test-results/farmer-v2-${width}.png`, fullPage: true });
+      await page.locator('.farmer-main-actions button').click();
+      await page.locator('#leaf-scan').waitFor();
+      assert.equal(await page.locator('.farmer-today').isVisible(), false);
+      assert.deepEqual(modelRequests, []);
+      const nav = page.locator(width < 761 ? '.farmer-bottom-tabs' : '.farmer-tabs');
+      await nav.getByRole('link', { name: 'খাতা', exact: true }).click();
+      await page.locator('#diary').waitFor();
+      assert.match(await page.locator('#diary h2').innerText(), /আগের ছবি ও লক্ষণ/);
+      await page.locator('.farmer-more summary').click();
+      await page.locator('.farmer-more a[href="/farmer#tuber"]').click();
+      await page.locator('.farmer-download').waitFor();
+      assert.equal(await page.locator('#scan').count(), 0);
+      assert.deepEqual(modelRequests, []);
+      await page.locator('.farmer-download button').click();
+      await page.locator('#scan').waitFor();
+      assert.deepEqual(modelRequests, []);
+      const legacy = JSON.stringify({ plan: { district: 'Rangpur', readyDate: '2026-10-11', quantityKg: 1000, transportPerKg: 2 }, demands: [] });
+      await page.evaluate(value => localStorage.setItem('alusathi-harvest-market-v1-demo', value), legacy);
+      await nav.getByRole('link', { name: 'বিক্রির আগে', exact: true }).click();
+      await page.locator('.selling-estimate').waitFor();
+      assert.equal(await page.evaluate(() => localStorage.getItem('alusathi-harvest-market-v1-demo')), legacy, 'Opening the new selling page must not rewrite old records');
+      assert.equal(await page.locator('.demand-form').count(), 0);
+      await page.locator('.selling-legacy > label input').check();
+      assert.equal(await page.locator('.sample-area #harvest-market input[type=date]').first().inputValue(), '2026-10-11');
+      assert.equal(await page.locator('.sample-area #harvest-market select').first().inputValue(), 'Rangpur');
+      assert.equal(await page.locator('.sample-area #harvest-market select').first().locator('option:checked').textContent(), 'রংপুর');
+      await page.locator('.selling-legacy > label input').uncheck();
+      await page.locator('[name=saleQuantity]').fill('1000');
+      await page.locator('[name=salePrice]').fill('30');
+      assert.match(await page.locator('.selling-net').innerText(), /গাড়িভাড়া লিখুন/);
+      await page.locator('[name=saleFreight]').fill('2000');
+      assert.match(await page.locator('.selling-net').innerText(), /২৮/);
+      await page.locator('.selling-estimate button[type=submit], .selling-estimate button.main-button').click();
+      await page.locator('.farmer-more summary').click();
+      await page.locator('.farmer-more button').getByText('English', { exact: true }).click();
+      assert.equal(await page.locator('[name=saleQuantity]').inputValue(), '1000');
+      assert.match(await page.locator('.selling-net').innerText(), /28/);
+      await page.locator('[name=saleQuantity]').fill('500');
+      assert.match(await page.locator('.selling-net').innerText(), /26/);
+      await page.locator('[name=saleFreight]').fill('');
+      assert.equal(await page.locator('.selling-estimate button.main-button').isDisabled(), true);
+      await page.goto(`${base}/marketplace/farmer.html#transport`);
+      await page.locator('#transport-plan').waitFor();
+      assert.equal(await page.locator('[name=pickupDate]').inputValue(), '2026-10-11');
+      assert.equal(await page.locator('[name=quantityKg]').inputValue(), '');
+      assert.equal(await page.locator('[name=priceKg]').inputValue(), '');
+      await page.locator('.sample-switch').click();
+      assert.notEqual(await page.locator('[name=quantityKg]').inputValue(), '');
+      await page.locator('.sample-switch').click();
+      assert.equal(await page.locator('[name=quantityKg]').inputValue(), '');
+      await page.goto(`${base}/marketplace/farmer.html`);
+      assert.equal(await page.locator('.lot-card').count(), 0);
+      await page.locator('.sample-switch').click();
+      assert.equal(await page.locator('.lot-card').count(), 1);
+      await page.locator('.lot-card [data-action=select-lot]').click();
+      assert.equal(await page.locator('.offer-card').count(), 3);
+      await page.goto(`${base}/marketplace/buyer.html`);
+      await page.locator('.lot-card').first().waitFor();
+      assert.equal(await page.locator('.sample-switch').count(), 0);
+      await page.evaluate(() => { localStorage.removeItem('alusathi-planting-date'); localStorage.setItem('alusathi-planting-age', '30to60'); localStorage.setItem('alusathi-planting-age-recorded', '2026-08-01'); });
+      await page.goto(`${base}/farmer`);
+      await page.locator('.planting-choices legend').waitFor();
+      assert.match(await page.locator('.planting-choices legend').innerText(), /Update your estimate/);
+      assert.equal(await page.locator('.farmer-stage').count(), 0);
+      assert.equal(await page.evaluate(() => localStorage.getItem('alusathi-planting-date')), null);
+      assert.deepEqual(errors, []);
+      await context.close();
+    }
+    console.log('Farmer v2: responsive navigation, range migration, dates, model consent, net proceeds and role-gated examples passed.');
+  } finally { await browser.close(); }
+})().catch(error => { console.error(error); process.exitCode = 1; });

@@ -32,7 +32,7 @@ export function AuthProvider({ children }: {children: ReactNode}) {
         const token = initial ? fragment.get('refresh_token') : null;
         if (token) {
           setRecovering(fragment.get('type') === 'recovery');
-          window.history.replaceState(null, '', '/auth');
+          window.history.replaceState(null, '', '/account');
         }
         const data = await accountRequest(token ? 'exchange' : 'session', token ? {refresh_token: token} : {});
         if (active && version === sessionVersion.current) accept(data);

@@ -1,0 +1,12 @@
+.git
+.ml-data
+.venv
+node_modules
+dist
+test-results
+.env*
+.openai
+competition
+docs
+ml
+tests

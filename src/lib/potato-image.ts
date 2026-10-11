@@ -10,6 +10,7 @@ export async function potatoImageTensor(file: File) {
     canvas.width = canvas.height = 224;
     const context = canvas.getContext("2d", { willReadFrequently: true });
     if (!context) throw new Error("Image processing is unavailable");
+    context.imageSmoothingQuality = "high";
     context.drawImage(bitmap, 0, 0, 224, 224);
     const rgba = context.getImageData(0, 0, 224, 224).data;
     const pixels = new Float32Array(3 * 224 * 224);

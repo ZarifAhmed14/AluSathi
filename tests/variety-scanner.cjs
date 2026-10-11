@@ -1,4 +1,4 @@
-const { chromium } = require('../../node_modules/playwright');
+const { chromium } = require('playwright');
 const path = require('node:path');
 const fs = require('node:fs');
 
@@ -35,6 +35,16 @@ const publicNotPotato = path.resolve('tests/fixtures/not-potato-orange.jpg');
       const input = scanner.locator('input[type=file]');
       const button = scanner.getByRole('button', { name: /ছবি পরীক্ষা করুন|Check photo/ });
       if (await scanner.locator('input[type=checkbox]').count()) throw new Error('Scanner must not require an opt-in checkbox');
+
+      const unsupportedMatch = await page.evaluate(async () => {
+        const image = await fetch('/tests/fixtures/not-potato-orange.jpg').then(response => response.blob());
+        const file = new File([image], 'not-potato-orange.jpg', { type: 'image/jpeg' });
+        const [{ potatoPresenceScore }, { scanPotatoVarietyOffline }] = await Promise.all([
+          import('/src/lib/potato-presence-model.ts'), import('/src/lib/variety-offline-model.ts'),
+        ]);
+        return scanPotatoVarietyOffline(file, await potatoPresenceScore(file));
+      });
+      if (unsupportedMatch) throw new Error('Variety model must reject a non-potato before naming Diamant or Asterix');
 
       await input.setInputFiles(potato);
       await button.click();

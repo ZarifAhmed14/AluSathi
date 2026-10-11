@@ -1,4 +1,4 @@
-const { chromium } = require("../../node_modules/playwright");
+const { chromium } = require("playwright");
 const path = require("node:path");
 
 const URL = "http://127.0.0.1:4173/";
@@ -79,10 +79,8 @@ async function addThreePhotos(page) {
   await offlinePage.evaluate(() => navigator.serviceWorker.ready);
   await offlinePage.reload({ waitUntil: "networkidle" });
   await offlinePage.evaluate(async () => {
-    const modelCached = async () => (await Promise.all((await caches.keys()).map(async (name) => (await caches.open(name)).keys()))).flat().some((request) => request.url.includes("potato_mobilenet_v3.onnx"));
-    const deadline = Date.now() + 60_000;
-    while (!(await modelCached()) && Date.now() < deadline) await new Promise((resolve) => setTimeout(resolve, 250));
-    if (!(await modelCached())) throw new Error("Offline model was not precached");
+    const cached = (await Promise.all((await caches.keys()).map(async (name) => (await caches.open(name)).keys()))).flat();
+    if (!cached.some(request => new URL(request.url).pathname === '/')) throw new Error("Offline app shell was not precached");
     localStorage.removeItem("alusathi-field-diary-v1");
   });
   await offlineContext.setOffline(true);

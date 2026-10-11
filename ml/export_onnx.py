@@ -5,7 +5,7 @@ from torchvision import models
 
 
 SOURCE = Path("ml/artifacts/potato_mobilenet_v3.pt")
-OUTPUT = Path("public/models/potato_mobilenet_v3.onnx")
+OUTPUT = Path("ml/artifacts/potato_mobilenet_v3.onnx")
 
 
 def main() -> None:

@@ -1,53 +1,46 @@
-const { chromium } = require('../../node_modules/playwright');
+const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
+
+const base = process.env.BASE_URL || 'http://127.0.0.1:4175';
 
 (async () => {
   const browser = await chromium.launch({ headless: true });
   try {
-    for (const width of [390, 1440]) {
+    for (const width of [390, 1024, 1440]) {
       const context = await browser.newContext({ viewport: { width, height: 900 }, serviceWorkers: 'block' });
-      let signedIn = false;
-      await context.route('**/api/auth/session', r => r.fulfill({ json: signedIn ? { user: { id: '00000000-0000-4000-8000-000000000001' }, access_token: 'ui-test-only' } : {} }));
-      await context.route('**/rest/v1/**', r => r.fulfill({ json: [] }));
       const page = await context.newPage();
       const errors = [];
-      page.on('pageerror', e => errors.push(e.message));
-      await page.goto('http://127.0.0.1:4173/', { waitUntil: 'networkidle' });
+      page.on('pageerror', error => errors.push(error.message));
+      await page.goto(base);
       assert.equal(await page.locator('#cold-storage').count(), 0);
-      signedIn = true;
-      await page.reload({ waitUntil: 'networkidle' });
-      await page.getByRole('button', { name: 'Change language' }).click();
+      await page.goto(`${base}/auth`);
+      await page.locator('.account-card button.main-button').click();
+      await page.waitForURL(`${base}/farmer`);
+      assert.equal(await page.locator('#cold-storage').count(), 0);
+
+      if (width < 1024) await page.getByRole('button', { name: 'Open menu' }).click();
+      await page.getByRole('navigation', { name: width < 1024 ? 'Mobile navigation' : 'Primary navigation' })
+        .getByRole('link', { name: 'বিক্রির প্রস্তুতি' }).click();
+      await page.waitForURL(`${base}/selling-preparation`);
+      await page.getByRole('heading', { name: 'বিক্রির প্রস্তুতি', level: 1 }).waitFor();
       const section = page.locator('#cold-storage');
-      await section.getByLabel('District or upazila to search').fill('Bogura & Rangpur');
-      const link = new URL(await section.getByRole('link').getAttribute('href'));
-      assert.equal(link.hostname, 'www.google.com');
-      assert.equal(link.searchParams.get('query'), 'potato cold storage Bogura & Rangpur Bangladesh');
-      await section.locator('summary').first().click();
-      await section.getByLabel('Total potatoes (kg)').fill('1000');
-      const first = section.locator('fieldset').first();
-      await first.getByLabel('Rate per kg (BDT)').fill('5');
-      await first.getByLabel('Total outward + return transport (BDT)').fill('2000');
-      await first.getByLabel('Total handling + bags (BDT)').fill('500');
-      assert.equal(await first.locator('output').count(), 0);
-      await first.getByLabel('Other charges including taxes (BDT)').fill('0');
-      assert.match(await first.locator('output').innerText(), /Total cost: ৳7,500/);
-      await first.getByLabel('Rate covers').selectOption('month');
-      await first.getByLabel('Number of billed months').fill('2');
-      assert.match(await first.locator('output').innerText(), /Total cost: ৳12,500/);
-      await first.getByLabel('Rate per kg (BDT)').fill('-1');
-      assert.equal(await first.locator('output').count(), 0);
-      await first.getByLabel('Rate per kg (BDT)').fill('5');
-      await section.getByRole('button', { name: 'Compare a second storage quote' }).click();
-      const second = section.locator('fieldset').nth(1);
-      for (const [label, value] of [['Rate per kg (BDT)', '6'], ['Total outward + return transport (BDT)', '0'], ['Total handling + bags (BDT)', '0'], ['Other charges including taxes (BDT)', '0']]) await second.getByLabel(label).fill(value);
-      assert.match(await section.innerText(), /Cost difference: ৳6,500/);
-      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-      await section.screenshot({ path: `test-results/cold-storage-${width}.png` });
+      await section.getByRole('heading', { name: 'হিমাগারে সরাসরি ফোন করুন' }).waitFor();
+      assert.equal(await section.getByRole('link', { name: 'ফোন করুন' }).count(), 3);
+      for (const href of await section.getByRole('link', { name: 'ফোন করুন' }).evaluateAll(links => links.map(link => link.getAttribute('href')))) {
+        assert.match(href, /^tel:\+?[\d]+$/);
+      }
       await page.getByRole('button', { name: 'Change language' }).click();
-      assert.match(await section.innerText(), /হিমাগার খুঁজুন/);
+      await page.getByRole('heading', { name: 'Prepare to sell', level: 1 }).waitFor();
+      await section.getByRole('heading', { name: 'Call a cold store directly' }).waitFor();
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+      await page.screenshot({ path: `test-results/cold-storage-${width}.png`, fullPage: true });
+      await page.getByRole('link', { name: 'Back to my page' }).click();
+      await page.waitForURL(`${base}/farmer`);
+      await page.goto(`${base}/cold-storage`);
+      await page.waitForURL(`${base}/selling-preparation`);
       assert.deepEqual(errors, []);
-      console.log(`Cold storage ${width}px: passed`);
       await context.close();
     }
+    console.log('Cold storage separate route, links, languages and layouts passed');
   } finally { await browser.close(); }
-})().catch(e => { console.error(e); process.exitCode = 1; });
+})().catch(error => { console.error(error); process.exitCode = 1; });
