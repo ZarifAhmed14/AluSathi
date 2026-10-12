@@ -21,6 +21,7 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:4175';
       await page.waitForTimeout(800);
       const nextFrame = await page.locator('.hero-photo').evaluate(el => getComputedStyle(el).transform);
       assert.notEqual(firstFrame, nextFrame, 'field should keep moving after the entrance');
+      assert.equal(await page.locator('.hero-action.primary > svg:last-child').evaluate(el => getComputedStyle(el).animationName), 'action-nudge');
       await page.screenshot({ path: `test-results/landing-motion-hero-${width}.png` });
       await page.locator('.weather-compact-wrap').scrollIntoViewIfNeeded();
       await page.waitForFunction(() => !document.querySelector('.weather-compact-wrap')?.classList.contains('landing-reveal-pending'));

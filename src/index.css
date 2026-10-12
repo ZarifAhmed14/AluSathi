@@ -346,6 +346,7 @@
 
 @media (prefers-reduced-motion: no-preference) {
   @keyframes field-drift { from { transform: scale(1.02) translateX(0); } to { transform: scale(1.09) translateX(-1.8%); } }
+  @keyframes action-nudge { 0%, 65%, 100% { transform: translateX(0); } 76% { transform: translateX(8px); } 87% { transform: translateX(0); } }
   @keyframes wash-arrive { from { opacity: 1; } to { opacity: .84; } }
   @keyframes copy-arrive { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
   .landing-motion .hero-photo { animation: field-drift 8s ease-in-out infinite alternate; }
@@ -358,6 +359,7 @@
   .landing-motion .hero-copy .hero-body { animation-delay: .32s; }
   .landing-motion .hero-copy .hero-action:first-child { animation-delay: .46s; }
   .landing-motion .hero-copy .hero-action:last-child { animation-delay: .56s; }
+  .landing-motion .hero-action.primary > svg:last-child { animation: action-nudge 4s ease-in-out infinite; }
   .landing-motion .landing-reveal { transition: opacity .75s ease, transform .75s cubic-bezier(.2,.8,.2,1); }
   .landing-motion .landing-reveal-pending { opacity: 0; transform: translateY(32px); }
 }
