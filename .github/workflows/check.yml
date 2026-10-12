@@ -29,6 +29,7 @@ jobs:
           node tests/login-roles.cjs
           node tests/farmer-weather.cjs
           node tests/farmer-home-v2.cjs
+          node tests/farmer-field-first.cjs
           node tests/offline-pack.cjs
           node tests/marketplace-local.cjs
           node tests/potato-life-cycle.cjs

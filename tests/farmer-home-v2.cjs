@@ -33,7 +33,7 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:4175';
       assert.match(await page.locator('.farmer-stage').innerText(), /২০ দিন/);
       await page.reload();
       assert.match(await page.locator('.farmer-stage').innerText(), /২০ দিন/);
-      await page.locator('.farmer-day-card.risk-high').waitFor();
+      await page.locator('.field-risk-banner').waitFor();
       assert.deepEqual(modelRequests, []);
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
       await page.screenshot({ path: `test-results/farmer-v2-${width}.png`, fullPage: true });

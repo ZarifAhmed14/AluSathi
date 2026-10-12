@@ -3,6 +3,7 @@ import { spreadOutlook } from "./farmer-tools";
 
 export type PlantingAge = "lt30" | "30to60" | "60to90" | "gt90";
 export const plantingAges: PlantingAge[] = ["lt30", "30to60", "60to90", "gt90"];
+// TODO(expert): Have local agronomists approve age-range task wording before field use.
 export function rangeGuidance(range: PlantingAge, bn: boolean) {
   const stages = { lt30: ["প্রায় ১ মাসের কম", "Approximately under 1 month"], "30to60": ["প্রায় ১–২ মাস", "Approximately 1–2 months"], "60to90": ["প্রায় ২–৩ মাস", "Approximately 2–3 months"], gt90: ["প্রায় ৩ মাসের বেশি", "Approximately over 3 months"] };
   const tasks = {
