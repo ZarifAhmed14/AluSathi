@@ -344,6 +344,24 @@
 @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 .animate-rise { animation: rise .65s cubic-bezier(.2,.8,.2,1) both; }
 
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes field-arrive { from { opacity: .65; transform: scale(1.055); } to { opacity: 1; transform: scale(1); } }
+  @keyframes wash-arrive { from { opacity: 1; } to { opacity: .84; } }
+  @keyframes copy-arrive { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
+  .landing-motion .hero-photo { animation: field-arrive 1.6s cubic-bezier(.16,1,.3,1) both; }
+  .landing-motion .hero-wash { animation: wash-arrive 1.3s ease-out both; }
+  .landing-motion .hero-copy { animation: none; }
+  .landing-motion .hero-copy h1,
+  .landing-motion .hero-copy .hero-body,
+  .landing-motion .hero-copy .hero-action { animation: copy-arrive .75s cubic-bezier(.2,.8,.2,1) both; }
+  .landing-motion .hero-copy h1 { animation-delay: .18s; }
+  .landing-motion .hero-copy .hero-body { animation-delay: .32s; }
+  .landing-motion .hero-copy .hero-action:first-child { animation-delay: .46s; }
+  .landing-motion .hero-copy .hero-action:last-child { animation-delay: .56s; }
+  .landing-motion .landing-reveal { transition: opacity .75s ease, transform .75s cubic-bezier(.2,.8,.2,1); }
+  .landing-motion .landing-reveal-pending { opacity: 0; transform: translateY(32px); }
+}
+
 @media (max-width: 1023px) {
   .hero-photo { background-position: 66% center; }
   .farmer-hero .hero-photo { background-position: 68% top; }

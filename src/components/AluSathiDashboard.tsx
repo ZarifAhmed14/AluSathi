@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   AlertTriangle, ArrowLeft, ArrowRight, Camera, Check, ChevronDown, CloudRain, Sun, Cloud,
   CloudLightning, Flame, Globe2, History, Leaf, Loader2, MapPin,
@@ -342,7 +342,21 @@ export default function AluSathiDashboard({ farmerHome = false }: { farmerHome?:
   const [menuOpen, setMenuOpen] = useState(false);
   const [followUpOf, setFollowUpOf] = useState<string | undefined>();
   const scanRef = useRef<HTMLElement>(null);
+  const landingRef = useRef<HTMLDivElement>(null);
   const syncingRef = useRef(false);
+  useLayoutEffect(() => {
+    if (farmerHome || !landingRef.current || !window.IntersectionObserver || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const targets = landingRef.current.querySelectorAll<HTMLElement>(".landing-reveal");
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.remove("landing-reveal-pending");
+        observer.unobserve(entry.target);
+      });
+    }, { rootMargin: "0px 0px -8% 0px" });
+    targets.forEach(target => { target.classList.add("landing-reveal-pending"); observer.observe(target); });
+    return () => { observer.disconnect(); targets.forEach(target => target.classList.remove("landing-reveal-pending")); };
+  }, [farmerHome]);
   const scanPoints = mode === "quick" ? GUIDED_POINTS.slice(0, Math.min(3, fieldResults.length + 1)) : GUIDED_POINTS;
   const scanComplete = isScanComplete(fieldResults, mode);
 
@@ -504,7 +518,7 @@ export default function AluSathiDashboard({ farmerHome = false }: { farmerHome?:
     window.location.replace("/");
   }
 
-  return <div className={`${language === "bn" ? "font-bangla" : ""} ${farmerHome ? "farmer-v2" : ""}`} data-view={farmerView}>
+  return <div ref={landingRef} className={`${language === "bn" ? "font-bangla" : ""} ${farmerHome ? "farmer-v2" : "landing-motion"}`} data-view={farmerView}>
     <a href="#main" className="skip-link">{language === "bn" ? "মূল অংশে যান" : "Skip to content"}</a>
     {farmerHome ? <FarmerNavigation active={farmerView} /> : <header className={`site-header ${activeRole ? "signed-in" : ""}`}>
       <div className="app-shell flex h-16 items-center justify-between gap-3">
@@ -525,7 +539,7 @@ export default function AluSathiDashboard({ farmerHome = false }: { farmerHome?:
         </div>
       </section>}
 
-      {!farmerHome && <div className="app-shell weather-compact-wrap">
+      {!farmerHome && <div className="app-shell weather-compact-wrap landing-reveal">
         <section className="weather-compact" aria-label={language === "bn" ? "আবহাওয়া" : "Weather"} aria-live="polite">
           <div className="weather-top"><strong>{weather ? `${Math.round(weather.temperature)}°` : "—°"}</strong>{weather?.weather === "Clear" ? <Sun size={42} /> : weather?.weather === "Cloudy" ? <Cloud size={42} /> : <CloudRain size={42} />}</div>
           <p>{weatherLoading ? copy.weatherLoading : !weather ? copy.weatherUnavailable : language === "bn" ? ({Clear:"পরিষ্কার আকাশ", Cloudy:"মেঘলা আকাশ", Rain:"বৃষ্টি হচ্ছে", Storms:"ঝড়ের আবহাওয়া"}[weather.weather] || "আজকের আবহাওয়া") : weather.weather}</p>
@@ -541,7 +555,7 @@ export default function AluSathiDashboard({ farmerHome = false }: { farmerHome?:
       {farmerHome && <div hidden={farmerView !== "today"}><FarmerToday weather={weather} loading={weatherLoading} district={district} districts={districtOptions} setDistrict={setDistrict} plantingDate={plantingDate} setPlantingDate={setPlantingDate} onPhoto={() => startScan("quick")} /></div>}
 
       {farmerHome && farmerView === "tuber" && !tuberConsent && <section className="app-shell farmer-download"><h1>{language === "bn" ? "তোলা আলুর ছবি পরীক্ষা" : "Harvested potato scanner"}</h1><p>{language === "bn" ? "ছবি পরীক্ষা করতে প্রথমবার প্রায় ৩৫ MB মডেল ফাইল লাগতে পারে। সম্ভব হলে Wi-Fi ব্যবহার করুন। পাতার ছবি ও প্রশ্নের জন্য এই ফাইল লাগে না।" : "The first potato scan may download about 35 MB of model files. Use Wi-Fi if possible. Leaf photos and questions do not need these files."}</p><button className="main-button" onClick={() => setTuberConsent(true)}>{language === "bn" ? "বুঝেছি, স্ক্যানার খুলুন" : "Continue to scanner"}</button></section>}
-      {(!farmerHome || (farmerView === "tuber" && tuberConsent)) && <Suspense fallback={<div id="scan" className="app-shell py-12" role="status">{language === "bn" ? "আলুর ছবি পরীক্ষার অংশ খুলছে…" : "Loading potato photo check…"}</div>}><TuberScan /></Suspense>}
+      {(!farmerHome || (farmerView === "tuber" && tuberConsent)) && <div className={farmerHome ? "" : "landing-reveal"}><Suspense fallback={<div id="scan" className="app-shell py-12" role="status">{language === "bn" ? "আলুর ছবি পরীক্ষার অংশ খুলছে…" : "Loading potato photo check…"}</div>}><TuberScan /></Suspense></div>}
       <details hidden={farmerHome && farmerView !== "photos"} className="app-shell leaf-check-details" open={leafOpen} onToggle={event => setLeafOpen(event.currentTarget.open)}><summary>{language === "bn" ? "গাছের পাতায় সমস্যা?" : "Problem with the plant’s leaves?"}</summary>
       <section id="leaf-scan" ref={scanRef} className="app-shell scroll-mt-24 py-16 sm:py-24">
         <div className="section-heading"><div><p className="section-kicker"><ScanLine size={16} />{copy.scanKicker}</p><h2>{copy.scanTitle}</h2><p>{copy.scanBody}</p></div></div>
@@ -553,10 +567,10 @@ export default function AluSathiDashboard({ farmerHome = false }: { farmerHome?:
       </section>
 
       </details>
-      <div hidden={farmerHome && farmerView !== "tools"}><FarmerTools showReminders={!farmerHome} /></div>
+      <div hidden={farmerHome && farmerView !== "tools"} className={farmerHome ? "" : "landing-reveal"}><FarmerTools showReminders={!farmerHome} /></div>
       {dashboardAccess && (farmerHome || diary.length > 0) && <section hidden={farmerHome && farmerView !== "diary"} id="diary" className={`diary-section scroll-mt-20 ${diary.length ? "" : "diary-empty-section"}`}><div className="app-shell py-16 sm:py-24"><div className="section-heading light"><div><p className="section-kicker"><History size={16} />{language === "bn" ? "আমার খাতা" : "MY NOTEBOOK"}</p><h2>{language === "bn" ? "আগের ছবি ও লক্ষণ" : "Previous photos and symptoms"}</h2><p>{language === "bn" ? "আগের লেখা ও ছবি দেখুন। এগুলো রোগের উন্নতি বা অবনতির নির্ণয় নয়।" : "Review saved photos and notes, not a diagnosis of improvement or deterioration."}</p><p>{user ? (language === "bn" ? "আপনার ব্যক্তিগত অনলাইন খাতা" : "Your private account history") : (language === "bn" ? "এই ফোনের খাতা; অনলাইনে সেভ হয় না।" : "Saved on this device; no cloud sync.")}</p>{cloudMessage && <p role="status">{cloudMessage}</p>}</div>{diary.length > 0 && <button className="text-button" onClick={() => removeDiary()}><Trash2 size={16} />{copy.clearAll}</button>}</div>{diary.length === 0 ? <div className="empty-diary"><span><History size={31} /></span><h3>{copy.emptyDiary}</h3><p>{copy.emptyDiaryBody}</p><button className="secondary-main" onClick={() => startScan("quick")}><Camera size={18} />{copy.quick}</button></div> : <div className="diary-grid timeline-grid">{diary.map((entry) => { const previous = entry.followUpOf ? diary.find((item) => item.id === entry.followUpOf) : undefined; return <DiaryCard key={entry.id} entry={entry} trend={trendFromEntries(entry, previous)} language={language} copy={copy} onDelete={() => removeDiary(entry.id)} onRecheck={() => { setDistrict(entry.district); startScan("quick", entry.id); }} />; })}</div>}</div></section>}
 
-      <section id="help" hidden={farmerHome && farmerView !== "help"} className="app-shell scroll-mt-20 py-16 sm:py-24">
+      <section id="help" hidden={farmerHome && farmerView !== "help"} className={`app-shell scroll-mt-20 py-16 sm:py-24 ${farmerHome ? "" : "landing-reveal"}`}>
         <div className="section-heading"><div><p className="section-kicker">{copy.helpKicker}</p><h2>{copy.helpTitle}</h2></div></div>
         <div className="care-slider" aria-roledescription="carousel" aria-label={copy.helpTitle}>
           <div className="care-slide" role="group" aria-label={`${tipIndex + 1} / ${copy.helpCards.length}`} aria-live="polite">
