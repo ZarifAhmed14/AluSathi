@@ -628,6 +628,53 @@
 .weather-chip-body p { margin-top: 8px; }
 .risk-badge { padding: 2px 10px; border-radius: 999px; background: #fff3cd; color: #483406; font-size: 14px; }
 .field-history-link { display: inline-flex; align-items: center; min-height: 44px; margin-top: 10px; font-weight: 700; text-decoration: underline; }
+.farmer-v2[data-view="today"] { background: #eaf4f1; color: #12301f; }
+.farmer-field-scene { position: relative; height: clamp(165px, 14.5vw, 210px); overflow: hidden; background: #bde8d8 url('/alusathi-farmer-field-children.webp') 49% center / cover no-repeat; }
+.field-leaves, .field-tree { position: absolute; pointer-events: none; transform-origin: 50% 100%; will-change: transform; }
+.field-leaves { bottom: -7px; width: 72px; opacity: .88; animation: leaves-sway 3.5s ease-in-out infinite alternate; }
+.field-leaves-one { left: 6%; width: 63px; animation-delay: -.7s; }
+.field-leaves-two { left: 46%; bottom: -12px; width: 84px; animation-duration: 3.9s; animation-delay: -2.1s; }
+.field-leaves-three { left: 58%; bottom: -9px; animation-duration: 3.2s; animation-delay: -1.2s; }
+.field-leaves-four { left: 81%; bottom: -14px; width: 81px; animation-duration: 4.1s; animation-delay: -2.8s; }
+.field-leaves-five { left: 93%; bottom: -8px; width: 66px; animation-duration: 3.7s; animation-delay: -1.9s; }
+.field-tree { top: 12%; width: 62px; opacity: .77; animation: tree-sway 5.8s ease-in-out infinite alternate; }
+.field-tree-one { left: 72%; animation-delay: -1.4s; }
+.field-tree-two { left: 84%; top: 15%; width: 49px; animation-duration: 6.4s; animation-delay: -3.6s; }
+.field-bird { position: absolute; z-index: 1; left: 55%; width: 54px; height: 24px; color: #245c57; animation: bird-cross 5.6s linear infinite; }
+.field-bird svg { width: 100%; height: 100%; animation: bird-flap .9s ease-in-out infinite alternate; }
+.field-bird path { stroke: currentColor; stroke-width: 4; stroke-linecap: round; }
+.field-bird-one { top: 3%; }
+.field-bird-two { top: 12%; width: 36px; animation-duration: 6.4s; animation-delay: -2.8s; }
+@keyframes leaves-sway { from { transform: rotate(-3.5deg); } to { transform: rotate(3.5deg); } }
+@keyframes tree-sway { from { transform: rotate(-1deg); } to { transform: rotate(1deg); } }
+@keyframes bird-cross { from { transform: translateX(0) translateY(2px); } to { transform: translateX(52vw) translateY(-5px); } }
+@keyframes bird-flap { from { transform: scaleY(.7); } to { transform: scaleY(1.12); } }
+@media (prefers-reduced-motion: reduce) { .field-leaves, .field-tree { animation: none; } .field-bird { display: none; } }
+.farmer-today { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(320px, .85fr); gap: 16px 22px; max-width: 1220px; padding-top: 20px; }
+.farmer-today .farmer-greeting { grid-column: 1 / -1; min-height: auto; margin: 0 0 4px; }
+.farmer-today .farmer-greeting h1 { font-size: clamp(30px, 3.3vw, 44px); }
+.farmer-today .farmer-greeting p:last-child { margin-top: 8px; color: #3f4f45; }
+.farmer-today .farmer-day-card { grid-column: 1; grid-row: 2; min-height: 260px; padding: 24px; border-color: #d3e4de; border-radius: 22px; background: #fff; box-shadow: 0 8px 32px #104a3410; }
+.farmer-today .field-card-title { font-size: clamp(23px, 2vw, 28px); }
+.farmer-today .farmer-weather-action { font-size: 20px; font-weight: 700; }
+.farmer-today .planting-choices { padding-top: 16px; border-top: 1px solid #d3e4de; }
+.farmer-today .planting-choices button { min-height: 48px; border-radius: 14px; background: #edf5f0; }
+.farmer-today .farmer-main-actions { grid-column: 1 / -1; grid-row: 3; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 0; }
+.farmer-today .farmer-main-actions .main-button { min-height: 64px; gap: 12px; padding: 12px 18px; border-radius: 16px; background: #0f4d38; color: #fff; font-size: 18px; }
+.farmer-today .farmer-main-actions .main-button:hover { background: #0b3f2e; }
+.farmer-today .farmer-main-actions .main-button svg { width: 23px; height: 23px; }
+.farmer-today .farmer-main-actions .secondary-main { min-height: 64px; border-color: #d3e4de; border-radius: 16px; background: #fff; font-size: 18px; }
+.farmer-today .weather-chip { grid-column: 2; grid-row: 2; margin: 0; padding: 22px; border-color: #d3e4de; border-radius: 22px; background: #fff; }
+.farmer-today .weather-chip > summary { align-items: start; flex-direction: column; font-size: 16px; }
+.farmer-today .weather-chip > summary strong { font-size: 23px; }
+.farmer-today .weather-chip-advice { padding-top: 14px; border-top: 1px solid #d3e4de; color: #3f4f45; line-height: 1.55; }
+.farmer-today .weather-chip-body { padding-top: 14px; }
+.farmer-today .field-secondary { grid-column: 1 / -1; grid-row: 4; align-self: start; margin: 0; padding: 14px 22px; border: 1px solid #d3e4de; border-radius: 18px; background: #fff; }
+.farmer-today .field-history-link { grid-column: 1 / -1; grid-row: 5; margin: 0; }
+.farmer-today .field-risk-banner { grid-column: 1 / -1; grid-row: 3; margin: 0; }
+.farmer-today:has(.field-risk-banner) .farmer-main-actions { grid-row: 4; }
+.farmer-today:has(.field-risk-banner) .field-secondary { grid-row: 5; }
+.farmer-today:has(.field-risk-banner) .field-history-link { grid-row: 6; }
 .farmer-listen { display: flex; align-items: center; gap: 6px; margin-top: 14px; }
 .today-reminders summary { display: flex; align-items: center; gap: 8px; }
 .today-reminders summary svg { width: 16px; }
@@ -688,6 +735,26 @@
   .farmer-stage p { font-size: 15px; line-height: 1.5; }
   .farmer-greeting { min-height: 76px; }
   .farmer-greeting img { display: none; }
+  .farmer-field-scene { background-position: 28% center; }
+  .farmer-field-scene { height: 144px; }
+  .field-leaves { width: 55px; }
+  .field-leaves-two, .field-leaves-four { width: 64px; }
+  .field-tree-one { left: 12%; top: 31%; width: 22px; }
+  .field-tree-two { left: 84%; top: 35%; width: 19px; }
+  .farmer-today { display: flex; flex-direction: column; gap: 14px; padding-top: 18px; }
+  .farmer-today .farmer-greeting { min-height: 0; margin: 0; }
+  .farmer-today .field-risk-banner { order: 1; }
+  .farmer-today .farmer-main-actions { order: 2; }
+  .farmer-today .farmer-day-card { order: 3; }
+  .farmer-today .weather-chip { order: 4; }
+  .farmer-today .field-secondary { order: 5; }
+  .farmer-today .field-history-link { order: 6; }
+  .farmer-today .farmer-day-card { min-height: 0; padding: 20px; }
+  .farmer-today .farmer-main-actions { grid-template-columns: 1fr; margin-top: 0; }
+  .farmer-today .farmer-main-actions .main-button { min-height: 64px; font-size: 18px; }
+  .farmer-today .farmer-main-actions .secondary-main { min-height: 58px; font-size: 16px; }
+  .farmer-today .weather-chip, .farmer-today .field-secondary { margin-top: 0; }
+  .farmer-today .field-history-link { margin-top: 8px; }
   .farmer-main-actions, .selling-inputs { grid-template-columns: 1fr; }
   .farmer-today { padding-top: 12px; }
   .farmer-main-actions { gap: 8px; margin-top: 12px; }

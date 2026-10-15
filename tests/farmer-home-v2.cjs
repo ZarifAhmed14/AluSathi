@@ -20,6 +20,39 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:4175';
       await page.clock.setFixedTime(new Date('2026-10-10T20:30:00Z'));
       await page.goto(`${base}/farmer`);
       await page.locator('.farmer-today').waitFor();
+      const orderedTabs = await page.locator(width < 761 ? '.farmer-bottom-tabs a' : '.farmer-tabs a').evaluateAll(links => links.map(link => link.getAttribute('href')));
+      assert.deepEqual(orderedTabs.slice(0, 2), ['/farmer#photos', '/farmer']);
+      assert.equal(await page.locator('.farmer-v2').evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(234, 244, 241)');
+      assert.ok(await page.locator('.farmer-field-scene').evaluate(el => getComputedStyle(el).backgroundImage.includes('alusathi-farmer-field-children.webp')));
+      assert.equal(await page.locator('.farmer-field-scene').evaluate(el => getComputedStyle(el, '::before').content), 'none', 'No chopped foreground duplicate');
+      assert.equal(await page.locator('.farmer-field-scene').evaluate(el => el.getAnimations().length), 0, 'The illustration stays still');
+      assert.equal(await page.locator('.field-leaves').count(), 5);
+      assert.ok(await page.locator('.field-leaves').evaluateAll(images => images.every(image => image.complete && image.naturalWidth > 0)), 'Leaf layers load');
+      const leafTravel = await page.locator('.field-leaves-two').evaluate(el => {
+        const animation = el.getAnimations()[0]; animation.pause(); animation.currentTime = -animation.effect.getTiming().delay;
+        const start = Math.atan2(new DOMMatrix(getComputedStyle(el).transform).b, new DOMMatrix(getComputedStyle(el).transform).a);
+        animation.currentTime = -animation.effect.getTiming().delay + animation.effect.getTiming().duration - 1;
+        const end = Math.atan2(new DOMMatrix(getComputedStyle(el).transform).b, new DOMMatrix(getComputedStyle(el).transform).a);
+        animation.play();
+        return Math.abs(end - start) * el.clientHeight;
+      });
+      assert.ok(leafTravel >= 4 && leafTravel <= 12, `Leaf-tip travel should be a few pixels, not a moving field: ${leafTravel.toFixed(1)}px`);
+      if (width > 760) {
+        const treeTravel = await page.locator('.field-tree-one').evaluate(el => {
+          const animation = el.getAnimations()[0]; animation.pause(); animation.currentTime = -animation.effect.getTiming().delay;
+          const start = Math.atan2(new DOMMatrix(getComputedStyle(el).transform).b, new DOMMatrix(getComputedStyle(el).transform).a);
+          animation.currentTime = -animation.effect.getTiming().delay + animation.effect.getTiming().duration - 1;
+          const end = Math.atan2(new DOMMatrix(getComputedStyle(el).transform).b, new DOMMatrix(getComputedStyle(el).transform).a);
+          animation.play();
+          return Math.abs(end - start) * el.clientHeight;
+        });
+        assert.ok(treeTravel > 0 && treeTravel < 3, `Distant-tree motion stays subtle: ${treeTravel.toFixed(1)}px`);
+      }
+      assert.ok(await page.locator('.field-bird-one').evaluate(el => { const s = getComputedStyle(el); return parseFloat(s.animationDuration) >= 4 && parseFloat(s.animationDuration) <= 8; }), 'Bird flight is visible in a short loop');
+      assert.ok(await page.locator('.field-bird-one').evaluate(el => el.getBoundingClientRect().left >= innerWidth * .5), 'Birds stay in the open sky, clear of the farmer');
+      const birdStart = await page.locator('.field-bird-one').evaluate(el => el.getBoundingClientRect().left);
+      await page.waitForTimeout(2400);
+      assert.ok(await page.locator('.field-bird-one').evaluate(el => el.getBoundingClientRect().left) > birdStart + 30, 'Bird crosses the illustration');
       assert.equal(await page.locator('.hero-section').count(), 0);
       assert.equal(await page.locator('#scan').count(), 0);
       assert.equal(await page.locator('#diary').isVisible(), false);
@@ -36,6 +69,8 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:4175';
       await page.locator('.field-risk-banner').waitFor();
       assert.deepEqual(modelRequests, []);
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.screenshot({ path: `test-results/farmer-v2-viewport-${width}.png` });
       await page.screenshot({ path: `test-results/farmer-v2-${width}.png`, fullPage: true });
       await page.locator('.farmer-main-actions button').click();
       await page.locator('#leaf-scan').waitFor();
@@ -105,6 +140,14 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:4175';
       assert.deepEqual(errors, []);
       await context.close();
     }
-    console.log('Farmer v2: responsive navigation, range migration, dates, model consent, net proceeds and role-gated examples passed.');
+    const reduced = await browser.newContext({ reducedMotion: 'reduce', serviceWorkers: 'block' });
+    await reduced.addInitScript(() => { sessionStorage.setItem('alusathi-demo', 'true'); sessionStorage.setItem('alusathi-role', 'farmer'); });
+    const reducedPage = await reduced.newPage();
+    await reducedPage.goto(`${base}/farmer`);
+    assert.equal(await reducedPage.locator('.field-bird-one').evaluate(el => getComputedStyle(el).display), 'none');
+    assert.equal(await reducedPage.locator('.field-leaves-one').evaluate(el => getComputedStyle(el).animationName), 'none');
+    assert.equal(await reducedPage.locator('.field-tree-one').evaluate(el => getComputedStyle(el).animationName), 'none');
+    await reduced.close();
+    console.log('Farmer v2: responsive navigation, field motion, reduced motion, range migration, dates, model consent, net proceeds and role-gated examples passed.');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

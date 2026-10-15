@@ -12,8 +12,8 @@ export default function FarmerNavigation({ active = "today" }: { active?: string
   const [error, setError] = useState("");
   const bn = language === "bn";
   const tabs = [
-    ["today", "/farmer", bn ? "আজকের কাজ" : "Today", Sun],
     ["photos", "/farmer#photos", bn ? "ছবি" : "Photos", Camera],
+    ["today", "/farmer", bn ? "আজকের কাজ" : "Today", Sun],
     ["selling", "/selling-preparation", bn ? "বিক্রির আগে" : "Before selling", Store],
     ["diary", "/farmer#diary", bn ? "খাতা" : "Notebook", History],
   ] as const;
@@ -24,7 +24,7 @@ export default function FarmerNavigation({ active = "today" }: { active?: string
   }
   return <>
     <header className="site-header farmer-header"><div className="app-shell farmer-header-inner">
-      <Link to="/farmer" className="site-brand"><span className="brand-mark"><Leaf size={22} /></span><strong>আলুসাথী</strong></Link>
+      <Link to="/farmer" className="site-brand" onClick={() => window.scrollTo(0, 0)}><span className="brand-mark"><Leaf size={22} /></span><strong>আলুসাথী</strong></Link>
       <nav className="farmer-tabs" aria-label={bn ? "মূল মেনু" : "Primary navigation"}>{links}</nav>
       <details className="farmer-more" onKeyDown={event => { if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); } }}><summary><Menu size={18} />{bn ? "আরও" : "More"}</summary><div onClick={event => { if ((event.target as Element).closest("a,button")) event.currentTarget.closest("details")?.removeAttribute("open"); }}>
         <Link to="/farmer#tools">{bn ? "জমির হিসাব" : "Field calculators"}</Link>

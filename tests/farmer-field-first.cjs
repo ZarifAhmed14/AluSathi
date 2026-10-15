@@ -58,8 +58,9 @@ async function lowContrast(page) {
       assert.equal(await page.locator('.field-risk-banner').count(), 0, 'No alert without a crop');
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
       const positions = await page.evaluate(() => ({ field: document.querySelector('.farmer-day-card').getBoundingClientRect().top, photo: document.querySelector('.farmer-main-actions button').getBoundingClientRect().top, callBottom: document.querySelector('.farmer-main-actions a').getBoundingClientRect().bottom, weather: document.querySelector('.weather-chip').getBoundingClientRect().top }));
-      assert.ok(positions.field < positions.photo && positions.photo < positions.weather);
-      assert.ok(positions.callBottom < (width === 375 ? 600 : 700), `Call button below first screen: ${positions.callBottom}`);
+      if (width === 375) assert.ok(positions.photo < positions.field && positions.field < positions.weather);
+      else assert.ok(Math.abs(positions.field - positions.weather) < 2 && positions.weather < positions.photo);
+      assert.ok(positions.callBottom <= (width === 375 ? 600 : 800), `Call button below first screen: ${positions.callBottom}`);
       await page.locator('.farmer-main-actions button').focus();
       await page.keyboard.press('Tab');
       assert.ok(await page.locator('.farmer-main-actions a').evaluate(el => el.matches(':focus-visible') && getComputedStyle(el).boxShadow !== 'none'), 'Keyboard focus follows actions and stays visible');

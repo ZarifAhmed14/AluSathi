@@ -302,7 +302,7 @@ export default function AluSathiDashboard({ farmerHome = false }: { farmerHome?:
   const location = useLocation();
   useEffect(() => {
     if (!farmerHome) return;
-    const update = () => { const view = window.location.hash.slice(1) || "today"; setFarmerView(view); if (view === "photos") setLeafOpen(true); window.scrollTo(0, 0); };
+    const update = () => { const view = window.location.hash.slice(1) || "today"; setFarmerView(view); if (view === "photos") setLeafOpen(true); window.scrollTo({ top: 0, behavior: "instant" }); };
     update(); window.addEventListener("hashchange", update);
     return () => window.removeEventListener("hashchange", update);
   }, [farmerHome, location.hash]);
@@ -434,7 +434,7 @@ export default function AluSathiDashboard({ farmerHome = false }: { farmerHome?:
     setReportImage(null);
     setMode(nextMode); setFile(null); setPreview(null); setResult(null); setFieldResults([]); setError(""); setBlurWarning(false);
     setFollowUpOf(nextFollowUp);
-    requestAnimationFrame(() => scanRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    if (!farmerHome) requestAnimationFrame(() => scanRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }
 
   function chooseFile(next?: File) {

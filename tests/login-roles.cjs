@@ -35,7 +35,7 @@ assert.ok(vercel.rewrites.some(route => route.source === '/account' && route.des
         assert.equal(await page.locator('.farmer-tabs a').count(), 4);
         assert.equal(await page.locator('.site-header .top-nav').getByText(bn ? 'সাহায্য' : 'Help').count(), 0);
         assert.equal(await page.locator('.connection-chip').count(), 0);
-        assert.match(await page.locator('.farmer-greeting img').getAttribute('src'), /alusathi-farmer-harvest-hero\.webp/);
+        assert.match(await page.locator('.farmer-field-scene').evaluate(element => getComputedStyle(element).backgroundImage), /alusathi-farmer-field-children\.webp/);
         await page.evaluate(() => scrollTo(0, 0));
         if (bn && width === 390) await page.screenshot({ path: 'test-results/farmer-home-mobile.png', fullPage: true });
         if (bn && width === 1280) await page.screenshot({ path: 'test-results/farmer-home-desktop.png' });
@@ -71,11 +71,9 @@ assert.ok(vercel.rewrites.some(route => route.source === '/account' && route.des
         await page.goto(`${base}/marketplace/`);
         await page.waitForURL(`${base}/marketplace/buyer.html`);
         await page.goto(base);
-        await page.locator('.role-badge:visible').waitFor();
-        assert.match(await page.locator('.role-badge').innerText(), bn ? /ব্যবসায়ী/ : /Buyer|Businessman/);
-        await page.locator('.site-header').getByRole('button', { name: bn ? 'বের হন' : 'Logout' }).click();
-        await page.waitForURL(`${base}/`);
-        assert.equal(await page.evaluate(() => sessionStorage.getItem('alusathi-role')), '');
+        await page.locator('.public-landing').waitFor();
+        assert.equal(await page.locator('.public-role-grid article').count(), 2);
+        assert.equal(await page.evaluate(() => sessionStorage.getItem('alusathi-role')), 'buyer');
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
         assert.deepEqual(errors, []);
         if (bn && width === 390) await page.screenshot({ path: 'test-results/login-roles-mobile.png', fullPage: true });

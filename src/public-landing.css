@@ -1,0 +1,128 @@
+.public-landing {
+  min-height: 100svh;
+  background: #eaf4f1;
+  color: #12301f;
+}
+
+.public-header {
+  display: flex;
+  min-height: 76px;
+  align-items: center;
+  justify-content: space-between;
+  width: min(100% - 32px, 1220px);
+  margin: 0 auto;
+}
+
+.public-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.public-brand strong,
+.public-brand small { display: block; }
+.public-brand strong { font-size: 22px; line-height: 1; }
+.public-brand small { margin-top: 5px; color: #53685b; font-size: 12px; font-weight: 600; }
+
+.public-language {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #c9dcd5;
+  border-radius: 999px;
+  background: #fff;
+  padding: 8px 14px;
+  font-weight: 800;
+}
+
+.public-hero {
+  position: relative;
+  min-height: clamp(390px, 34vw, 490px);
+  overflow: hidden;
+  border-block: 1px solid #d3e4de;
+  background: #e3c789;
+}
+
+.public-hero > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.public-hero::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(244,225,181,.98) 0%, rgba(244,225,181,.88) 27%, rgba(244,225,181,.12) 53%, transparent 70%);
+  content: "";
+}
+
+.public-hero-copy {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  align-content: center;
+  width: min(100% - 32px, 1220px);
+  min-height: inherit;
+  margin: 0 auto;
+}
+
+.public-hero-copy > * { max-width: 550px; }
+.public-hero-copy > p { color: #176344; font-size: 16px; font-weight: 800; }
+.public-hero-copy h1 { margin-top: 12px; font-size: clamp(42px, 5vw, 72px); font-weight: 700; letter-spacing: -.045em; line-height: 1.04; }
+.public-hero-copy > span { margin-top: 20px; color: #324b3c; font-size: 19px; font-weight: 500; line-height: 1.65; }
+
+.public-roles {
+  width: min(100% - 32px, 1220px);
+  margin: 0 auto;
+  padding: 38px 0 44px;
+}
+
+.public-role-heading > p { color: #24724d; font-size: 14px; font-weight: 800; }
+.public-role-heading h2 { margin-top: 5px; font-size: clamp(27px, 3vw, 40px); font-weight: 700; letter-spacing: -.025em; }
+.public-role-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 22px; }
+.public-role-grid article { display: grid; grid-template-columns: auto 1fr; gap: 16px 18px; border: 1px solid #d3e4de; border-radius: 24px; background: #fff; padding: 24px; box-shadow: 0 14px 36px rgba(18,48,31,.06); }
+.public-role-icon { display: grid; width: 50px; height: 50px; place-items: center; border-radius: 16px; background: #e0eedf; color: #15533a; }
+.public-role-grid h3 { font-size: 25px; font-weight: 800; }
+.public-role-grid p { margin-top: 4px; color: #4a5d51; line-height: 1.55; }
+.public-role-grid button,
+.public-role-grid a { display: flex; grid-column: 1 / -1; min-height: 52px; align-items: center; justify-content: space-between; border-radius: 14px; background: #123b2b; padding: 12px 17px; color: #fff; font-weight: 800; transition: transform .2s ease, background .2s ease; }
+.public-role-grid article:last-child .public-role-icon { background: #fff0c7; color: #785313; }
+.public-role-grid article:last-child a { background: #a75d28; }
+.public-role-grid button:hover { background: #0a2f21; transform: translateY(-2px); }
+.public-role-grid a:hover { background: #88491f; transform: translateY(-2px); }
+.public-role-grid svg { flex: none; }
+
+.public-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  border-top: 1px solid #d3e4de;
+  background: transparent;
+  padding: 22px max(16px, calc((100% - 1220px) / 2));
+  color: #506258;
+}
+.public-footer span { color: #12301f; font-weight: 800; }
+
+@media (max-width: 700px) {
+  .public-header { min-height: 68px; }
+  .public-brand small { display: none; }
+  .public-hero { display: flex; min-height: 0; flex-direction: column; background: #eaf4f1; }
+  .public-hero > img { position: relative; height: 220px; object-position: 66% center; }
+  .public-hero::after { display: none; }
+  .public-hero-copy { min-height: 0; padding: 28px 0 30px; }
+  .public-hero-copy h1 { font-size: 38px; }
+  .public-hero-copy > span { margin-top: 14px; font-size: 17px; }
+  .public-roles { padding-top: 30px; }
+  .public-role-grid { grid-template-columns: 1fr; }
+  .public-role-grid article { padding: 20px; }
+  .public-footer { align-items: start; flex-direction: column; padding-block: 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-role-grid button,
+  .public-role-grid a { transition: none; }
+}
