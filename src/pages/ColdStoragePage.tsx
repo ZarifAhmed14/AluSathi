@@ -1,23 +1,8 @@
-import { useState } from "react";
 import ColdStorage from "@/components/ColdStorage";
 import FarmerNavigation from "@/components/FarmerNavigation";
-import SellingEstimate from "@/components/SellingEstimate";
-import HarvestMarket from "@/components/HarvestMarket";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useAuth } from "@/contexts/AuthContext";
 
 export default function ColdStoragePage() {
-  const { language } = useLanguage(); const { user } = useAuth(); const bn = language === "bn";
-  const [samples, setSamples] = useState(false);
-  return <div className={`farmer-v2 ${bn ? "font-bangla" : ""}`}>
-    <FarmerNavigation active="selling" />
-    <main className="farmer-selling"><div className="app-shell"><header className="farmer-page-heading"><h1>{bn ? "বিক্রির আগে" : "Before selling"}</h1><p>{bn ? "দর, গাড়িভাড়া আর হাতে থাকার হিসাব।" : "Your quoted price, transport costs and take-home amount."}</p></header>
-      <SellingEstimate />
-      <div className="selling-links"><a className="secondary-main" href="/marketplace/farmer.html#transport">{bn ? "পথ ও গাড়ির বিস্তারিত হিসাব" : "Route and detailed transport plan"}</a><a className="secondary-main" href="/marketplace/farmer.html#deals">{bn ? "বিক্রির রাখা নথি" : "Saved sale records"}</a></div>
-    </div><ColdStorage />
-    <div className="app-shell selling-legacy"><details><summary>{bn ? "আগের প্রস্তুতি ও ফোনে লেখা চাহিদা" : "Previous preparation and phone requests"}</summary><HarvestMarket storageKey={user?.id || "demo"} readOnly /></details>
-      <label className="checkbox-label"><input type="checkbox" checked={samples} onChange={e => setSamples(e.target.checked)} />{bn ? "নমুনা দেখুন" : "Show examples"}</label>
-      {samples && <div className="sample-area"><p>{bn ? "এটি অনুশীলনের অংশ। নমুনা দর আসল ক্রেতার প্রস্তাব নয়।" : "Practice area. Example prices are not real buyer offers."}</p><a href="/marketplace/farmer.html#samples">{bn ? "নমুনা আলু ও দর দেখুন" : "Open sample lots and offers"}</a><HarvestMarket storageKey="farmer-practice" /></div>}
-    </div></main>
-  </div>;
+  const { language } = useLanguage(); const bn = language === "bn";
+  return <div className={`farmer-v2 ${bn ? "font-bangla" : ""}`}><FarmerNavigation active="selling" /><main className="farmer-selling"><div className="app-shell"><header className="farmer-page-heading"><p className="section-kicker">{bn ? "বিক্রির প্রস্তুতি" : "PREPARE TO SELL"}</p><h1>{bn ? "বিক্রির আগে" : "Before selling"}</h1><p>{bn ? "আগে ঠিক করুন—আলু কোথায় যাবে, আর কোন সহায়তা দরকার।" : "Choose where your potatoes go and what help you need first."}</p></header><div className="selling-compact-grid"><section className="selling-focus-card"><span className="selling-icon">❄️</span><div><h2>{bn ? "হিমাগার খুঁজুন" : "Find cold storage"}</h2><p>{bn ? "কাছের সংরক্ষণ কেন্দ্রের তথ্য দেখুন।" : "Browse storage options for your harvest."}</p><a className="secondary-main" href="#cold-storage">{bn ? "হিমাগার দেখুন" : "Browse storage"}</a></div></section><section className="selling-focus-card"><span className="selling-icon">🪪</span><div><h2>{bn ? "আলুর পরিচয়পত্র" : "Potato passport"}</h2><p>{bn ? "জাত, পরিমাণ ও জমির নোট একসাথে রাখুন।" : "Keep variety, quantity and field notes together."}</p><a className="secondary-main" href="/marketplace/farmer.html#passport">{bn ? "পরিচয়পত্র খুলুন" : "Open passport"}</a></div></section></div><section className="selling-route-teaser"><div className="route-line"><span>📍 {bn ? "পীরগঞ্জ, রংপুর" : "Pirganj, Rangpur"}</span><span className="route-arrow">→</span><span>🏪 {bn ? "ঢাকা বাজার" : "Dhaka market"}</span></div><p>{bn ? "যাত্রাপথ ও গাড়ির খুঁটিনাটি পরে দেখুন—এখানে শুধু গন্তব্যটি মনে রাখুন।" : "Keep the destination visible here; open the detailed route only when needed."}</p><a className="text-button" href="/selling-preparation/details">🚚 {bn ? "পথ ও গাড়ির বিস্তারিত হিসাব" : "Route and transport details"}</a></section><section className="selling-intent"><h2>{bn ? "আপনি কী চান?" : "What are you looking for?"}</h2><div className="intent-options"><label><input type="radio" name="selling-intent" defaultChecked />{bn ? "বাজারে পাঠাব" : "Send to market"}</label><label><input type="radio" name="selling-intent" />{bn ? "আগে হিমাগারে রাখব" : "Store first"}</label></div></section></div><div id="cold-storage"><ColdStorage /></div></main></div>;
 }

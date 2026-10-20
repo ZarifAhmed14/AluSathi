@@ -5,6 +5,7 @@ import Index from "@/pages/Index";
 import NotFound from "@/pages/NotFound";
 import PotatoLifeCycle from "@/pages/PotatoLifeCycle";
 import ColdStoragePage from "@/pages/ColdStoragePage";
+import SellingPreparationDetails from "@/pages/SellingPreparationDetails";
 import { DemoProvider, DemoEntry } from "@/contexts/DemoContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Auth from "@/pages/Auth";
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="/account" element={<Auth />} />
           <Route path="/life-cycle" element={<PotatoLifeCycle />} />
           <Route path="/selling-preparation" element={<ColdStoragePage />} />
+          <Route path="/selling-preparation/details" element={<SellingPreparationDetails />} />
           <Route path="/cold-storage" element={<Navigate to="/selling-preparation" replace />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -45,7 +45,7 @@ function SeverityMeasure({ image, onMeasure }: { image: string; onMeasure: (perc
   </div></details>;
 }
 
-export default function ScanInsights({ results, weather, district, image, cropAgeDays }: { results: DiseaseResult[]; weather: WeatherData | null; district: string; image: string | null; cropAgeDays: number | null }) {
+export default function ScanInsights({ results, weather, district, image, cropAgeDays, onSymptomsChange }: { results: DiseaseResult[]; weather: WeatherData | null; district: string; image: string | null; cropAgeDays: number | null; onSymptomsChange?: (symptoms: string[]) => void }) {
   const { language } = useLanguage(); const bn = language === "bn";
   const [severity, setSeverity] = useState<number | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -68,6 +68,14 @@ export default function ScanInsights({ results, weather, district, image, cropAg
     const option = q.options.find(([value]) => value === answers[q.id]);
     return `${bn ? q.bn : q.en} ${option ? option[bn ? 1 : 2] : (bn ? "উত্তর দেওয়া হয়নি" : "Not answered")}`;
   });
+  const chooseAnswer = (id: string, value: string) => {
+    const next = { ...answers, [id]: value };
+    setAnswers(next);
+    onSymptomsChange?.(questions.map(q => {
+      const option = q.options.find(([optionValue]) => optionValue === next[q.id]);
+      return option ? `${bn ? q.bn : q.en} ${option[bn ? 1 : 2]}` : "";
+    }).filter(Boolean));
+  };
   const report = [bn ? "আলুসাথী — কৃষকের রিপোর্ট" : "AluSathi — Farmer report", createdAt.current.toLocaleString(bn ? "bn-BD" : "en-GB"), district,
     upazila.trim() && `${bn ? "উপজেলা" : "Upazila"}: ${upazila.trim()}`, variety.trim() && `${bn ? "আলুর জাত (কৃষকের দেওয়া)" : "Variety (farmer-provided)"}: ${variety.trim()}`,
     cropAgeDays !== null && `${bn ? "লাগানোর পর" : "Days since planting"}: ${cropAgeDays} ${bn ? "দিন" : "days"}`,
@@ -94,7 +102,7 @@ export default function ScanInsights({ results, weather, district, image, cropAg
       <label>{bn ? "যোগাযোগের নম্বর (ঐচ্ছিক)" : "Contact number (optional)"}<input type="tel" value={phone} onChange={event => setPhone(event.target.value)} maxLength={20} autoComplete="tel" /></label>
     </section>
     <section className="symptom-check" aria-labelledby="symptom-title"><p className="section-kicker">{bn ? "বিশেষজ্ঞকে জানানোর আগে" : "Before talking to an expert"}</p><h3 id="symptom-title">{bn ? "পাতায় কী দেখছেন?" : "What do you see on the leaf?"}</h3><p>{bn ? "যা দেখেছেন শুধু সেটাই বাছুন। নিশ্চিত না হলে ‘বুঝতে পারছি না’ দিন।" : "Choose only what you can see. Select ‘Not sure’ when unclear."}</p>
-      {questions.map(q => <fieldset key={q.id}><legend>{bn ? q.bn : q.en}</legend><div className="symptom-options">{q.options.map(([value, bangla, english]) => <label key={value} className={answers[q.id] === value ? "selected" : ""}><input type="radio" name={`symptom-${q.id}`} value={value} checked={answers[q.id] === value} onChange={() => setAnswers(previous => ({ ...previous, [q.id]: value }))} />{bn ? bangla : english}</label>)}</div></fieldset>)}
+      {questions.map(q => <fieldset key={q.id}><legend>{bn ? q.bn : q.en}</legend><div className="symptom-options">{q.options.map(([value, bangla, english]) => <label key={value} className={answers[q.id] === value ? "selected" : ""}><input type="radio" name={`symptom-${q.id}`} value={value} checked={answers[q.id] === value} onChange={() => chooseAnswer(q.id, value)} />{bn ? bangla : english}</label>)}</div></fieldset>)}
       <small>{bn ? "এই উত্তর দেখে আলুসাথী রোগের নাম বা ওষুধ বলে না।" : "These answers do not produce a disease name or treatment."}</small>
     </section>
     <article className="lookalike-warning"><AlertTriangle /><div><h3>{bn ? "একই রকম দাগ মানেই একই রোগ নয়" : "Similar marks can have different causes"}</h3><p>{bn ? "পুষ্টির ঘাটতি, পোকার ক্ষতি, রোদে পোড়া বা অন্য রোগেও এমন দাগ হয়। পাতার নিচে ও গোড়ায় দেখুন। নিশ্চিত না হয়ে ওষুধ দেবেন না।" : "Nutrient stress, pests, sun damage and other diseases can look alike. Check the leaf underside and plant base. Confirm the cause before treatment."}</p></div></article>

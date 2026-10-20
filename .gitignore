@@ -31,3 +31,7 @@ tests/__pycache__/
 *.sln
 *.sw?
 .vercel
+
+__pycache__/
+*.pyc
+

@@ -21,3 +21,22 @@
   .hero.page-shell { background-size: 100% 100%, auto 100%; background-position: center, center bottom; }
   .hero-visual { min-height: 270px; background: transparent; }
 }
+.buyer-hero{background:linear-gradient(90deg,#173d30ee 0%,#173d30c8 42%,#173d3040 75%),url('./potato-harvest.png') center/cover no-repeat;}
+.buyer-hero h1{max-width:620px}
+.hero-mini-points{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:22px;color:#e1efe0;font-size:13px;font-weight:700}
+.hero-mini-points span{display:inline-flex;align-items:center;gap:6px}
+.buyer-workspace{padding-top:28px}
+.buyer-brief{padding:24px 26px;margin-bottom:28px;background:#fffdf8}
+.buyer-brief .section-header{align-items:center;margin-bottom:18px}
+.brief-status{border-radius:999px;padding:7px 11px;background:#e4f0e6;color:#2b6645;font-size:12px;font-weight:800}
+.brief-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) auto;gap:12px;align-items:end}
+.brief-grid label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:800;color:#274935}
+.brief-grid input,.brief-grid select{width:100%;min-height:44px;border:1px solid #cbd5c8;background:#fff;border-radius:9px;padding:9px 11px;color:#183b2d;font-size:14px}
+.brief-submit{min-height:44px;white-space:nowrap}
+.brief-note{margin:15px 0 0;color:#687a6c;font-size:12px;line-height:1.5}
+.buyer-lots-heading{align-items:center}
+.buyer-lots-heading .small-label{color:#3e7550}
+.buyer-hero .inner-hero-mark{background:#ffffff20}
+@media(max-width:1120px){.brief-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.brief-submit{justify-self:start}}
+@media(max-width:760px){.brief-grid{grid-template-columns:1fr}.buyer-brief{padding:19px}.buyer-hero{background-position:62% center}.hero-mini-points{display:grid;gap:7px}.buyer-lots-heading{align-items:start}}
+.brief-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.brief-grid label:nth-last-of-type(-n+2){grid-column:span 1}.buyer-purchase-estimate{margin:1rem 0;padding:.85rem 1rem;border:1px solid rgba(15,77,56,.18);border-radius:14px;background:#eef8f0;color:#174f3b;font-weight:700}.cost-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.cost-confirm{display:block;font-size:.78rem;margin-top:.35rem;color:#577065}.cost-confirm input{width:auto!important;margin-right:.3rem}.deal-terms-input{margin:1rem 0}.form-note{color:#64766d;font-size:.9rem}.lot-card .small-label{max-width:70%}@media(max-width:900px){.brief-grid,.cost-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.brief-grid,.cost-grid{grid-template-columns:1fr}}

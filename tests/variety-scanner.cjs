@@ -9,6 +9,12 @@ const unclear = path.resolve('public/marketplace/potato-harvest.png');
 const notPotato = path.resolve('public/marketplace/farmer-hero.png');
 const publicNotPotato = path.resolve('tests/fixtures/not-potato-orange.jpg');
 
+async function toggleLanguage(page) {
+  const more = page.locator('.farmer-more');
+  await more.locator('summary').click();
+  await more.getByRole('button', { name: /English|বাংলা/ }).click();
+}
+
 (async () => {
   const browser = await chromium.launch({ headless: true });
   try {
@@ -25,13 +31,16 @@ const publicNotPotato = path.resolve('tests/fixtures/not-potato-orange.jpg');
           uploads.push(request.url());
         }
       });
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+      await page.goto(new URL('/farmer', url).href, { waitUntil: 'domcontentloaded', timeout: 60000 });
+      await page.getByRole('button', { name: /কৃষক হিসেবে ঢুকুন|Continue as farmer|Farmer/i }).first().click();
+      await page.evaluate(() => { window.location.hash = 'photos'; });
       const scanner = page.locator('.potato-scan');
       await scanner.waitFor();
       if (viewport.width === 1440) {
-        await page.getByRole('button', { name: 'Change language' }).click();
-        await scanner.getByText('Start with one potato photo').waitFor();
+        await toggleLanguage(page);
+        await scanner.getByText('Explore examples or add a photo').waitFor();
       }
+      await scanner.getByRole('button', { name: /Enable scanner|স্ক্যানার চালু করুন/ }).click();
       const input = scanner.locator('input[type=file]');
       const button = scanner.getByRole('button', { name: /ছবি পরীক্ষা করুন|Check photo/ });
       if (await scanner.locator('input[type=checkbox]').count()) throw new Error('Scanner must not require an opt-in checkbox');
@@ -66,14 +75,22 @@ const publicNotPotato = path.resolve('tests/fixtures/not-potato-orange.jpg');
       for (const object of [notPotato, publicNotPotato]) {
         await input.setInputFiles(object);
         await button.click();
-        await scanner.getByText(/Not a potato|এটি আলু নয়/).waitFor({ timeout: 90000 });
+        await scanner.getByText(/No potato detected|আলু শনাক্ত হয়নি/).waitFor({ timeout: 90000 });
         if (/Closest photo match|ছবিতে সবচেয়ে মিলছে|How long since harvest|তোলার পর কতদিন/.test(await scanner.innerText())) {
           throw new Error('Non-potato photo must not receive variety or age result');
         }
       }
-      await page.getByRole('button', { name: 'Change language' }).click();
-      await scanner.getByText(viewport.width === 1440 ? 'এটি আলু নয়।' : 'Not a potato.').waitFor();
-      await page.getByRole('button', { name: 'Change language' }).click();
+      await scanner.getByRole('button', { name: /Continue with leaf questions|পাতার ছবি হিসেবে চালিয়ে যান/ }).click();
+      const leafFallback = page.locator('.leaf-check-details[open]');
+      await leafFallback.waitFor();
+      await leafFallback.locator('img[alt="Selected potato leaf"], img[alt="বাছাই করা আলু পাতা"]').waitFor();
+      if (viewport.width === 1440) {
+        await toggleLanguage(page);
+        await scanner.getByText('ছবিতে আলু শনাক্ত হয়নি।').waitFor();
+        await toggleLanguage(page);
+      } else {
+        await scanner.getByText('ছবিতে আলু শনাক্ত হয়নি।').waitFor();
+      }
 
       await input.setInputFiles(unclear);
       await button.click();

@@ -7,8 +7,21 @@ export function areaSquareMetres(area: number, unit: AreaUnit, decimalsPerBigha 
   return area * factors[unit];
 }
 
+export const potatoFertilizerRates = [
+  { key: "manure", rate: 10000, bn: "পচা গোবর", en: "Well-rotted cow dung" },
+  { key: "urea", rate: 350, bn: "ইউরিয়া", en: "Urea" },
+  { key: "tsp", rate: 100, bn: "টিএসপি", en: "TSP" },
+  { key: "mp", rate: 210, bn: "এমপি (পটাশ)", en: "MP (potash)" },
+  { key: "gypsum", rate: 84, bn: "জিপসাম", en: "Gypsum" },
+] as const;
+
+export function potatoFertilizerEstimate(areaM2: number) {
+  if (!Number.isFinite(areaM2) || areaM2 <= 0) throw new Error("Enter a positive area.");
+  return potatoFertilizerRates.map(item => ({ ...item, amountKg: item.rate * areaM2 / 10000 }));
+}
+
 export function dosageAmount(areaM2: number, labelRate: number, basis: "hectare" | "decimal" | "litre", waterLitres: number): number {
-  if (![areaM2, labelRate, waterLitres].every(Number.isFinite) || areaM2 <= 0 || labelRate <= 0 || waterLitres < 0) throw new Error("Check the label rate and quantity.");
+  if (![areaM2, labelRate, waterLitres].every(Number.isFinite) || areaM2 < 0 || (basis !== "litre" && areaM2 <= 0) || labelRate <= 0 || waterLitres < 0) throw new Error("Check the label rate and quantity.");
   if (basis === "litre" && waterLitres <= 0) throw new Error("Enter water volume.");
   return labelRate * (basis === "litre" ? waterLitres : areaM2 / (basis === "hectare" ? 10000 : 40.468564224));
 }
