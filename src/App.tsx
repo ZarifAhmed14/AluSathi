@@ -15,7 +15,7 @@ function PageTitle() {
   const { language } = useLanguage();
   useEffect(() => {
     const titles: Record<string, [string, string]> = {
-      "/": ["আলুসাথী — বাংলাদেশের আলুচাষির ডিজিটাল সাথী", "AluSathi — Potato care in Bangladesh"],
+      "/": ["আলুসাথী — আলু চাষ, বিক্রি ও কেনার সহায়তা", "AluSathi — Grow, sell, and buy potatoes"],
       "/farmer": ["আমার পাতা — আলুসাথী", "My farmer page — AluSathi"],
       "/auth": ["কৃষক নাকি ব্যবসায়ী — আলুসাথী", "Farmer or businessman — AluSathi"],
       "/account": ["আমার অ্যাকাউন্ট — আলুসাথী", "My account — AluSathi"],

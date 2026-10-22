@@ -29,8 +29,23 @@ export function estimateOffer(offer, quantityKg = offer.quantityKg) {
   return { offeredKg, acceptedKg, rejectedKg: offeredKg - acceptedKg, gross, costs, net: gross - costs };
 }
 
+export function purchaseCost({ acceptedKg, priceKg, costs }) {
+  const kg = Math.max(0, Number(acceptedKg) || 0);
+  const price = Math.max(0, Number(priceKg) || 0);
+  const values = Object.values(costs || {});
+  const known = values.every(value => value !== null && value !== "" && Number.isFinite(Number(value)) && Number(value) >= 0);
+  const potatoPayment = Math.round(kg * price * 100) / 100;
+  const extras = values.reduce((sum, value) => sum + (Number(value) || 0), 0);
+  const total = known ? Math.round((potatoPayment + extras) * 100) / 100 : null;
+  return { potatoPayment, total, costPerAcceptedKg: total !== null && kg ? Math.round(total / kg * 100) / 100 : null, known };
+}
+
 export function availableKg(listing, deals) {
-  const committed = deals.filter(deal => deal.lotId === listing.id).reduce((sum, deal) => sum + (deal.status === "collected" || deal.status === "payment_pending" || deal.status === "paid" ? deal.actualAcceptedKg : deal.quantityKg), 0);
+  // An agreed lot stays reserved until the farmer explicitly returns it to stock.
+  // Rejected or missing weight is not silently relisted.
+  const committed = deals
+    .filter(deal => deal.lotId === listing.id && deal.status !== "cancelled")
+    .reduce((sum, deal) => sum + Number(deal.quantityKg || 0), 0);
   return Math.max(0, listing.quantityKg - committed);
 }
 

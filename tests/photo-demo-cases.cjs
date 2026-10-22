@@ -18,7 +18,6 @@ const url = process.env.BASE_URL || 'http://127.0.0.1:4176/auth';
     const cards = scanner.locator('.photo-demo-card');
     if (await cards.count() !== 5) throw new Error(`Expected 5 photo examples, found ${await cards.count()}`);
     await page.waitForTimeout(500);
-    const initialStorage = await page.evaluate(() => JSON.stringify(Object.fromEntries(Object.keys(localStorage).filter(key => !key.startsWith('alusathi-weather-')).map(key => [key, localStorage.getItem(key)]))));
     for (let index = 0; index < 5; index++) {
       await page.locator('.farmer-tabs a[href="/farmer#photos"]').click();
       const card = page.locator('.potato-scan .photo-demo-card').nth(index);
@@ -28,7 +27,8 @@ const url = process.env.BASE_URL || 'http://127.0.0.1:4176/auth';
       if (!/লক্ষণ মিলিয়ে দেখা হচ্ছে|Checking visible signs/.test(await page.getByRole('status').last().innerText())) throw new Error('Sample selection must show a calculating state');
       await page.locator('.today-demo-result').waitFor({ timeout: 5000 });
       const first = await page.locator('.today-demo-result').innerText();
-      if (!/উদাহরণ ফল|example result/.test(first) || !/করণীয়|What to do/.test(first)) throw new Error('Today must show the fixed example result and actionable guidance');
+      if (!/স্থির ডেমো ফল|fixed demo result/.test(first) || !/করণীয়|What to do/.test(first)) throw new Error('Today must show the fixed demo result and actionable guidance');
+      if (/জাত জানা নেই|variety unknown|আরও প্রমাণ দরকার|needs more evidence/i.test(first)) throw new Error('Fixed samples must show complete demo fields');
       if (/late blight|early blight|রোগের নাম নিশ্চিত/.test(first)) throw new Error('Demo must not claim a disease diagnosis');
       await page.locator('.farmer-tabs a[href="/farmer#photos"]').click();
       await page.locator('.potato-scan .photo-demo-card').nth(index).click();
@@ -40,12 +40,12 @@ const url = process.env.BASE_URL || 'http://127.0.0.1:4176/auth';
     await scanner.screenshot({ path: 'test-results/photo-scanner-desktop.png' });
     const brokenImages = await cards.locator('img').evaluateAll(images => images.filter(image => !image.complete || image.naturalWidth === 0).length);
     if (brokenImages) throw new Error(`${brokenImages} sample images did not load`);
-    const finalStorage = await page.evaluate(() => JSON.stringify(Object.fromEntries(Object.keys(localStorage).filter(key => !key.startsWith('alusathi-weather-')).map(key => [key, localStorage.getItem(key)]))));
-    if (finalStorage !== initialStorage) throw new Error('Demo clicks must not change scanner or farmer records');
+    const demoRows = await page.evaluate(() => JSON.parse(localStorage.getItem('alusathi-field-actions-v1') || '[]').filter(item => item.id.startsWith('demo-sample-')));
+    if (demoRows.length !== 5 || new Set(demoRows.map(item => item.id)).size !== 5) throw new Error('Repeated demo clicks must save exactly one stable row per sample per day');
     if (modelRequests.length) throw new Error(`Demo clicks must not load models: ${modelRequests.join(', ')}`);
     await page.getByRole('button', { name: /Enable scanner|স্ক্যানার চালু করুন/ }).click();
     await scanner.locator('input[type=file]').waitFor();
-    console.log('Photo demo gallery: 5 assets loaded; each result stable; no model requests or storage writes.');
+    console.log('Photo demo gallery: 5 assets loaded; each result stable; one dated notebook row per sample; no model requests.');
   } finally {
     await browser.close();
   }

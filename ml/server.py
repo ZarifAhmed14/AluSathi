@@ -17,6 +17,7 @@ from torchvision import models, transforms
 from ml.inference_policy import CONFIDENCE_THRESHOLD, MARGIN_THRESHOLD, image_quality, should_reject
 from ml.tuber import inspect_tubers
 from ml.auth import router as auth_router
+from ml.marketplace import router as marketplace_router
 
 
 MODEL_PATH = Path(os.getenv("ALUSATHI_MODEL", "ml/artifacts/potato_mobilenet_v3.pt"))
@@ -56,6 +57,7 @@ NEXT_STEPS = {
 
 app = FastAPI(title="AluSathi demo disease API", version="0.1.0", docs_url=None, redoc_url=None)
 app.include_router(auth_router)
+app.include_router(marketplace_router)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = None
 class_names: list[str] = []

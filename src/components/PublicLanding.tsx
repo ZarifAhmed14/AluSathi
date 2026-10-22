@@ -1,7 +1,6 @@
 import {
   ArrowRight,
   Camera,
-  Check,
   ClipboardCheck,
   Globe2,
   Leaf,
@@ -10,7 +9,7 @@ import {
   Truck,
   UsersRound,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useDemo } from "@/contexts/DemoContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import "@/public-landing.css";
@@ -20,13 +19,7 @@ const buyerPath = "/marketplace/buyer.html";
 export default function PublicLanding() {
   const { language, setLanguage } = useLanguage();
   const { setDemo } = useDemo();
-  const navigate = useNavigate();
   const bn = language === "bn";
-
-  function enterFarmerPage() {
-    setDemo(true);
-    navigate("/farmer");
-  }
 
   function enterBuyerPage() {
     try {
@@ -49,6 +42,18 @@ export default function PublicLanding() {
         [Sprout, "See what to do", "Plan today’s work"],
       ] as const;
 
+  const buyerSteps = bn
+    ? [
+        [Sprout, "পছন্দের আলু খুঁজুন", "জেলা, জাত, পরিমাণ ও প্রস্তুতির তারিখ মিলিয়ে দেখুন।"],
+        [ClipboardCheck, "দর ও শর্ত জানান", "কত কেজি, কত দর, কবে নেবেন ও কীভাবে টাকা দেবেন লিখুন।"],
+        [Scale, "পুরো খরচ বুঝুন", "আলুর দাম, পরিবহন ও অন্য খরচ মিলিয়ে হিসাব রাখুন।"],
+      ] as const
+    : [
+        [Sprout, "Find the potatoes you need", "Filter by district, variety, quantity, and ready date."],
+        [ClipboardCheck, "Share your offer and terms", "Enter quantity, price, pickup date, and payment method."],
+        [Scale, "See the full purchase cost", "Track the potato price, transport, and other costs together."],
+      ] as const;
+
   return (
     <div className={`public-landing ${bn ? "font-bangla" : ""}`}>
       <a href="#main-content" className="skip-link">{bn ? "মূল অংশে যান" : "Skip to content"}</a>
@@ -59,7 +64,7 @@ export default function PublicLanding() {
         </a>
         <nav className="public-nav" aria-label={bn ? "মূল নেভিগেশন" : "Main navigation"}>
           <a href="#farmer">{bn ? "কৃষকের জন্য" : "For farmers"}</a>
-          <a href="#business">{bn ? "ব্যবসায়ীর জন্য" : "For businesses"}</a>
+          <a href="#business">{bn ? "আলু কিনুন" : "Buy potatoes"}</a>
           <a href="#how-it-works">{bn ? "যেভাবে কাজ করে" : "How it works"}</a>
           <Link to="/life-cycle">{bn ? "আলুর জীবনচক্র" : "Potato life cycle"}</Link>
         </nav>
@@ -94,29 +99,46 @@ export default function PublicLanding() {
           </svg>
           <div className="hero-content">
             <p className="home-eyebrow"><span />{bn ? "জমি থেকে বাজার" : "FIELD TO MARKET"}</p>
-            <h1 id="home-title">{bn ? <>আলু চাষ থেকে বিক্রি—<em>পাশে আলুসাথী</em></> : <>From potato field to market, <em>AluSathi is by your side.</em></>}</h1>
-            <p className="hero-description">{bn ? "জমির যত্ন নিন, ফসলের তথ্য রাখুন, আর বিক্রির প্রস্তুতি বুঝে নিন—সহজ তিন ধাপে।" : "Care for your field, keep useful crop records, and prepare to sell—in three simple steps."}</p>
+            <h1 id="home-title">{bn ? <>আলু চাষ, বিক্রি ও কেনা—<em>এক জায়গায়।</em></> : <>Grow, sell, and buy potatoes <em>in one place.</em></>}</h1>
+            <p className="hero-description">{bn ? "কৃষক লটের তথ্য যোগ করেন। ক্রেতা প্রস্তুত বা সামনে তোলা হবে এমন লট দেখে আগাম দর প্রস্তাব ও কেনাকাটার খরচ হিসাব করতে পারেন।" : "Farmers add lot details. Buyers can find ready or upcoming lots, make an early offer, and estimate the full purchase cost."}</p>
             <div className="hero-actions" id="roles">
-              <button className="button-primary hero-role-card" onClick={enterFarmerPage} aria-label={bn ? "আমি কৃষক" : "I’m a farmer"} aria-describedby="farmer-role-help">
+              <Link className="button-primary hero-role-card" to="/farmer#photos" onClick={() => setDemo(true)} aria-label={bn ? "আমি কৃষক" : "I’m a farmer"} aria-describedby="farmer-role-help">
                 <span className="role-card-icon"><Sprout size={23} /></span>
-                <span className="role-card-copy"><strong>{bn ? "আমি কৃষক" : "I’m a farmer"}</strong><small id="farmer-role-help">{bn ? "ছবি, আজকের কাজ ও জমির খাতা" : "Photos, today’s work and field diary"}</small></span>
+                <span className="role-card-copy"><strong>{bn ? "আমি কৃষক" : "I’m a farmer"}</strong><small id="farmer-role-help">{bn ? "জমির যত্ন নিন, খাতা রাখুন, আলু বিক্রির তথ্য দিন।" : "Care for your field, keep records, and list potatoes for sale."}</small></span>
                 <ArrowRight size={19} />
-              </button>
-              <a className="button-secondary hero-role-card" href={buyerPath} onClick={enterBuyerPage} aria-label={bn ? "আমি ব্যবসায়ী" : "I’m a buyer"} aria-describedby="buyer-role-help">
+              </Link>
+              <a className="button-primary hero-role-card" href={buyerPath} onClick={enterBuyerPage} aria-label={bn ? "আমি আলু কিনব" : "I want to buy potatoes"} aria-describedby="buyer-role-help">
                 <span className="role-card-icon"><UsersRound size={23} /></span>
-                <span className="role-card-copy"><strong>{bn ? "আমি ব্যবসায়ী" : "I’m a buyer"}</strong><small id="buyer-role-help">{bn ? "আলুর লট, ক্রেতা ও পরিবহন" : "Potato lots, buyers and transport"}</small></span>
+                <span className="role-card-copy"><strong>{bn ? "আমি আলু কিনব" : "I want to buy potatoes"}</strong><small id="buyer-role-help">{bn ? "লট খুঁজুন, আগাম দর দিন, কেনাকাটার হিসাব রাখুন।" : "Find lots, make early offers, and track purchase costs."}</small></span>
                 <ArrowRight size={19} />
               </a>
             </div>
           </div>
         </section>
 
-        <section className="journey-band" aria-label={bn ? "আলুর যাত্রা" : "The potato journey"}>
-          <div className="journey-step"><span className="journey-illustration"><Sprout /></span><span>{bn ? "জমির যত্ন" : "Care for the field"}</span></div>
-          <span className="journey-line" aria-hidden="true"><ArrowRight /></span>
-          <div className="journey-step"><span className="journey-illustration amber"><Scale /></span><span>{bn ? "বিক্রির প্রস্তুতি" : "Prepare to sell"}</span></div>
-          <span className="journey-line" aria-hidden="true"><ArrowRight /></span>
-          <div className="journey-step"><span className="journey-illustration forest"><UsersRound /></span><span>{bn ? "ক্রেতার সাথে যোগাযোগ" : "Meet buyers"}</span></div>
+        <section className="journey-band trade-bridge" aria-label={bn ? "কৃষক ও ক্রেতার যাত্রা" : "Farmer and buyer journey"}>
+          <span>{bn ? "কৃষক লটের তথ্য দেন" : "Farmer lists a lot"}</span><ArrowRight aria-hidden="true" />
+          <span>{bn ? "ক্রেতা আগাম দর প্রস্তাব করেন" : "Buyer makes an early offer"}</span><ArrowRight aria-hidden="true" />
+          <span>{bn ? "শর্ত মিলিয়ে সংগ্রহের প্রস্তুতি" : "Agree on terms and prepare pickup"}</span>
+        </section>
+
+        <section className="business-section" id="business" aria-labelledby="business-title">
+          <div className="business-copy">
+            <p className="section-kicker">{bn ? "ব্যবসায়ীর জন্য" : "FOR POTATO BUYERS"}</p>
+            <h2 id="business-title">{bn ? <>আজকের প্রয়োজন, আগামী সংগ্রহ—<em>লট দেখে দর দিন।</em></> : <>Need potatoes now or later? <em>Find a lot and make an offer.</em></>}</h2>
+            <ol className="workflow-steps buyer-steps">
+              {buyerSteps.map(([Icon, title, detail], index) => <li key={title}>
+                <span className="step-icon"><Icon size={21} /></span>
+                <span className="step-index">{bn ? ["১", "২", "৩"][index] : index + 1}</span>
+                <span className="step-copy"><strong>{title}</strong><small>{detail}</small></span>
+              </li>)}
+            </ol>
+            <a className="button-primary business-cta" href={buyerPath} onClick={enterBuyerPage}>{bn ? "আলুর লট দেখুন" : "Browse potato lots"}<ArrowRight size={19} /></a>
+          </div>
+          <div className="business-art-wrap">
+            <img src="/alusathi-home-market.webp" alt={bn ? "আলুর বাজারে একজন ক্রেতা ফোন ও কেনাকাটার তথ্য দেখছেন" : "A potato buyer reviewing purchase details at the market"} loading="lazy" />
+            <span className="trade-stamp"><Truck size={18} />{bn ? "বাজারে আলু কেনা" : "Potato buying at market"}</span>
+          </div>
         </section>
 
         <section className="workflow-section" id="how-it-works" aria-labelledby="workflow-title">
@@ -135,7 +157,7 @@ export default function PublicLanding() {
                 <span className="step-copy"><strong>{title}</strong><small>{detail}</small></span>
               </li>)}
             </ol>
-            <button className="text-link" onClick={enterFarmerPage}>{bn ? "ছবি দিয়ে শুরু করুন" : "Start with a photo"}<ArrowRight size={18} /></button>
+            <Link className="text-link" to="/farmer#photos" onClick={() => setDemo(true)}>{bn ? "ছবি দিয়ে শুরু করুন" : "Start with a photo"}<ArrowRight size={18} /></Link>
           </div>
         </section>
 
@@ -152,23 +174,9 @@ export default function PublicLanding() {
           </Link>
         </section>
 
-        <section className="business-section" id="business" aria-labelledby="business-title">
-          <div className="business-copy">
-            <p className="section-kicker">{bn ? "ফসল তোলার পর" : "AFTER THE HARVEST"}</p>
-            <h2 id="business-title">{bn ? <>বিক্রির আগে, <em>হিসাবটা বুঝে নিন</em></> : <>Before the sale, <em>see the full picture.</em></>}</h2>
-            <p className="section-intro">{bn ? "ওজন, পরিবহন আর সম্ভাব্য খরচ একসাথে দেখে ব্যবসায়ীর বাজারে আপনার লটের তথ্য দিন।" : "Review weight, transport, and likely costs together, then share your lot with buyers in the marketplace."}</p>
-            <div className="trade-points">
-              <span><Check size={16} />{bn ? "ওজন ও লটের তথ্য" : "Weight and lot details"}</span>
-              <span><Check size={16} />{bn ? "পরিবহন খরচের হিসাব" : "Transport cost estimate"}</span>
-              <span><Check size={16} />{bn ? "ব্যবসায়ীর বাজার" : "Business marketplace"}</span>
-            </div>
-            <a className="button-primary business-cta" href={buyerPath} onClick={enterBuyerPage}>{bn ? "ব্যবসায়ীর বাজার দেখুন" : "Explore the marketplace"}<ArrowRight size={19} /></a>
-            <small className="sample-note">{bn ? "নমুনা লট দিয়ে বাজারের অভিজ্ঞতা দেখুন" : "Explore the marketplace with sample lots"}</small>
-          </div>
-          <div className="business-art-wrap">
-            <img src="/alusathi-home-selling.webp" alt={bn ? "ওজন করা বস্তা সবুজ ট্রাকে তোলার প্রস্তুতি চলছে" : "A farmer weighs tied potato sacks beside a truck on a village road"} loading="lazy" />
-            <span className="trade-stamp"><Truck size={18} />{bn ? "মাঠ থেকে বাজারে" : "From field to market"}</span>
-          </div>
+        <section className="farmer-selling-link" aria-label={bn ? "আলু বিক্রি করুন" : "Sell potatoes"}>
+          <p>{bn ? "আলু বিক্রি করতে চান?" : "Ready to sell your potatoes?"}</p>
+          <a href="/marketplace/farmer.html#list">{bn ? "পরিচয়পত্র তৈরি করুন" : "Create a potato passport"}<ArrowRight size={17} /></a>
         </section>
       </main>
 

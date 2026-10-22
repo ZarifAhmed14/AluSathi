@@ -12,8 +12,8 @@ export default function Index({ farmerHome = false }: { farmerHome?: boolean }) 
   return (
     <>
       <Helmet>
-        <title>আলুসাথী — আলুর রোগ বুঝুন, সহজে</title>
-        <meta name="description" content="Bangla-first field support and potato trade tools for farmers and businesses in Bangladesh." />
+        <title>আলুসাথী — আলু চাষ, বিক্রি ও কেনার সহায়তা</title>
+        <meta name="description" content="আলুর চাষ, জমির খাতা, বিক্রির লট, ক্রেতার দর এবং কেনাকাটার খরচ—আলুসাথীতে এক জায়গায়।" />
         <meta name="theme-color" content="#112a20" />
       </Helmet>
       {farmerHome ? <AluSathiDashboard key={`${user?.id || 'guest'}-${farmerHome}`} farmerHome /> : <PublicLanding />}

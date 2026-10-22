@@ -1,4 +1,4 @@
-import { initialData, estimateOffer, availableKg, storageBreakEven, todayPlus } from "./market.mjs";
+import { initialData, estimateOffer, availableKg, purchaseCost, storageBreakEven, todayPlus } from "./market.mjs";
 import { offerSummary, offerTerms, passportBody, passportDocument, passportText } from "./lot-tools.mjs";
 import { mountTransport, disposeTransport } from "./transport.mjs";
 import { districtPlaces } from "./districts.mjs";
@@ -101,7 +101,8 @@ try { if (role !== "choose") { sessionStorage.setItem("alusathi-role", role); se
 const buyerProfileKey = "alusathi-buyer-profile-v1";
 let buyerProfile = {};
 try { buyerProfile = JSON.parse(localStorage.getItem(buyerProfileKey) || "{}") || {}; } catch { buyerProfile = {}; }
-let view = role === "farmer" && ["#transport", "#deals"].includes(location.hash) ? location.hash.slice(1) : "home";
+const buyerViews = ["home", "buyer-offers", "purchases", "transport", "notebook", "buyer-detail", "passport"];
+let view = role === "farmer" && ["#transport", "#deals", "#list", "#passport"].includes(location.hash) ? location.hash.slice(1) : role === "buyer" && buyerViews.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
 let storageInputs = null;
 let quoteOpen = false;
 let selectedLotId = data.listings[0]?.id || "";
@@ -121,7 +122,7 @@ function lotMatchesBrief(lot) {
   return (!quantity || availableKg(lot, data.deals) >= quantity)
     && (!variety || lot.variety === variety)
     && (!destination || lot.district === destination)
-    && (!purpose || lot.purpose === purpose || lot.purpose === "unknown")
+    && (!purpose || lot.purpose === purpose)
     && (!readyDate || lot.readyDate <= readyDate);
 }
 
@@ -135,7 +136,7 @@ function buyerCostLines(offer) {
 function buyerCostState(offer) {
   const lines = buyerCostLines(offer);
   const values = Object.values(lines);
-  return { lines, known: values.every(value => Number.isFinite(Number(value)) && Number(value) >= 0), total: values.reduce((sum, value) => sum + (Number(value) || 0), 0) };
+  return { lines, known: values.every(value => value !== null && value !== "" && Number.isFinite(Number(value)) && Number(value) >= 0), total: values.reduce((sum, value) => sum + (Number(value) || 0), 0) };
 }
 
 function buyerCostSummary(offer, lot) {
@@ -143,8 +144,8 @@ function buyerCostSummary(offer, lot) {
   const offeredKg = Math.min(Number(offer.quantityKg) || 0, available);
   const acceptedKg = Math.floor(offeredKg * Math.min(100, Math.max(0, Number(offer.acceptedPercent) || 0)) / 100);
   const costs = buyerCostState(offer);
-  const total = costs.known ? acceptedKg * Math.max(0, Number(offer.priceKg) || 0) + costs.total : null;
-  return { offeredKg, acceptedKg, total, costs, deliveredPerKg: total != null && acceptedKg ? total / acceptedKg : null };
+  const result = purchaseCost({ acceptedKg, priceKg: offer.priceKg, costs: costs.lines });
+  return { offeredKg, acceptedKg, total: result.total, costs, deliveredPerKg: result.costPerAcceptedKg };
 }
 
 function summaryBlock(offer, quantity, open = false) {
@@ -155,6 +156,25 @@ function renderPassport() {
   const lot = selectedLot();
   if (!lot) return `<section class="section page-shell">${t("আগে আলুর তথ্য দিন।", "Add a potato lot first.")}</section>`;
   return `<section class="section page-shell passport-page"><div class="passport-actions"><button class="text-arrow" data-view="home">← ${t("তালিকায় ফিরুন", "Back to lots")}</button><button class="button button-outline button-small" data-action="download-passport">${t("ফাইল রাখুন", "Save file")}</button><button class="button button-green button-small" data-action="share-passport">${t("পরিচয়পত্র পাঠান", "Share passport")}</button><button class="text-arrow" data-action="print-passport">${t("ছাপুন / PDF", "Print / PDF")}</button></div>${passportBody(lot, data.offers.filter(offer => offer.lotId === lot.id), language)}</section>`;
+}
+
+function farmerHistoryPrefill() {
+  try {
+    const diary = JSON.parse(localStorage.getItem("alusathi-field-diary-v1") || "[]");
+    const actions = JSON.parse(localStorage.getItem("alusathi-field-actions-v1") || "[]");
+    const dates = [
+      ...(Array.isArray(diary) ? diary.map(item => Date.parse(item?.createdAt || "")) : []),
+      ...(Array.isArray(actions) ? actions.map(item => Date.parse(`${item?.date || ""}T12:00:00`)) : []),
+    ].filter(Number.isFinite);
+    if (!dates.length || Date.now() - Math.min(...dates) < 30 * 86_400_000) return null;
+    const photo = Array.isArray(actions) ? actions.find(item => item?.category === "photo") : null;
+    const district = localStorage.getItem("alusathi-district") || "";
+    return {
+      district: districts.includes(district) ? district : "",
+      variety: varieties.some(([value, bn]) => value === photo?.variety || bn === photo?.variety) ? varieties.find(([value, bn]) => value === photo.variety || bn === photo.variety)[0] : "",
+      notes: [photo?.status, photo?.details].filter(Boolean).join(" · ").slice(0, 300),
+    };
+  } catch { return null; }
 }
 
 function enhanceLotTools() {
@@ -186,6 +206,13 @@ function enhanceLotTools() {
     quantity.addEventListener("input", showConversion);
     bagKg.addEventListener("input", showConversion);
     showConversion();
+    const history = farmerHistoryPrefill();
+    if (history) {
+      if (history.district) form.elements.district.value = history.district;
+      if (history.variety) form.elements.variety.value = history.variety;
+      if (history.notes) form.elements.notes.value = history.notes;
+      form.querySelector(".form-intro").insertAdjacentHTML("afterend", `<p class="history-prefill-note">${t("এক মাসের বেশি পুরোনো খাতা থেকে জানা তথ্য বসানো হয়েছে। পরিমাণ ও প্রস্তুতির তারিখ মিলিয়ে নিন।", "Known details were filled from more than one month of notebook history. Check the quantity and ready date.")}</p>`);
+    }
   }
   if (view === "home") document.querySelectorAll(".lot-card").forEach((card, index) => {
     const lot = visibleListings()[index];
@@ -229,10 +256,11 @@ function save() {
 }
 
 function setView(next) {
-  const allowed = role === "farmer" ? ["home", "list", "offers", "transport", "storage", "deals", "passport"] : ["home", "buyer-offers", "deals", "passport"];
+  const allowed = role === "farmer" ? ["home", "list", "offers", "transport", "storage", "deals", "passport"] : buyerViews;
   if (!displayName || !allowed.includes(next)) return;
-  view = next; reviewOfferId = ""; window.scrollTo({ top: 0, behavior: "smooth" }); render();
+  view = next; reviewOfferId = ""; window.scrollTo({ top: 0, behavior: "smooth" });
   const url = new URL(location.href); url.hash = next === "home" ? "" : next; history.replaceState(null, "", url);
+  render();
 }
 function captureFormState() {
   const form = document.querySelector("form");
@@ -253,19 +281,26 @@ function offerRemainingKg(offer, lot) {
 }
 function districtOptions(selected = "Rangpur") { return districts.map(d => `<option value="${h(d)}" ${selected === d ? "selected" : ""}>${h(language === "bn" ? districtNamesBn[d] : d)}</option>`).join(""); }
 function lotVariety(lot) { return language === "bn" ? varieties.find(([name]) => name === lot.variety)?.[1] || lot.variety : lot.variety; }
+function purposeLabel(value) { return ({ table: t("খাওয়ার", "Food"), seed: t("বীজ", "Seed"), processing: t("প্রক্রিয়াজাত", "Processing") })[value] || t("লেখা নেই", "Not recorded"); }
 function lotNotes(lot) { return lot.sample && language === "bn" ? "হিমাগারে রাখা আলু; মাঝারি ও বড় আকারের মিশ্রণ।" : lot.notes; }
 function photoOrArtwork(lot, className = "lot-photo") {
   const photo = photoSrc(lot.photo);
   return photo ? `<img class="${className}" src="${photo}" alt="${t("আলুর ছবি", "Potato lot photo")}" />` : `<div class="${className} lot-art" aria-hidden="true"><span class="art-leaf leaf-a"></span><span class="art-leaf leaf-b"></span><span class="art-potato potato-a"></span><span class="art-potato potato-b"></span><span class="art-potato potato-c"></span></div>`;
 }
 
+function marketUrl(key) {
+  const page = role === "farmer" ? "./farmer.html" : "./buyer.html";
+  return key === "home" ? page : `${page}#${encodeURIComponent(key)}`;
+}
 function navButton(label, key, symbol) {
-  return `<button class="nav-link ${view === key ? "active" : ""}" data-view="${key}" aria-current="${view === key ? "page" : "false"}">${icon(symbol, 18)}<span>${label}</span></button>`;
+  const attrs = `class="nav-link ${view === key ? "active" : ""}" data-view="${key}" aria-current="${view === key ? "page" : "false"}`;
+  if (role === "farmer") return `<button ${attrs}">${icon(symbol, 18)}<span>${label}</span></button>`;
+  return `<a ${attrs}" href="${marketUrl(key)}">${icon(symbol, 18)}<span>${label}</span></a>`;
 }
 
 function renderShell(content) {
   const farmerNav = [["/farmer", t("আজকের কাজ", "Today"), "leaf"], ["/farmer#photos", t("ছবি", "Photos"), "bag"], ["/selling-preparation", t("বিক্রির আগে", "Before selling"), "truck"], ["/farmer#diary", t("খাতা", "Notebook"), "clock"]].map(([href, label, symbol]) => `<a class="nav-link ${href === "/selling-preparation" ? "active" : ""}" href="${href}" ${href === "/selling-preparation" ? 'aria-current="page"' : ""}>${icon(symbol, 18)}<span>${label}</span></a>`).join("");
-  const buyerNav = [navButton(t("আলুর তালিকা", "Lots"), "home", "bag"), navButton(t("আমার দর", "My offers"), "buyer-offers", "scale"), navButton(t("চুক্তি", "Deals"), "deals", "shield")].join("");
+  const buyerNav = [navButton(t("আলুর তালিকা", "Lots"), "home", "bag"), navButton(t("আমার দর", "My offers"), "buyer-offers", "scale"), navButton(t("আমার কেনাকাটা", "My purchases"), "purchases", "shield"), navButton(t("পরিবহন", "Transport"), "transport", "truck"), navButton(t("খাতা", "Notebook"), "notebook", "clock")].join("");
   app.innerHTML = `
     <div class="site-wrap ${role}-portal">
       <header class="topbar">
@@ -275,7 +310,7 @@ function renderShell(content) {
       </header>
       ${notice ? `<div class="notice" role="status">${h(notice)}<button data-action="dismiss" aria-label="Dismiss">×</button></div>` : ""}
       <main id="main">${role === "farmer" ? `<div class="page-shell farmer-market-tools"><a href="/selling-preparation">← ${t("বিক্রির আগে", "Before selling")}</a><details><summary>${t("বিক্রির আরও সরঞ্জাম", "More selling tools")}</summary><div>${[navButton(t("আমার আলু", "My potatoes"), "home", "bag"), navButton(t("আলু যোগ করুন", "Add potatoes"), "list", "bag"), navButton(t("দর", "Offers"), "offers", "scale"), navButton(t("গাড়ি", "Transport"), "transport", "truck"), navButton(t("রাখা নথি", "Records"), "deals", "shield")].join("")}</div></details><button class="sample-switch" data-action="toggle-samples" aria-pressed="${showSamples}">${showSamples ? t("নমুনা লুকান", "Hide examples") : t("নমুনা দেখুন", "Show examples")}</button>${showSamples ? `<p class="sample-label">${t("নমুনা তথ্য — আসল ক্রেতার দর নয়", "Example data — not real buyer offers")}</p>` : ""}</div>` : ""}${content}</main>
-      <footer class="footer"><div><strong>আলুসাথী বাজার</strong><p>${t("কৃষকের সিদ্ধান্ত, পরিষ্কার হিসাব।", "Your crop. Clear choices.")}</p></div><div><span>${t("শুধু এই ব্রাউজারে সেভ হয়", "Saved only in this browser")}</span><a class="main-return" href="${role === "farmer" ? "/farmer" : "/"}">${t("মূল অ্যাপে ফিরুন", "Back to AluSathi")}</a><button data-action="reset">${t("আবার শুরু করুন", "Start over")}</button></div></footer>
+      <footer class="footer"><div><strong>আলুসাথী বাজার</strong><p>${t("কৃষকের সিদ্ধান্ত, পরিষ্কার হিসাব।", "Your crop. Clear choices.")}</p></div><div><span>${t("খসড়া এই ব্রাউজারে থাকে", "Drafts stay in this browser")}</span><a class="main-return" href="${role === "farmer" ? "/farmer" : "/"}">${t("মূল অ্যাপে ফিরুন", "Back to AluSathi")}</a><button data-action="reset">${t("আবার শুরু করুন", "Start over")}</button></div></footer>
       <nav class="mobile-nav" aria-label="${t("মোবাইল মেনু", "Mobile navigation")}">${role === "farmer" ? farmerNav : buyerNav}</nav>
       ${reviewOfferId ? renderReview() : ""}
     </div>`;
@@ -328,7 +363,20 @@ function renderOffers() {
 
 function renderBuyerHome() {
   const matchedLots = data.listings.filter(lot => lotMatchesBrief(lot)).sort((a, b) => buyerBrief.sort === "quantity" ? availableKg(b, data.deals) - availableKg(a, data.deals) : String(a.readyDate).localeCompare(String(b.readyDate)));
-  return `<section class="inner-hero buyer-hero page-shell"><div><p class="section-kicker">${t("ক্রেতার পাতা", "BUYER PAGE")}</p><h1>${t("সঠিক আলু, পরিষ্কার হিসাব।", "Buy with a clear cost.")}</h1><p>${t("কৃষকের আলু দেখুন, আপনার প্রয়োজন মিলিয়ে নিন, তারপর দর দিন।", "Browse farmer lots, match your need, then make an offer.")}</p><div class="hero-mini-points"><span>${icon("check", 15)}${t("পরিমাণ ও ঠিকানা", "Quantity and place")}</span><span>${icon("scale", 15)}${t("গ্রহণ করা প্রতি কেজির খরচ", "Cost per accepted kg")}</span><span>${icon("shield", 15)}${t("শর্ত লিখে রাখুন", "Terms in writing")}</span></div></div><div class="inner-hero-mark">${icon("truck", 52)}</div></section><section class="section page-shell buyer-workspace"><div class="buyer-brief panel"><div class="section-header"><div><p class="section-kicker">${t("আপনার প্রয়োজন", "YOUR BUYING BRIEF")}</p><h2>${t("কী আলু খুঁজছেন?", "What are you buying?")}</h2></div><span class="brief-status">${matchedLots.length} ${t("টি মিল", "matches")}</span></div><form id="buyer-brief-form" class="brief-grid"><label>${t("জেলা", "District")}<select name="district"><option value="">${t("যেকোনো জেলা", "Any district")}</option>${districts.map(d => `<option value="${h(d)}" ${buyerBrief.district === d || (!buyerBrief.district && buyerBrief.destination === d) ? "selected" : ""}>${h(language === "bn" ? districtNamesBn[d] || d : d)}</option>`).join("")}</select></label><label>${t("জাত", "Variety")}<select name="variety"><option value="">${t("যেকোনো জাত", "Any variety")}</option>${varieties.map(([value,bn]) => `<option value="${h(value)}" ${buyerBrief.variety === value ? "selected" : ""}>${h(t(bn,value))}</option>`).join("")}</select></label><label>${t("কমপক্ষে কত কেজি", "Minimum quantity (kg)")}<input name="quantityKg" type="number" min="0" max="100000" step="1" value="${h(buyerBrief.quantityKg)}" placeholder="${t("যেমন ১০০০", "e.g. 1000")}" /></label><label>${t("ব্যবহার", "Purpose")}<select name="purpose"><option value="">${t("যেকোনো ব্যবহার", "Any purpose")}</option><option value="table" ${buyerBrief.purpose === "table" ? "selected" : ""}>${t("খাওয়ার আলু", "Food")}</option><option value="seed" ${buyerBrief.purpose === "seed" ? "selected" : ""}>${t("বীজ আলু", "Seed")}</option><option value="processing" ${buyerBrief.purpose === "processing" ? "selected" : ""}>${t("প্রক্রিয়াজাত", "Processing")}</option></select></label><label>${t("প্রস্তুত হওয়ার মধ্যে", "Ready by")}<input name="readyDate" type="date" value="${h(buyerBrief.readyDate)}" /></label><label>${t("সাজান", "Sort")}<select name="sort"><option value="ready" ${buyerBrief.sort !== "quantity" ? "selected" : ""}>${t("আগে প্রস্তুত", "Ready soonest")}</option><option value="quantity" ${buyerBrief.sort === "quantity" ? "selected" : ""}>${t("বেশি কেজি", "Most kg")}</option></select></label><button class="button button-green brief-submit" type="submit">${t("তালিকা মিলিয়ে দেখুন", "Match lots")}${icon("arrow", 17)}</button></form><p class="brief-note">${t("তালিকায় থাকা তথ্যই দেখানো হয়—দূরত্ব, গ্রেড বা লাইভ মজুত ধরে নেওয়া হয় না।", "Only entered lots are shown; distance, grade, and live stock are not inferred.")}</p></div><div class="section-header buyer-lots-heading"><div><p class="section-kicker">${t("কৃষকের আলু", "FARMER LOTS")}</p><h2>${t("বিক্রির জন্য তালিকা", "Available lots")}</h2></div><span class="small-label">${matchedLots.length ? t("মিল পাওয়া গেছে", "MATCHES FOUND") : t("মিল নেই", "NO MATCH")}</span></div><div class="lot-grid">${matchedLots.length ? matchedLots.map(lot => `<article class="lot-card">${photoOrArtwork(lot)}<div class="lot-copy"><div class="card-topline"><span class="small-label">${lot.sample ? t("উদাহরণ · যাচাই হয়নি", "EXAMPLE · NOT VERIFIED") : t("এই ফোনে লেখা", "ENTERED HERE")}</span><span class="status-pill">${kg(availableKg(lot, data.deals))} ${t("বাকি", "left")}</span></div><h3>${h(lotVariety(lot))} <span>· ${kg(lot.quantityKg)}</span></h3><p>${icon("pin", 16)}${h(language === "bn" && lot.sample ? "পীরগঞ্জ" : lot.upazila)}, ${h(language === "bn" ? districtNamesBn[lot.district] || lot.district : lot.district)} · ${prettyDate(lot.readyDate)}</p><div class="lot-card-bottom"><span>${h(lotNotes(lot) || t("বিস্তারিত নেই", "No notes"))}</span><button class="text-arrow" data-action="offer-lot" data-id="${h(lot.id)}">${t("দর দিন", "Make offer")}${icon("arrow", 16)}</button></div></div></article>`).join("") : `<div class="empty-state"><h3>${t("এই চাহিদায় কোনো তালিকা নেই", "No lot matches this brief")}</h3><p>${t("চাহিদা কমিয়ে আবার মিলিয়ে দেখুন।", "Loosen the brief and try again.")}</p></div>`}</div>${draftLotId ? renderOfferForm() : ""}</section>`;
+  const offers = data.offers.filter(offer => !offer.sample && ["pending", "counter"].includes(offer.status || "pending")).length;
+  const purchases = data.deals.filter(deal => deal.status !== "paid");
+  const due = purchases.filter(deal => deal.status === "collected" || deal.status === "payment_pending").length;
+  const lot = matchedLots.find(item => item.id === selectedLotId) || matchedLots[0];
+  return `<section class="buyer-workspace page-shell"><header class="buyer-title"><div><p class="section-kicker">${t("ব্যবসায়ীর কাজ", "BUYER WORKSPACE")}</p><h1>${t("আলু কিনুন, পুরো খরচ জানুন।", "Buy potatoes with the full cost clear.")}</h1><p>${t("লট দেখুন, দর দিন, সংগ্রহ ও পাওনা একই জায়গায় রাখুন।", "Browse lots, send terms, then keep collection and payments together.")}</p></div><div class="buyer-market-mark" aria-hidden="true">${icon("scale", 34)}<span>${t("ঢাকার বাজার", "Dhaka market")}</span></div></header>
+  <div class="buyer-summary-strip"><a href="${marketUrl("buyer-offers")}" data-view="buyer-offers"><strong>${formatter.format(offers)}</strong><span>${t("দরে উত্তর দরকার", "offers need attention")}</span></a><a href="${marketUrl("purchases")}" data-view="purchases"><strong>${formatter.format(purchases.length)}</strong><span>${t("আসন্ন সংগ্রহ", "upcoming collections")}</span></a><a href="${marketUrl("purchases")}" data-view="purchases"><strong>${formatter.format(due)}</strong><span>${t("পেমেন্ট বাকি", "payments due")}</span></a></div>
+  <section class="buyer-brief panel"><form id="buyer-brief-form" class="brief-grid"><label>${t("জেলা", "District")}<select name="district"><option value="">${t("যেকোনো জেলা", "Any district")}</option>${districts.map(d => `<option value="${h(d)}" ${buyerBrief.district === d ? "selected" : ""}>${h(language === "bn" ? districtNamesBn[d] || d : d)}</option>`).join("")}</select></label><label>${t("জাত", "Variety")}<select name="variety"><option value="">${t("যেকোনো জাত", "Any variety")}</option>${varieties.map(([value,bn]) => `<option value="${h(value)}" ${buyerBrief.variety === value ? "selected" : ""}>${h(t(bn,value))}</option>`).join("")}</select></label><label>${t("কমপক্ষে কেজি", "Minimum kg")}<input name="quantityKg" type="number" min="0" max="100000" step="1" value="${h(buyerBrief.quantityKg)}" /></label><button class="button button-green brief-submit" type="submit">${t("বাছাই করুন", "Apply")}</button><details class="buyer-more-filter"><summary>${t("আরও বাছাই", "More filters")}</summary><div><label>${t("ব্যবহার", "Purpose")}<select name="purpose"><option value="">${t("সব", "All")}</option><option value="table">${t("খাওয়ার", "Food")}</option><option value="seed">${t("বীজ", "Seed")}</option><option value="processing">${t("প্রক্রিয়াজাত", "Processing")}</option></select></label><label>${t("প্রস্তুত হওয়ার মধ্যে", "Ready by")}<input name="readyDate" type="date" value="${h(buyerBrief.readyDate)}" /></label><label>${t("সাজান", "Sort")}<select name="sort"><option value="ready">${t("প্রস্তুতির তারিখ", "Readiness")}</option><option value="quantity">${t("পরিমাণ", "Quantity")}</option></select></label></div></details></form></section>
+  <section class="buyer-split"><div><div class="section-header buyer-lots-heading"><div><p class="section-kicker">${t("লট", "LOTS")}</p><h2>${t("বিক্রির জন্য আলু", "Potatoes for sale")}</h2></div><span class="brief-status">${formatter.format(matchedLots.length)} ${t("টি লট", "lots")}</span></div><div class="buyer-lot-list">${matchedLots.length ? matchedLots.map(item => `<button class="buyer-lot-row ${lot?.id === item.id ? "selected" : ""}" data-action="open-buyer-lot" data-id="${h(item.id)}">${photoOrArtwork(item, "buyer-lot-photo")}<span><strong>${h(lotVariety(item))}</strong><small>${kg(availableKg(item, data.deals))} · ${h(language === "bn" ? districtNamesBn[item.district] || item.district : item.district)}</small></span><em>${prettyDate(item.readyDate)}</em></button>`).join("") : `<div class="empty-state"><h3>${t("এই বাছাইয়ে লট নেই", "No lots match")}</h3><p>${t("বাছাই বদলে আবার দেখুন।", "Adjust filters and try again.")}</p></div>`}</div></div>${lot ? renderBuyerLotDetail(lot) : ""}</section>${draftLotId ? renderOfferForm() : ""}</section>`;
+}
+
+function renderBuyerLotDetail(lot) {
+  const remaining = availableKg(lot, data.deals);
+  const contact = lot.contactPhone && /^(?:\+?88)?01[3-9]\d{8}$/.test(lot.contactPhone) ? `<a class="text-arrow" href="tel:${h(lot.contactPhone)}">${t("ফোন করুন", "Call farmer")}</a>` : "";
+  return `<aside class="buyer-lot-detail panel"><div class="detail-head">${photoOrArtwork(lot, "buyer-detail-photo")}<div><span class="small-label">${t("কৃষকের দেওয়া তথ্য", "FARMER-ENTERED")}</span><h2>${h(lotVariety(lot))}</h2><p>${h(lot.upazila || "—")}, ${h(language === "bn" ? districtNamesBn[lot.district] || lot.district : lot.district)}</p></div></div><dl class="buyer-detail-facts"><div><dt>${t("বাকি", "Remaining")}</dt><dd>${kg(remaining)}</dd></div><div><dt>${t("প্রস্তুত", "Ready")}</dt><dd>${prettyDate(lot.readyDate)}</dd></div><div><dt>${t("ব্যবহার", "Purpose")}</dt><dd>${purposeLabel(lot.purpose)}</dd></div><div><dt>${t("চাওয়া দর", "Asking price")}</dt><dd>${lot.askingPrice ? `${rate(lot.askingPrice)}/${t("কেজি", "kg")}` : t("দর প্রস্তাব করুন", "Make an offer")}</dd></div></dl><p class="buyer-detail-notes">${h(lotNotes(lot) || t("কৃষক বাড়তি বিবরণ দেননি।", "The farmer did not add a description."))}</p><div class="buyer-detail-actions"><button class="button button-green" data-action="offer-lot" data-id="${h(lot.id)}">${t("দর দিন", "Make offer")}${icon("arrow", 16)}</button>${contact}<button class="text-arrow" data-action="view-passport" data-id="${h(lot.id)}">${t("পরিচয়পত্র", "View passport")}</button></div><p class="detail-caution">${t("ছবি ও তথ্য কৃষক দিয়েছেন; আলুসাথী এগুলো স্বাধীনভাবে যাচাই করে না।", "Photos and details come from the farmer; AluSathi does not independently verify them.")}</p></aside>`;
 }
 
 function renderBuyerProfile() {
@@ -340,12 +388,38 @@ function renderOfferForm() {
   if (!lot) return "";
   const remaining = availableKg(lot, data.deals);
   const cost = (name, bn, en) => `<label>${t(bn, en)}<input name="cost_${name}" type="number" min="0" max="1000000" step="1" inputmode="numeric" placeholder="${t("অজানা", "Unknown")}" /><span class="cost-confirm"><input name="known_${name}" type="checkbox" value="yes" /> ${t("খরচ নেই", "No charge")}</span></label>`;
-  return `<form id="offer-form" class="panel offer-form"><input type="hidden" name="lotId" value="${h(lot.id)}" /><div class="section-header"><div><p class="section-kicker">${t("এই আলুর জন্য দর", "OFFER FOR THIS LOT")}</p><h2>${h(lot.variety)} · ${kg(remaining)}</h2></div><button type="button" class="text-arrow" data-action="close-offer">${t("বন্ধ করুন", "Close")}</button></div><fieldset class="form-section"><legend>${t("১ · দর ও পরিমাণ", "1 · Price and quantity")}</legend><div class="form-grid"><label>${t("আপনার ব্যবসার নাম", "Business name")}<input name="buyer" required minlength="2" maxlength="80" placeholder="${t("ক্রেতা", "Buyer")}" /></label><label>${t("ক্রেতার জেলা", "Buyer district")}<select name="district">${districtOptions("Bogura")}</select></label><label>${t("যত কেজি নিতে চান", "Quantity you can buy (kg)")}<input name="quantityKg" required type="number" min="1" max="${remaining}" step="1" inputmode="numeric" value="${Math.min(remaining, 1000)}" /></label><label>${t("দর (টাকা/কেজি)", "Price (BDT/kg)")}<input name="priceKg" required type="number" min="1" max="10000" step="0.01" inputmode="decimal" placeholder="25" /></label></div></fieldset><fieldset class="form-section"><legend>${t("২ · নেওয়া ও টাকা", "2 · Pickup and payment")}</legend><div class="form-grid"><label>${t("আনুমানিক কত % আলু নেবেন?", "How much of the lot will you take? (%)")}<input name="acceptedPercent" required type="number" min="1" max="100" step="1" inputmode="numeric" value="100" /></label><label>${t("কে আলু নিয়ে যাবেন?", "Who collects?")}<select name="pickup"><option value="buyer">${t("ক্রেতা", "Buyer")}</option><option value="farmer">${t("কৃষক পাঠাবেন", "Farmer delivers")}</option></select></label><label>${t("চাইবার তারিখ", "Requested pickup date")}<input name="pickupDate" type="date" min="${todayPlus(0)}" /></label><label>${t("টাকা দেওয়ার মাধ্যম", "Payment method")}<select name="paymentMethod"><option value="cash">${t("নগদ", "Cash")}</option><option value="mfs">${t("মোবাইল ওয়ালেট", "Mobile wallet")}</option><option value="bank">${t("ব্যাংক", "Bank")}</option></select></label><label>${t("টাকা কত দিনে দেবেন?", "Payment within how many days?")}<input name="paymentDays" required type="number" min="0" max="30" step="1" inputmode="numeric" value="0" /></label></div></fieldset><fieldset class="form-section"><legend>${t("৩ · আপনার আলাদা খরচ", "3 · Your separate costs")}</legend><p class="form-note">${t("দরদাতার কাছ থেকে পাওয়া কোট লিখুন। ফাঁকা মানে জানা নেই; কেবল নিশ্চিত হলে ‘খরচ নেই’ টিক দিন।", "Enter quoted buyer costs. Blank means unknown; tick ‘No charge’ only when confirmed.")}</p><div class="form-grid cost-grid">${cost("transport", "পরিবহন", "Transport")}${cost("loadingSacks", "লোড / বস্তা", "Loading / sacks")}${cost("taxes", "কর", "Taxes")}${cost("marketFees", "বাজার ফি", "Market fees")}${cost("other", "অন্যান্য", "Other")}</div><div id="buyer-purchase-estimate" class="buyer-purchase-estimate" aria-live="polite">${t("সব খরচ জানা হলে মোট দেখাবে।", "Total appears when every cost is known.")}</div><label>${t("দরের শেষ দিন", "Offer expires")}<input name="expires" required type="date" min="${todayPlus(0)}" value="${todayPlus(7)}" /></label><label>${t("গ্রেড, ওজন ও কাটতির নিয়ম", "Grade, weighing and deduction terms")}<textarea name="terms" required maxlength="400" rows="3" placeholder="${t("যেমন: মাঝারি আলু; ওজনের সময় কাটতি হলে ছবি দেবেন", "e.g. Medium potatoes; show photos for any rejection at weighing")}"></textarea></label></fieldset><p class="form-warning">${t("দর, যোগাযোগ ও নথি শুধু এই ব্রাউজারে থাকবে। আলুসাথী টাকা পাঠায় না, স্টক যাচাই করে না।", "Offers, contacts and records stay in this browser. AluSathi does not send money or verify stock.")}</p><button class="button button-green submit" type="submit">${t("দর রাখুন", "Save offer")}${icon("arrow", 18)}</button></form>`;
+  return `<form id="offer-form" class="panel offer-form"><input type="hidden" name="lotId" value="${h(lot.id)}" /><div class="section-header"><div><p class="section-kicker">${t("এই আলুর জন্য দর", "OFFER FOR THIS LOT")}</p><h2>${h(lot.variety)} · ${kg(remaining)}</h2></div><button type="button" class="text-arrow" data-action="close-offer">${t("বন্ধ করুন", "Close")}</button></div><fieldset class="form-section"><legend>${t("১ · দর ও পরিমাণ", "1 · Price and quantity")}</legend><div class="form-grid"><label>${t("আপনার ব্যবসার নাম", "Business name")}<input name="buyer" required minlength="2" maxlength="80" placeholder="${t("ক্রেতা", "Buyer")}" /></label><label>${t("ক্রেতার জেলা", "Buyer district")}<select name="district">${districtOptions("Bogura")}</select></label><label>${t("যত কেজি নিতে চান", "Quantity you can buy (kg)")}<input name="quantityKg" required type="number" min="1" max="${remaining}" step="1" inputmode="numeric" value="${Math.min(remaining, 1000)}" /></label><label>${t("দর (টাকা/কেজি)", "Price (BDT/kg)")}<input name="priceKg" required type="number" min="1" max="10000" step="0.01" inputmode="decimal" placeholder="25" /></label></div></fieldset><fieldset class="form-section"><legend>${t("২ · নেওয়া ও টাকা", "2 · Pickup and payment")}</legend><div class="form-grid"><label>${t("আনুমানিক কত % আলু নেবেন?", "How much of the lot will you take? (%)")}<input name="acceptedPercent" required type="number" min="1" max="100" step="1" inputmode="numeric" value="100" /></label><label>${t("কে আলু নিয়ে যাবেন?", "Who collects?")}<select name="pickup"><option value="buyer">${t("ক্রেতা", "Buyer")}</option><option value="farmer">${t("কৃষক পাঠাবেন", "Farmer delivers")}</option></select></label><label>${t("চাইবার তারিখ", "Requested pickup date")}<input name="pickupDate" type="date" min="${todayPlus(0)}" /></label><label>${t("টাকা দেওয়ার মাধ্যম", "Payment method")}<select name="paymentMethod"><option value="cash">${t("নগদ", "Cash")}</option><option value="mfs">${t("মোবাইল ওয়ালেট", "Mobile wallet")}</option><option value="bank">${t("ব্যাংক", "Bank")}</option></select></label><label>${t("টাকা কত দিনে দেবেন?", "Payment within how many days?")}<input name="paymentDays" required type="number" min="0" max="30" step="1" inputmode="numeric" value="0" /></label></div></fieldset><details class="offer-disclosure"><summary>${t("আরও শর্ত ও খরচ", "More terms and costs")}</summary><fieldset class="form-section"><legend>${t("আপনার আলাদা খরচ", "Your separate costs")}</legend><p class="form-note">${t("দরদাতার কাছ থেকে পাওয়া কোট লিখুন। ফাঁকা মানে জানা নেই; কেবল নিশ্চিত হলে ‘খরচ নেই’ টিক দিন।", "Enter quoted buyer costs. Blank means unknown; tick ‘No charge’ only when confirmed.")}</p><div class="form-grid cost-grid">${cost("transport", "পরিবহন", "Transport")}${cost("loadingSacks", "লোড / বস্তা", "Loading / sacks")}${cost("taxes", "কর", "Taxes")}${cost("marketFees", "বাজার ফি", "Market fees")}${cost("other", "অন্যান্য", "Other")}</div><div id="buyer-purchase-estimate" class="buyer-purchase-estimate" aria-live="polite">${t("সব খরচ জানা হলে মোট দেখাবে।", "Total appears when every cost is known.")}</div><label>${t("দরের শেষ দিন", "Offer expires")}<input name="expires" required type="date" min="${todayPlus(0)}" value="${todayPlus(2)}" /></label><label>${t("গ্রেড, ওজন ও কাটতির নিয়ম", "Grade, weighing and deduction terms")}<textarea name="terms" required maxlength="400" rows="3" placeholder="${t("যেমন: মাঝারি আলু; ওজনের সময় কাটতি হলে ছবি দেবেন", "e.g. Medium potatoes; show photos for any rejection at weighing")}"></textarea></label></fieldset></details><p class="form-warning">${t("আলুসাথী টাকা পাঠায় না বা স্টক যাচাই করে না।", "AluSathi does not transfer money or verify stock.")}</p><button class="button button-green submit" type="submit">${t("দর পাঠান", "Send offer")}${icon("arrow", 18)}</button></form>`;
 }
 
 function renderBuyerOffers() {
-  const offers = data.offers;
-  return `<section class="inner-hero page-shell"><div><p class="section-kicker">${t("ক্রেতার বোর্ড", "BUYER BOARD")}</p><h1>${t("দর, খরচ ও পরিস্থিতি", "Offers and buying scenarios")}</h1><p>${t("তিনটি উদাহরণে মোট খরচ দেখুন, তারপর নিজের দর লিখুন।", "Review three examples, then enter your own offer.")}</p></div><div class="inner-hero-mark">${icon("scale", 52)}</div></section><section class="section page-shell"><div class="offer-grid">${offers.length ? offers.map(offer => { const lot = data.listings.find(item => item.id === offer.lotId); return lot ? renderOfferCard(offer, lot) : ""; }).join("") : `<div class="empty-state"><h2>${t("এখনো দর দেননি", "No offers entered yet")}</h2><button class="button button-green" data-view="home">${t("আলুর তালিকা দেখুন", "Browse lots")}</button></div>`}</div></section>`;
+  const offers = data.offers.filter(offer => !offer.sample);
+  return `<section class="buyer-page page-shell"><header class="compact-page-head"><div><p class="section-kicker">${t("আমার দর", "MY OFFERS")}</p><h1>${t("দর ও উত্তর", "Offers and responses")}</h1><p>${t("প্রতিটি দরের বর্তমান শর্ত ও পরের কাজ এখানে দেখুন।", "See the latest terms and next action for every offer.")}</p></div><a href="${marketUrl("home")}" class="button button-green" data-view="home">${t("আলুর তালিকা", "Browse lots")}</a></header><div class="offer-grid buyer-offer-grid">${offers.length ? offers.map(offer => { const lot = data.listings.find(item => item.id === offer.lotId); return lot ? renderBuyerOfferRow(offer, lot) : ""; }).join("") : `<div class="empty-state"><h2>${t("এখনো কোনো দর নেই", "No offers yet")}</h2><p>${t("একটি লট খুলে দর ও সংগ্রহের শর্ত লিখুন।", "Open a lot to enter price and collection terms.")}</p><a class="button button-green" href="${marketUrl("home")}" data-view="home">${t("লট দেখুন", "See lots")}</a></div>`}</div></section>`;
+}
+
+function buyerOfferStatus(offer) {
+  const status = offer.status || "pending";
+  return ({ draft: t("খসড়া", "Draft"), pending: t("কৃষকের উত্তরের অপেক্ষা", "Awaiting farmer"), counter: t("পাল্টা দর এসেছে", "Counteroffer"), agreed: t("সম্মতি হয়েছে", "Agreed"), rejected: t("গ্রহণ হয়নি", "Rejected"), withdrawn: t("তুলে নেওয়া", "Withdrawn"), expired: t("সময় শেষ", "Expired") })[status] || t("অপেক্ষমাণ", "Pending");
+}
+function renderBuyerOfferRow(offer, lot) {
+  const summary = buyerCostSummary(offer, lot);
+  const expired = offer.expires && offer.expires < todayPlus(0);
+  const latest = expired && offer.status === "pending" ? "expired" : offer.status || "pending";
+  return `<article class="buyer-offer-row"><div><span class="status-pill">${buyerOfferStatus({ ...offer, status: latest })}</span><h2>${h(lotVariety(lot))} · ${kg(offer.quantityKg)}</h2><p>${t("ব্যবসা", "Business")}: ${h(offer.buyer)} · ${h(language === "bn" ? districtNamesBn[lot.district] || lot.district : lot.district)} · ${t("সংগ্রহ", "Pickup")}: ${prettyDate(offer.pickupDate)}</p></div><div><span>${t("দর", "Price")}</span><strong>${rate(offer.priceKg)}/${t("কেজি", "kg")}</strong></div><div><span>${t("আনুমানিক মোট খরচ", "Estimated total")}</span><strong>${summary.total === null ? t("অসম্পূর্ণ", "Incomplete") : money(summary.total)}</strong><small>${summary.total === null ? t("সব খরচ জানা নেই", "Some costs are unknown") : `${rate(summary.deliveredPerKg)}/${t("গ্রহণ কেজি", "accepted kg")}`}</small></div><div class="buyer-offer-actions">${latest === "pending" ? `<button class="text-arrow" data-action="edit-offer" data-id="${h(offer.id)}">${t("বদলান", "Edit")}</button><button class="text-arrow" data-action="withdraw-offer" data-id="${h(offer.id)}">${t("তুলে নিন", "Withdraw")}</button>` : ""}<a class="text-arrow" href="${marketUrl("purchases")}" data-view="purchases">${t("বিস্তারিত", "Details")}</a></div></article>`;
+}
+
+function renderBuyerPurchases() {
+  const deals = data.deals.filter(deal => !deal.sample);
+  return `<section class="buyer-page page-shell"><header class="compact-page-head"><div><p class="section-kicker">${t("আমার কেনাকাটা", "MY PURCHASES")}</p><h1>${t("সংগ্রহ, ওজন ও টাকা", "Collection, weight, and payments")}</h1><p>${t("কৃষক নিশ্চিত না করা পর্যন্ত ওজন ও টাকার হিসাব চূড়ান্ত নয়।", "Weight and payment remain unconfirmed until the farmer confirms them.")}</p></div></header><div class="deals-list">${deals.length ? deals.map(renderDealCard).join("") : `<div class="empty-state"><h2>${t("এখনো কোনো কেনাকাটা হয়নি", "No agreed purchases yet")}</h2><p>${t("কৃষক দর মেনে নিলে কেনাকাটার রেকর্ড এখানে আসবে।", "An agreed offer will appear here.")}</p></div>`}</div></section>`;
+}
+
+function renderBuyerNotebook() {
+  const rows = data.deals.filter(deal => !deal.sample).map(deal => {
+    const accepted = deal.actualAcceptedKg ?? deal.quantityKg;
+    const payment = purchaseCost({ acceptedKg: accepted, priceKg: deal.offer.priceKg, costs: buyerCostLines(deal.offer) });
+    const confirmed = Number(deal.confirmedPaidAmount) || 0;
+    return `<tr><td>${prettyDate(deal.createdAt?.slice(0, 10))}</td><td>${h(deal.offer.buyer)} · ${h(deal.variety)}</td><td>${kg(accepted)}</td><td>${money(payment.potatoPayment)}</td><td>${payment.total === null ? t("জানা নেই", "Unknown") : money(payment.total - payment.potatoPayment)}</td><td>${money(confirmed)}</td><td>${payment.total === null ? "—" : money(Math.max(0, payment.total - confirmed))}</td><td>${dealStatus(deal)}</td></tr>`;
+  }).join("");
+  return `<section class="buyer-page page-shell"><header class="compact-page-head"><div><p class="section-kicker">${t("খাতা", "NOTEBOOK")}</p><h1>${t("কেনাকাটার হিসাব", "Purchase notebook")}</h1><p>${t("আনুমানিক, জানানো ও নিশ্চিত অঙ্ক আলাদা করে রাখা হয়।", "Estimated, reported, and confirmed figures stay separate.")}</p></div><button class="button button-outline" data-action="print-buyer-notebook">${t("ছাপুন", "Print")}</button></header><div class="notebook-tabs"><button class="active">${t("কেনাকাটা", "Purchases")}</button><button disabled>${t("খরচ", "Expenses")}</button><button disabled>${t("বাকি টাকা", "Outstanding")}</button></div><div class="notebook-table-wrap"><table><thead><tr><th>${t("তারিখ", "Date")}</th><th>${t("লট", "Lot")}</th><th>${t("গ্রহণ", "Accepted")}</th><th>${t("আলুর মূল্য", "Potato payment")}</th><th>${t("আলাদা খরচ", "Extra costs")}</th><th>${t("নিশ্চিত পরিশোধ", "Confirmed paid")}</th><th>${t("বাকি", "Outstanding")}</th><th>${t("অবস্থা", "Status")}</th></tr></thead><tbody>${rows || `<tr><td colspan="8">${t("চুক্তি হলে হিসাব এখানে আসবে।", "Agreed purchases will appear here.")}</td></tr>`}</tbody></table></div><p class="notebook-note">${t("পুনর্বিক্রির আয় লেখা না হলে লাভ দেখানো হয় না।", "Profit is not shown until resale income is recorded.")}</p></section>`;
 }
 
 function renderReview() {
@@ -371,18 +445,31 @@ function updateReviewPreview(form) {
 }
 
 function dealStatus(deal) {
-  return ({ agreed: t("চুক্তি হয়েছে", "Agreed"), pickup_pending: t("ওজন নিশ্চিতের অপেক্ষা", "Weight awaiting farmer"), collected: t("তোলা হয়েছে", "Collected"), payment_pending: t("টাকা নিশ্চিতের অপেক্ষা", "Payment awaiting farmer"), paid: t("টাকা পাওয়া গেছে", "Paid") })[deal.status] || "—";
+  return ({ agreed: t("চুক্তি হয়েছে", "Agreed"), pickup_pending: t("ওজন নিশ্চিতের অপেক্ষা", "Weight awaiting farmer"), collected: t("তোলা হয়েছে", "Collected"), payment_pending: t("টাকা নিশ্চিতের অপেক্ষা", "Payment awaiting farmer"), paid: t("টাকা পাওয়া গেছে", "Paid"), disputed: t("পার্থক্য আছে", "Difference recorded") })[deal.status] || "—";
+}
+
+function potatoPaymentDue(deal) {
+  const acceptedKg = deal.actualAcceptedKg ?? deal.quantityKg;
+  return purchaseCost({ acceptedKg, priceKg: deal.offer.priceKg, costs: buyerCostLines(deal.offer) }).potatoPayment;
+}
+function confirmedPayments(deal) {
+  return (deal.paymentReports || []).filter(item => item.status === "confirmed").reduce((sum, item) => sum + Number(item.amount || 0), 0);
+}
+function pendingPayment(deal) {
+  return [...(deal.paymentReports || [])].reverse().find(item => item.status === "reported") || null;
 }
 
 function renderDealCard(deal) {
   const offer = deal.offer;
   const estimate = estimateOffer(offer, deal.quantityKg);
-  const actualNet = deal.actualAcceptedKg != null ? deal.actualAcceptedKg * offer.priceKg - estimate.costs : estimate.net;
   let action = "";
   if (deal.status === "agreed" && role === "buyer") action = `<form class="inline-form" data-form="pickup" data-id="${h(deal.id)}"><label>${t("মাপা ওজন (কেজি)", "Accepted weight (kg)")}<input name="actualAcceptedKg" type="number" min="1" max="${deal.quantityKg}" value="${deal.quantityKg}" required /></label><label>${t("ওজন / কাটতির কথা", "Weight or rejection note")}<input name="pickupNote" maxlength="180" placeholder="${t("যেমন: ১০ কেজি বাদ", "e.g. 10 kg rejected")}" /></label><button class="button button-green button-small">${t("ওজন পাঠান", "Submit weight")}</button></form>`;
   if (deal.status === "pickup_pending" && role === "farmer") action = `<div class="action-box"><p>${t("ক্রেতা বলছেন গ্রহণ করেছেন", "Buyer reports accepted")}: <strong>${kg(deal.actualAcceptedKg)}</strong>. ${h(deal.pickupNote || "")}</p><button class="button button-green button-small" data-action="confirm-pickup" data-id="${h(deal.id)}">${t("ওজন মেনে নিন", "Approve weight")}</button><button class="text-arrow" data-action="dispute" data-id="${h(deal.id)}">${t("মিলছে না—সহায়তা চাই", "Dispute this")}</button></div>`;
-  if (deal.status === "collected" && role === "buyer") { const due = Math.max(0, actualNet); const paid = Math.max(0, Number(deal.paidAmount) || 0); const balance = Math.max(0, due - paid); action = `<form class="inline-form" data-form="payment" data-id="${h(deal.id)}"><p>${t("বাকি টাকা", "Remaining balance")}: <strong>${money(balance)}</strong></p><label>${t("পাঠানো টাকার পরিমাণ", "Amount sent (BDT)")}<input name="paymentAmount" type="number" min="1" max="${balance}" value="${balance}" required /></label><label>${t("লেনদেন নম্বর / রসিদ", "Payment reference")}<input name="paymentRef" maxlength="80" required /></label><button class="button button-green button-small">${t("টাকার কথা রাখুন", "Record payment")}</button></form>`; }
-  if (deal.status === "payment_pending" && role === "farmer") action = `<div class="action-box"><p>${t("ক্রেতা পাঠানোর কথা লিখেছেন", "Buyer claims to have sent")}: <strong>${money(deal.paymentAmount)}</strong> · ${t("মোট পাওয়া", "Total recorded")}: <strong>${money(deal.paidAmount)}</strong> · ${t("বাকি", "Remaining")}: <strong>${money(deal.remainingBalance)}</strong> · ${t("রেফারেন্স", "Reference")}: ${h(deal.paymentRef)}. ${t("নিজের হিসাবে টাকা দেখে তারপর নিশ্চিত করুন।", "Check your own account before confirming.")}</p><button class="button button-green button-small" data-action="confirm-payment" data-id="${h(deal.id)}">${t("টাকা পেয়েছি", "I received the money")}</button><button class="text-arrow" data-action="dispute" data-id="${h(deal.id)}">${t("পাইনি—সমস্যা লিখুন", "Not received")}</button></div>`;
+  const potatoDue = potatoPaymentDue(deal);
+  const confirmed = confirmedPayments(deal);
+  const balance = Math.max(0, potatoDue - confirmed);
+  if (deal.status === "collected" && role === "buyer") action = `<form class="inline-form" data-form="payment" data-id="${h(deal.id)}"><p>${t("কৃষকের নিশ্চিত পাওনা", "Confirmed amount due to farmer")}: <strong>${money(balance)}</strong></p><label>${t("পাঠানো টাকার পরিমাণ", "Amount sent (BDT)")}<input name="paymentAmount" type="number" min="1" max="${balance}" value="${balance}" required /></label><label>${t("লেনদেন নম্বর / রসিদ", "Payment reference")}<input name="paymentRef" maxlength="80" required /></label><button class="button button-green button-small">${t("পেমেন্ট জানান", "Report payment")}</button></form>`;
+  if (deal.status === "payment_pending" && role === "farmer") { const report = pendingPayment(deal); action = report ? `<div class="action-box"><p>${t("ক্রেতা পেমেন্টের কথা লিখেছেন", "Buyer has reported a payment")}: <strong>${money(report.amount)}</strong> · ${t("নিশ্চিত পাওয়া", "Confirmed received")}: <strong>${money(confirmed)}</strong> · ${t("বাকি", "Remaining")}: <strong>${money(balance)}</strong> · ${t("রেফারেন্স", "Reference")}: ${h(report.reference)}. ${t("নিজের হিসাবে টাকা দেখে তারপর নিশ্চিত করুন।", "Check your own account before confirming.")}</p><button class="button button-green button-small" data-action="confirm-payment" data-id="${h(deal.id)}">${t("টাকা পেয়েছি", "I received the money")}</button><button class="text-arrow" data-action="dispute" data-id="${h(deal.id)}">${t("পাইনি—সমস্যা লিখুন", "Not received")}</button></div>` : ""; }
   const costs = buyerCostState(offer);
   return `<article class="deal-card"><div class="deal-card-header"><div><span class="small-label">${t("চুক্তির নথি", "DEAL RECORD")}</span><h3>${h(offer.buyer)} <span>· ${h(deal.variety)}</span></h3></div><span class="status-pill ${deal.status === "paid" ? "status-paid" : ""}">${dealStatus(deal)}</span></div><div class="deal-facts"><div><span>${t("চুক্তির পরিমাণ", "Agreed quantity")}</span><strong>${kg(deal.quantityKg)}</strong></div><div><span>${t("দর", "Price")}</span><strong>${rate(offer.priceKg)}/${t("কেজি", "kg")}</strong></div><div><span>${t("হাতে আসার হিসাব", "Estimated take-home")}</span><strong>${money(estimate.net)}</strong></div><div><span>${t("আসল গ্রহণ", "Accepted at pickup")}</span><strong>${deal.actualAcceptedKg == null ? t("এখনো নয়", "Not yet") : kg(deal.actualAcceptedKg)}</strong></div></div><p class="deal-terms">${icon("shield", 18)}${h(offer.terms)} · ${t("ক্রেতার আলাদা খরচ", "Buyer costs")}: ${costs.known ? money(costs.total) : t("জানা নেই", "Unknown")} · ${t("তোলা", "Pickup")}: ${h(deal.pickupDate ? prettyDate(deal.pickupDate) : t("তারিখ নেই", "Not set"))} · ${t("টাকা", "Payment")}: ${h(deal.paymentMethod || offer.paymentMethod || "cash")}</p>${action}${deal.status === "paid" ? `<p class="paid-note">${icon("check", 18)}${t("কৃষক টাকা পেয়েছেন বলে লিখেছেন; টাকা যাচাই করা হয়নি।", "Farmer marked payment received; the payment was not verified.")}</p>` : ""}<div class="deal-card-footer"><span>${t("চুক্তির নম্বর", "Deal ID")}: ${h(deal.id.slice(0, 8))}</span><button class="text-arrow" data-action="print-deal" data-id="${h(deal.id)}">${t("চুক্তি ছাপুন", "Print deal card")}${icon("arrow", 15)}</button></div></article>`;
 }
@@ -404,7 +491,7 @@ function renderServices(kind) {
 }
 
 function prepareDemo() {
-  if (role === "farmer" && !showSamples) return;
+  if (role !== "farmer" || !showSamples) return;
   prepareDemoForms(app, {
     displayName: role === 'farmer' ? t('কৃষক', 'Farmer') : t('ক্রেতা', 'Buyer'),
     upazila: 'Pirganj', variety: 'Diamant', quantityKg: 2000, priceKg: 25,
@@ -422,7 +509,7 @@ function render() {
   document.documentElement.lang = language;
   if (role === "choose") { let selected = ""; try { selected = sessionStorage.getItem("alusathi-role") || ""; } catch { /* Role choice is available at /auth. */ } location.replace(selected === "buyer" ? "./buyer.html" : selected === "farmer" ? "./farmer.html" : "../auth"); return; }
   if (view === "storage") quoteOpen = document.querySelector(".quote-disclosure")?.open ?? quoteOpen;
-  const content = view === "transport" ? '<section class="section page-shell" id="transport-root"></section>' : view === "passport" ? renderPassport() : view === "list" ? renderListForm() : view === "offers" ? renderOffers() : view === "deals" ? renderDeals() : view === "storage" ? renderStorage() : view === "buyer-offers" ? renderBuyerOffers() : role === "buyer" ? renderBuyerHome() : renderFarmerHome();
+  const content = role === "buyer" && view === "purchases" ? renderBuyerPurchases() : role === "buyer" && view === "notebook" ? renderBuyerNotebook() : view === "transport" ? '<section class="section page-shell" id="transport-root"></section>' : view === "passport" ? renderPassport() : view === "list" ? renderListForm() : view === "offers" ? renderOffers() : view === "deals" ? renderDeals() : view === "storage" ? renderStorage() : view === "buyer-offers" ? renderBuyerOffers() : role === "buyer" ? renderBuyerHome() : renderFarmerHome();
   renderShell(content);
   document.querySelector("#offer-form .section-header")?.insertAdjacentHTML("afterend", renderBuyerProfile());
   if (buyerProfile.businessName && document.querySelector("#offer-form [name=buyer]")) document.querySelector("#offer-form [name=buyer]").value = buyerProfile.businessName;
@@ -476,7 +563,10 @@ function getDeal(id) { return data.deals.find(deal => deal.id === id); }
 
 document.addEventListener("click", event => {
   const viewButton = event.target.closest("[data-view]");
-  if (viewButton) { setView(viewButton.dataset.view); return; }
+  if (viewButton) {
+    if (viewButton.tagName === "A" && (event.ctrlKey || event.metaKey || event.shiftKey || event.button === 1)) return;
+    event.preventDefault(); setView(viewButton.dataset.view); return;
+  }
   const button = event.target.closest("[data-action]");
   if (!button) return;
   const action = button.dataset.action;
@@ -490,14 +580,23 @@ document.addEventListener("click", event => {
   if (action === "dismiss") { notice = ""; render(); }
   if (action === "reset" && confirm(t("এই ব্রাউজারের রাখা তথ্য মুছে আবার শুরু করবেন?", "Clear saved data in this browser and start over?"))) { data = initialData(); buyerProfile = {}; buyerBrief = { variety: "", quantityKg: "", destination: "", purpose: "" }; try { localStorage.removeItem(buyerProfileKey); localStorage.removeItem("alusathi-buyer-brief-v1"); } catch { /* Data remains editable in memory. */ } selectedLotId = data.listings[0].id; storageInputs = null; quoteOpen = false; save(); setView("home"); }
   if (action === "select-lot") { selectedLotId = button.dataset.id; setView("offers"); }
+  if (action === "open-buyer-lot") { selectedLotId = button.dataset.id; draftLotId = ""; render(); return; }
   if (action === "offer-lot") { draftLotId = button.dataset.id; if (role === "buyer") setView("home"); else { render(); document.querySelector("#offer-form")?.scrollIntoView({ behavior: "smooth", block: "start" }); } }
+  if (action === "edit-offer") { const offer = data.offers.find(item => item.id === button.dataset.id); if (offer && offer.status === "pending") { draftLotId = offer.lotId; selectedLotId = offer.lotId; setView("home"); } return; }
+  if (action === "withdraw-offer") { const offer = data.offers.find(item => item.id === button.dataset.id); if (offer && offer.status === "pending") { offer.status = "withdrawn"; offer.updatedAt = new Date().toISOString(); save(); notice = t("দরটি তুলে নেওয়া হয়েছে।", "Offer withdrawn."); render(); } return; }
   if (action === "close-offer") { draftLotId = ""; render(); }
   if (action === "review-offer") { reviewOfferId = button.dataset.id; render(); document.querySelector(".modal input[name=quantityKg]")?.focus(); }
   if (action === "close-review" && (button === event.target || button.closest(".modal-close") || button.tagName === "BUTTON")) { reviewOfferId = ""; render(); }
   if (action === "confirm-pickup") { const deal = getDeal(button.dataset.id); if (deal?.status === "pickup_pending") { deal.status = "collected"; save(); render(); } }
-  if (action === "confirm-payment") { const deal = getDeal(button.dataset.id); if (deal?.status === "payment_pending" && Number(deal.paymentAmount) > 0 && confirm(t("নিজের হিসাবে টাকা পেয়েছেন? পেয়ে থাকলে তবেই নিশ্চিত করুন।", "Have you checked your own account and received the money?"))) { deal.status = Number(deal.remainingBalance) > 0 ? "collected" : "paid"; save(); render(); } }
-  if (action === "dispute") { notice = t("এখানে বিরোধ মেটানোর সেবা নেই।", "Dispute support is not available here."); render(); }
+  if (action === "confirm-payment") { const deal = getDeal(button.dataset.id); const report = deal && pendingPayment(deal); if (deal?.status === "payment_pending" && report && confirm(t("নিজের হিসাবে টাকা পেয়েছেন? পেয়ে থাকলে তবেই নিশ্চিত করুন।", "Have you checked your own account and received the money?"))) { report.status = "confirmed"; report.confirmedAt = new Date().toISOString(); deal.status = confirmedPayments(deal) >= potatoPaymentDue(deal) ? "paid" : "collected"; save(); render(); } }
+  if (action === "dispute") { const deal = getDeal(button.dataset.id); const issue = deal && prompt(t("কী মিলছে না?", "What does not match?")); if (deal && issue?.trim()) { deal.disagreements ??= []; deal.disagreements.push({ id: uid(), text: issue.trim().slice(0, 300), reportedBy: role, createdAt: new Date().toISOString(), resolved: false }); deal.status = "disputed"; save(); notice = t("পার্থক্য নথিতে রাখা হয়েছে। দুই পক্ষ মিলিয়ে সমাধান করুন।", "The difference was saved. Resolve it together before completing the purchase."); render(); } }
   if (action === "print-deal") printDeal(button.dataset.id);
+  if (action === "print-buyer-notebook") { window.print(); }
+});
+
+window.addEventListener("hashchange", () => {
+  const next = location.hash.slice(1) || "home";
+  if (role === "buyer" && buyerViews.includes(next) && next !== view) { view = next; render(); }
 });
 
 document.addEventListener("change", event => {
@@ -510,8 +609,9 @@ document.addEventListener("input", event => {
     const form = event.target.form, box = form.querySelector("#buyer-purchase-estimate");
     if (box) {
       const quantity = Number(form.elements.quantityKg.value) || 0, accepted = Math.floor(quantity * (Number(form.elements.acceptedPercent.value) || 0) / 100), price = Number(form.elements.priceKg.value) || 0;
-      const costs = ["transport", "loadingSacks", "taxes", "marketFees", "other"].map(key => form.elements[`known_${key}`].checked ? 0 : (form.elements[`cost_${key}`].value === "" ? null : Number(form.elements[`cost_${key}`].value)));
-      box.textContent = costs.every(value => Number.isFinite(value) && value >= 0) && accepted > 0 && price > 0 ? `${t("গ্রহণ", "Accepted")}: ${kg(accepted)} · ${t("মোট", "Total")}: ${money(accepted * price + costs.reduce((sum, value) => sum + value, 0))} · ${t("প্রতি কেজি", "Per accepted kg")}: ${rate((accepted * price + costs.reduce((sum, value) => sum + value, 0)) / accepted)}` : t("সব খরচ জানা হলে মোট দেখাবে।", "Total appears when every cost is known.");
+      const costs = Object.fromEntries(["transport", "loadingSacks", "taxes", "marketFees", "other"].map(key => [key, form.elements[`known_${key}`].checked ? 0 : (form.elements[`cost_${key}`].value === "" ? null : Number(form.elements[`cost_${key}`].value))]));
+      const estimate = purchaseCost({ acceptedKg: accepted, priceKg: price, costs });
+      box.textContent = estimate.total !== null && accepted > 0 && price > 0 ? `${t("গ্রহণ", "Accepted")}: ${kg(accepted)} · ${t("মোট", "Total")}: ${money(estimate.total)} · ${t("প্রতি কেজি", "Per accepted kg")}: ${rate(estimate.costPerAcceptedKg)}` : t("সব খরচ জানা হলে মোট দেখাবে।", "Total appears when every cost is known.");
     }
   }
   if (event.target.name !== "quantityKg" || event.target.form?.id !== "deal-form") return;
@@ -607,12 +707,12 @@ document.addEventListener("submit", async event => {
   if (form.dataset.form === "payment") {
     const deal = getDeal(form.dataset.id);
     const amount = validNumber(values.paymentAmount, 0, 100000000);
-    const estimate = deal ? estimateOffer(deal.offer, deal.actualAcceptedKg ?? deal.quantityKg) : null;
-    const due = estimate ? Math.max(0, estimate.net) : 0;
-    const paid = Math.max(0, Number(deal?.paidAmount) || 0);
-    const remaining = Math.max(0, due - paid);
+    const due = deal ? potatoPaymentDue(deal) : 0;
+    const remaining = Math.max(0, due - confirmedPayments(deal));
     if (!deal || deal.status !== "collected" || amount === null || amount <= 0 || amount > remaining || !String(values.paymentRef || "").trim()) { notice = t("টাকার পরিমাণ শূন্য হতে পারবে না এবং বাকি টাকার বেশি হতে পারবে না।", "Payment must be above zero and cannot exceed the remaining balance."); return render(); }
-    deal.paymentAmount = amount; deal.paidAmount = paid + amount; deal.remainingBalance = Math.max(0, due - deal.paidAmount); deal.paymentRef = String(values.paymentRef).trim().slice(0, 80); deal.status = "payment_pending"; save(); render();
+    deal.paymentReports ??= [];
+    deal.paymentReports.push({ id: uid(), amount, reference: String(values.paymentRef).trim().slice(0, 80), reportedAt: new Date().toISOString(), status: "reported" });
+    deal.status = "payment_pending"; save(); render();
   }
   if (form.id === "storage-form") {
     const bounds = { quantityKg: [1, 100000], priceKg: [0, 10000], months: [0.1, 12], feeKgMonth: [0, 1000], lossPercent: [0, 80], oneTimeCost: [0, 1000000] };

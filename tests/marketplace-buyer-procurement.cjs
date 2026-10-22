@@ -16,6 +16,7 @@ const base = process.env.BASE_URL || "http://127.0.0.1:4176";
   await page.locator("#buyer-brief-form [name=district]").selectOption("");
   await page.locator("#buyer-brief-form").evaluate(form => form.requestSubmit());
   await page.locator("button[data-action=offer-lot]").first().click();
+  await page.locator("details.offer-disclosure summary").click();
   for (const [name, value] of [["buyer", "Test buyer"], ["contactPerson", "Buyer Person"], ["contactPhone", "01712345678"], ["buyerUpazila", "Pirganj"], ["buyerAddress", "Market road"], ["priceKg", "25"], ["terms", "Weigh at pickup"]]) await page.locator(`[name=${name}]`).fill(value);
   await page.locator("[name=cost_transport]").fill("1000");
   await page.locator("[name=known_loadingSacks]").check();

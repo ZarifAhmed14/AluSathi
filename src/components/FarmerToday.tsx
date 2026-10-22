@@ -1,42 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Camera, Check, CloudRain, Droplets, Eye, Flower2, Image, Leaf, PackageCheck, PhoneCall, Sprout, Volume2, WifiOff, X } from "lucide-react";
+import { Camera, Check, CloudRain, Droplets, Eye, Image, Leaf, PhoneCall, Volume2, WifiOff, X } from "lucide-react";
 import type { WeatherData } from "@/lib/api";
-import { cropAge, cropGuidance, plantingAges, rangeGuidance, type PlantingAge } from "@/lib/crop-advice";
-import { spreadOutlook } from "@/lib/farmer-tools";
+import { cropAge, cropGuidance } from "@/lib/crop-advice";
 import { localToday } from "@/lib/local-date";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { readFieldActions, saveFieldActions, type FieldAction } from "@/lib/field-actions";
-import type { ReactNode } from "react";
 import { PHOTO_DEMO_CASES } from "@/lib/photo-demo-cases";
 
 type CheckinPreview = { createdAt: string; thumbnails: string[] };
-const ALERT_SEEN_KEY = "alusathi-weather-alert-seen-v1";
-const ageIcons = { lt30: Sprout, "30to60": Leaf, "60to90": Flower2, gt90: PackageCheck };
-
-function ageBand(age: number | null, range: PlantingAge | ""): PlantingAge | "" {
-  if (age === null) return range;
-  if (age < 30) return "lt30";
-  if (age < 60) return "30to60";
-  if (age < 90) return "60to90";
-  return "gt90";
-}
-
-export default function FarmerToday({ weather, loading, district, districts, plantingDate, onPhoto, lastCheckin, photoFlow, photoOpen, onClosePhoto, demoResult, onClearDemo }: {
+export default function FarmerToday({ weather, loading, district, districts, plantingDate, onPhoto, lastCheckin, demoResult, onClearDemo }: {
   weather: WeatherData | null; loading: boolean; district: string; districts: Record<string, string>;
   plantingDate: string; onPhoto: () => void; lastCheckin?: CheckinPreview;
-  photoFlow?: ReactNode; photoOpen?: boolean; onClosePhoto?: () => void;
   demoResult?: typeof PHOTO_DEMO_CASES[number] | null; onClearDemo?: () => void;
 }) {
   const { language } = useLanguage(); const bn = language === "bn";
-  const [range, setRange] = useState<PlantingAge | "">(() => {
-    const value = localStorage.getItem("alusathi-planting-age");
-    return plantingAges.includes(value as PlantingAge) ? value as PlantingAge : "";
-  });
-  const [recorded, setRecorded] = useState(() => localStorage.getItem("alusathi-planting-age-recorded") || "");
   const [voice, setVoice] = useState<SpeechSynthesisVoice | null>(null);
   const [actions, setActions] = useState(readFieldActions);
   const [online, setOnline] = useState(() => navigator.onLine);
-  const [seenAlert, setSeenAlert] = useState(() => localStorage.getItem(ALERT_SEEN_KEY) || "");
 
   useEffect(() => {
     const update = () => setOnline(navigator.onLine);
@@ -51,16 +31,9 @@ export default function FarmerToday({ weather, loading, district, districts, pla
   }, []);
 
   const age = cropAge(plantingDate);
-  const elapsed = cropAge(recorded);
-  const stale = Boolean(range) && (elapsed === null || elapsed >= 30);
-  const approximate = age === null && range && !stale ? rangeGuidance(range, bn) : null;
   const advice = cropGuidance(age, weather, bn);
-  const risk = spreadOutlook(weather);
-  const hasPlanting = age !== null || Boolean(approximate);
-  const riskId = risk?.high ? risk.days.map(day => `${day.date}:${day.humid_hours}`).join("|") : "";
-  const showRisk = hasPlanting && Boolean(riskId) && seenAlert !== riskId;
-  const currentBand = ageBand(age, approximate ? range : "");
-  const stage = age !== null ? `${bn ? `লাগানোর ${age.toLocaleString("bn-BD")} দিন` : `Day ${age}`} · ${advice.stage}` : approximate?.stage;
+  const hasPlanting = age !== null;
+  const stage = age !== null ? `${bn ? `লাগানোর ${age.toLocaleString("bn-BD")} দিন` : `Day ${age}`} · ${advice.stage}` : null;
   const number = (value: number) => value.toLocaleString(bn ? "bn-BD" : "en-GB", { maximumFractionDigits: 1 });
 
   const tasks = useMemo(() => {
@@ -87,16 +60,6 @@ export default function FarmerToday({ weather, loading, district, districts, pla
     if (completed.has(key)) saveActions(actions.filter(action => actionKey(action.text) !== key));
     else saveActions([{ id: crypto.randomUUID(), date: localToday(), text, district, kind: "task" as const }, ...actions].slice(0, 100));
   };
-  const choose = (value: PlantingAge) => {
-    setRange(value); setRecorded(localToday());
-    localStorage.setItem("alusathi-planting-age", value); localStorage.setItem("alusathi-planting-age-recorded", localToday());
-  };
-  const acknowledgeAlert = () => {
-    if (!riskId) return;
-    const text = bn ? "সতর্কতা দেখে জমি পরীক্ষা করেছি; এখন সমস্যা দেখিনি।" : "Checked the field after the alert; no problem seen now.";
-    saveActions([{ id: crypto.randomUUID(), date: localToday(), text, district, kind: "observation" as const }, ...actions].slice(0, 100));
-    localStorage.setItem(ALERT_SEEN_KEY, riskId); setSeenAlert(riskId);
-  };
   const checkinDays = lastCheckin ? Math.max(0, Math.floor((Date.now() - Date.parse(lastCheckin.createdAt)) / 86_400_000)) : null;
   const checkinLabel = checkinDays === null ? (bn ? "এখনও কোনো ছবি রাখা হয়নি" : "No photos recorded yet")
     : checkinDays === 0 ? (bn ? "শেষ ছবি আজ" : "Last photo today")
@@ -117,24 +80,20 @@ export default function FarmerToday({ weather, loading, district, districts, pla
     </div>
 
     <div className="today-layout"><div className="today-primary-column"><div className="farmer-day-card">
-      <div className="field-card-heading"><div className="field-card-identity"><span>{bn ? "আমার জমি" : "My field"}</span><strong>{districts[district] || district}</strong></div><div className="field-card-actions">{stage && <span className="farmer-stage"><strong>{stage}</strong></span>}{stage && bn && voice && <button className="farmer-listen" onClick={() => { speechSynthesis.cancel(); const utterance = new SpeechSynthesisUtterance([stage, ...tasks.map(item => item.text)].join("। ")); utterance.voice = voice; utterance.lang = voice.lang; speechSynthesis.speak(utterance); }}><Volume2 size={17} />শুনুন</button>}</div></div>
-      {currentBand && <div className="growth-stage-strip" aria-label={bn ? "গাছের আনুমানিক বয়স" : "Approximate crop age"}>{plantingAges.map(value => { const AgeIcon = ageIcons[value]; return <span key={value} aria-current={currentBand === value ? "step" : undefined}><AgeIcon size={17} />{rangeGuidance(value, bn).stage.replace(bn ? "প্রায় " : "Approximately ", "")}</span>; })}</div>}
-      {age === null && !approximate && <fieldset className="planting-choices"><legend>{stale ? (bn ? "এখন গাছের বয়স কত? আবার বেছে নিন।" : "How old is the crop now? Update your estimate.") : (bn ? "কবে আলু লাগিয়েছেন?" : "When did you plant?")}</legend>{plantingAges.map(value => { const AgeIcon = ageIcons[value]; return <button key={value} aria-pressed={range === value} onClick={() => choose(value)}><AgeIcon size={17} />{rangeGuidance(value, bn).stage.replace(bn ? "প্রায় " : "Approximately ", "")}</button>; })}<small>{bn ? "না জানলে আপাতত বাদ দিন।" : "Not sure? Skip for now."}</small></fieldset>}
+      <div className="field-card-heading"><div className="field-card-identity"><span>{bn ? "আমার জমি" : "My field"}</span><strong>{bn ? (districts[district] || district) : district}</strong></div><div className="field-card-actions">{stage && <span className="farmer-stage"><strong>{stage}</strong></span>}{stage && bn && voice && <button className="farmer-listen" onClick={() => { speechSynthesis.cancel(); const utterance = new SpeechSynthesisUtterance([stage, ...tasks.map(item => item.text)].join("। ")); utterance.voice = voice; utterance.lang = voice.lang; speechSynthesis.speak(utterance); }}><Volume2 size={17} />শুনুন</button>}</div></div>
       {hasPlanting && <details className="today-more-tasks"><summary>{bn ? "সাধারণ মাঠ-চেক" : "Routine field checks"}</summary><div className="today-task-list">{tasks.map(item => { const done = completed.has(actionKey(item.text)); const { tone, Icon } = item; return <div className={`today-task ${tone} ${done ? "done" : ""}`} key={item.text}><label><input type="checkbox" checked={done} onChange={() => toggleTask(item.text)} /><span className="task-check" aria-hidden="true">{done ? <Check size={20} /> : <Icon size={21} />}</span><strong>{item.text}</strong></label><details><summary>{bn ? "কেন?" : "Why?"}</summary><p>{item.why}</p></details></div>; })}</div></details>}
       <div className="today-photo-action">
         <div><span className="today-photo-mark"><Leaf size={21} /></span><span><strong>{bn ? "আলুর ছবি দিন" : "Add a potato photo"}</strong><small>{bn ? "ছবি বা নমুনা বেছে নিয়ে দৃশ্যমান লক্ষণ দেখুন।" : "Choose a photo or sample to review visible signs."}</small></span></div>
         <button className="main-button" onClick={onPhoto}><Camera size={18} />{bn ? "ছবি স্ক্যানার খুলুন" : "Open photo scanner"}</button>
       </div>
-      {demoResult && <article className="today-demo-result" aria-live="polite"><img src={demoResult.image} alt={bn ? "নমুনা আলুর ছবি" : "Potato sample"} /><div><div className="today-demo-result-heading"><small>{bn ? `নমুনা ${demoResult.id.slice(-1)} · উদাহরণ ফল` : `Sample ${demoResult.id.slice(-1)} · example result`}</small><button className="text-button" type="button" onClick={onClearDemo} aria-label={bn ? "নমুনা ফল বন্ধ করুন" : "Dismiss sample result"}><X size={18} /></button></div><h3>{demoResult[bn ? "bn" : "en"].title}</h3><p>{demoResult[bn ? "bn" : "en"].body}</p><p className="today-demo-action"><strong>{bn ? "করণীয়" : "What to do"}</strong>{demoResult[bn ? "bn" : "en"].action}</p></div></article>}
+      {demoResult && <article className="today-demo-result" aria-live="polite"><img src={demoResult.image} alt={bn ? "নমুনা আলুর ছবি" : "Potato sample"} /><div><div className="today-demo-result-heading"><small>{bn ? `নমুনা ${demoResult.id.slice(-1)} · স্থির ডেমো ফল` : `Sample ${demoResult.id.slice(-1)} · fixed demo result`}</small><button className="text-button" type="button" onClick={onClearDemo} aria-label={bn ? "নমুনা ফল বন্ধ করুন" : "Dismiss sample result"}><X size={18} /></button></div><h3>{demoResult[bn ? "bn" : "en"].title}</h3><dl className="photo-result-facts"><div><dt>{bn ? "আলুর ধরন" : "Potato type"}</dt><dd>{demoResult[bn ? "bn" : "en"].variety}</dd></div><div><dt>{bn ? "আলুর বয়স" : "Potato age"}</dt><dd>{demoResult[bn ? "bn" : "en"].age}</dd></div><div><dt>{bn ? "স্বাস্থ্য" : "Health"}</dt><dd>{demoResult[bn ? "bn" : "en"].health}</dd></div></dl><p>{demoResult[bn ? "bn" : "en"].body}</p><p className="today-demo-action"><strong>{bn ? "করণীয়" : "What to do"}</strong>{demoResult[bn ? "bn" : "en"].action}</p></div></article>}
       {lastCheckin && <button className="last-checkin-strip" onClick={onPhoto}><span className="checkin-thumbnails" aria-hidden="true">{lastCheckin.thumbnails.length ? lastCheckin.thumbnails.slice(0, 3).map((src, index) => <img key={index} src={src} alt="" />) : <i><Image size={21} /></i>}</span><span><strong>{checkinLabel}</strong><small>{bn ? "ছবি ও লক্ষণ দেখতে চাপুন" : "Open photos and symptoms"}</small></span><Camera size={20} /></button>}
-      {photoOpen && <div className="today-inline-photo"><div className="today-inline-photo-heading"><div><strong>{bn ? "পাতার ছবি ও লক্ষণ" : "Leaf photo and visible signs"}</strong><small>{bn ? "শুধু ছবি থেকে রোগ নির্ণয় করা হয় না।" : "A photo alone is not used to diagnose disease."}</small></div><button className="text-button" onClick={onClosePhoto}>{bn ? "বন্ধ করুন" : "Close"}</button></div>{photoFlow}</div>}
     </div>
 
-    {showRisk && <div className="field-risk-banner" role="status"><div className="risk-copy"><AlertTriangle size={23} /><div><strong>{bn ? "আর্দ্র আবহাওয়ার সতর্কতা" : "Humid-weather alert"}</strong><p>{bn ? "পাতা ও কাছের গাছ দেখে নিন। এটি রোগ নির্ণয় নয়।" : "Check leaves and nearby plants. This is not a diagnosis."}</p></div></div><figure className="humidity-chart"><div>{risk?.days.slice(0, 3).map(day => <span key={day.date}><i style={{ height: `${Math.max(6, day.humid_hours / 24 * 100)}%` }} /><small>{number(day.humid_hours)}{bn ? "ঘ" : "h"}</small></span>)}<b style={{ bottom: "25%" }} /></div><figcaption>{bn ? "৯০%+ আর্দ্রতার ঘণ্টা · সীমা ৬ ঘণ্টা" : "Hours at 90%+ humidity · threshold 6h"}</figcaption></figure><div className="risk-actions"><button onClick={onPhoto}>{bn ? "ছবি দিন" : "Add photo"}</button><button className="risk-dismiss" onClick={acknowledgeAlert}>{bn ? "দেখেছি, সমস্যা নেই" : "Checked, no problem"}</button></div></div>}
     </div>
 
-    <aside className="today-utility-rail" aria-label={bn ? "দ্রুত সাহায্য" : "Quick help"}><p>{bn ? "কৃষি পরামর্শ" : "Agricultural advice"}</p><a className="secondary-main today-helpline" href="tel:16123"><PhoneCall />{bn ? "কৃষি কল সেন্টার · ১৬১২৩" : "Agriculture helpline · 16123"}</a>
-    <div className="weather-chip" aria-live="polite"><CloudRain size={20} /><strong>{bn ? "আবহাওয়া" : "Weather"}</strong><span>{weather ? `${number(Math.round(weather.temperature))}° · ${bn ? "আর্দ্রতা" : "Humidity"} ${number(Math.round(weather.humidity))}%` : loading ? (bn ? "আবহাওয়া আসছে…" : "Loading weather…") : (bn ? "আবহাওয়া পাওয়া যায়নি" : "Weather unavailable")}</span>{weather && <small>{weatherFetchedAt ? (bn ? `তথ্য: ${new Date(weatherFetchedAt).toLocaleString("bn-BD", { dateStyle: "short", timeStyle: "short" })}` : `Fetched ${new Date(weatherFetchedAt).toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short" })}`) : (bn ? "সময় অজানা" : "Fetch time unknown")} · {weatherStatus}</small>}</div>
+    <aside className="today-utility-rail" aria-label={bn ? "দ্রুত সাহায্য" : "Quick help"}><p>{bn ? "কৃষি পরামর্শ" : "Agricultural advice"}</p><section className="today-advice-card"><strong>{bn ? "কেন হলো" : "Why this happened"}</strong><p>{demoResult ? demoResult[bn ? "bn" : "en"].body : lastCheckin ? (bn ? "শেষ ছবির দৃশ্যমান লক্ষণ মিলিয়ে পাতার নিচে ও কাছের গাছ দেখুন।" : "Compare the visible signs in your last photo with nearby plants.") : (bn ? "ছবি দিলে দৃশ্যমান লক্ষণ ধরে কেন এটি দেখা যাচ্ছে, তার সংক্ষিপ্ত ব্যাখ্যা দেখাব।" : "Add a photo to see a short explanation of the visible signs.")}</p><small>{bn ? "এটি রোগের নাম বা নিশ্চিত নির্ণয় নয়।" : "This is not a disease name or a confirmed diagnosis."}</small></section><a className="secondary-main today-helpline" href="tel:16123"><PhoneCall />{bn ? "কৃষি কল সেন্টার · ১৬১২৩" : "Agriculture helpline · 16123"}</a>
+    <div className="weather-chip" aria-live="polite"><CloudRain size={20} /><strong>{bn ? "আবহাওয়া" : "Weather"}</strong><span>{weather ? `${number(Math.round(weather.temperature))}° · ${bn ? "আর্দ্রতা" : "Humidity"} ${number(Math.round(weather.humidity))}%` : loading ? (bn ? "আবহাওয়া আসছে…" : "Loading weather…") : (bn ? "আবহাওয়া পাওয়া যায়নি" : "Weather unavailable")}</span>{weather && <small>{weatherFetchedAt ? (bn ? `তথ্য: ${new Date(weatherFetchedAt).toLocaleString("bn-BD", { dateStyle: "short", timeStyle: "short" })}` : `Fetched ${new Date(weatherFetchedAt).toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short" })}`) : (bn ? "সময় অজানা" : "Fetch time unknown")} · {weatherStatus}</small>}{Boolean(weather?.forecast?.length) && <details className="today-forecast"><summary>{bn ? "আগামী ৩ দিন" : "Next 3 days"}</summary>{weather!.forecast!.slice(0, 3).map(day => <p key={day.date}><strong>{new Date(`${day.date}T12:00:00`).toLocaleDateString(bn ? "bn-BD" : "en-GB", { weekday: "short", day: "numeric" })}</strong><span>{number(day.minimum)}–{number(day.maximum)}° · {bn ? "বৃষ্টি" : "Rain"} {number(day.rainMm)} {bn ? "মিমি" : "mm"}</span></p>)}</details>}</div>
     {!online && <p className="offline-status" role="status"><WifiOff size={18} />{bn ? "অফলাইনে আছেন — ছবি ফোনে সেভ হবে" : "You are offline — photos will be saved on this phone"}</p>}</aside></div>
   </section></>;
 }

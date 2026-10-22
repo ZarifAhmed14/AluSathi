@@ -20,7 +20,7 @@ if Path(".env").exists():
             env[key] = value.strip().strip('"')
 URL = os.getenv("SUPABASE_URL", env.get("VITE_SUPABASE_URL", ""))
 KEY = os.getenv("SUPABASE_PUBLISHABLE_KEY", env.get("VITE_SUPABASE_PUBLISHABLE_KEY", ""))
-ORIGINS = set(os.getenv("ALUSATHI_ORIGINS", "http://127.0.0.1:4173,http://127.0.0.1:8080,http://localhost:8080").split(","))
+ORIGINS = set(os.getenv("ALUSATHI_ORIGINS", "http://127.0.0.1:4173,http://127.0.0.1:4176,http://localhost:4176,http://127.0.0.1:8080,http://localhost:8080").split(","))
 attempts = defaultdict(deque)
 
 def call(path, data=None, token=None, method=None):
@@ -62,7 +62,7 @@ async def guard(request):
 def session_response(data, request):
     response = JSONResponse({"user": data.get("user"), "access_token": data.get("access_token"), "expires_at": data.get("expires_at", int(time.time()) + data.get("expires_in", 0))})
     if data.get("refresh_token"):
-        response.set_cookie("alusathi_refresh", data["refresh_token"], httponly=True, secure=request.headers.get("origin", "").startswith("https://"), samesite="strict", path="/api/auth", max_age=30*86400)
+        response.set_cookie("alusathi_refresh", data["refresh_token"], httponly=True, secure=request.headers.get("origin", "").startswith("https://"), samesite="strict", path="/api", max_age=30*86400)
     return response
 
 @router.post("/{action}")
@@ -74,13 +74,13 @@ async def auth_action(action: str, request: Request):
         try: return session_response(await asyncio.to_thread(call, "token?grant_type=refresh_token", {"refresh_token": refresh}), request)
         except HTTPException as error:
             if error.status_code >= 500: raise
-            response = session_response({}, request); response.delete_cookie("alusathi_refresh", path="/api/auth"); return response
+            response = session_response({}, request); response.delete_cookie("alusathi_refresh", path="/api"); return response
     if action == "signout":
         token = data.get("access_token")
         if isinstance(token, str) and token:
             try: await asyncio.to_thread(call, "logout?scope=local", {}, token)
             except HTTPException: pass
-        response = session_response({}, request); response.delete_cookie("alusathi_refresh", path="/api/auth"); return response
+        response = session_response({}, request); response.delete_cookie("alusathi_refresh", path="/api"); return response
     email, password = data.get("email", ""), data.get("password", "")
     if action in {"signin", "signup", "recover"}:
         if not isinstance(email, str) or not 3 <= len(email) <= 254 or "@" not in email: raise HTTPException(400, "Invalid email")

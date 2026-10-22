@@ -395,6 +395,55 @@
 @keyframes route-dash { to { stroke-dashoffset: -14; } }
 @media(prefers-reduced-motion:reduce) { .route-preview-line { animation: none; } }
 .bag-weight[hidden] { display: none !important; }
+.buyer-portal { background: #eaf4f1; }
+.buyer-portal .topbar { background: #fffdf7; }
+.buyer-workspace,.buyer-page { padding-top: 24px; padding-bottom: 70px; }
+.buyer-title,.compact-page-head { display:flex; align-items:flex-start; justify-content:space-between; gap:28px; margin-bottom:12px; }
+.buyer-title h1,.compact-page-head h1 { margin:4px 0 6px; color:#102d20; font-size:clamp(29px,2.75vw,40px); line-height:1.08; letter-spacing:-.04em; }
+.buyer-title p:not(.section-kicker),.compact-page-head p:not(.section-kicker) { max-width:670px; margin:0; color:#50645a; line-height:1.5; font-size:16px; }
+.buyer-market-mark { display:flex; align-items:center; gap:10px; min-width:176px; padding:13px 16px; border:1px solid #d4e2db; border-radius:15px; background:linear-gradient(135deg,#f6fbf9,#e1f0e9); color:#0f5a3f; font-size:13px; font-weight:800; }
+.buyer-summary-strip { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:14px 0; }
+.buyer-summary-strip a { display:grid; gap:3px; min-height:60px; padding:10px 15px; border:1px solid #d4e2db; border-radius:14px; color:#102d20; text-decoration:none; background:#fff; transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease; }
+.buyer-summary-strip a:hover { transform:translateY(-2px); border-color:#8bb79f; box-shadow:0 8px 20px #0f5a3f14; }
+.buyer-summary-strip strong { font:800 26px/1 "DM Sans","Anek Bangla",sans-serif; color:#0f5a3f; }
+.buyer-summary-strip span { color:#50645a; font-size:14px; font-weight:700; }
+.buyer-brief { padding:12px 18px; margin-bottom:14px; border-radius:16px; box-shadow:none; }
+.buyer-brief .brief-grid { grid-template-columns:repeat(4,minmax(0,1fr)) auto; align-items:end; margin:0; }
+.buyer-brief .brief-grid label { margin:0; }
+.buyer-brief .brief-submit { min-height:48px; }
+.buyer-more-filter { grid-column:1/-1; margin-top:2px; }
+.buyer-more-filter summary { width:max-content; min-height:38px; padding:8px 0; color:#24583c; cursor:pointer; font-weight:800; }
+.buyer-more-filter > div { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:13px; padding:10px 0 2px; }
+.buyer-split { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(330px,.75fr); gap:20px; align-items:start; }
+.buyer-lots-heading { margin:4px 0 12px; }
+.buyer-lot-list { display:grid; gap:9px; }
+.buyer-lot-row { display:grid; grid-template-columns:72px minmax(0,1fr) auto; align-items:center; gap:13px; width:100%; padding:9px; border:1px solid #d4e2db; border-radius:14px; text-align:left; color:#102d20; background:#fff; cursor:pointer; }
+.buyer-lot-row:hover,.buyer-lot-row.selected { border-color:#76a88a; background:#f6fbf8; }
+.buyer-lot-row:focus-visible,.buyer-summary-strip a:focus-visible { outline:3px solid #d69522; outline-offset:3px; }
+.buyer-lot-photo { width:72px; height:62px; object-fit:cover; border-radius:9px; background:#dfeee6; }
+.buyer-lot-row span { display:grid; gap:5px; min-width:0; }
+.buyer-lot-row strong { font-size:18px; }
+.buyer-lot-row small,.buyer-lot-row em { color:#50645a; font-size:13px; font-style:normal; overflow-wrap:anywhere; }
+.buyer-lot-detail { position:sticky; top:20px; padding:19px; border-radius:17px; box-shadow:0 12px 30px #0f5a3f0d; }
+.detail-head { display:grid; grid-template-columns:96px 1fr; gap:14px; align-items:center; }
+.buyer-detail-photo { width:96px; height:88px; object-fit:cover; border-radius:12px; background:#e0eee7; }
+.buyer-detail-photo.lot-art,.buyer-lot-photo.lot-art { pointer-events:none; }
+.buyer-detail-actions { position:relative; z-index:1; }
+.detail-head h2 { margin:4px 0; font-size:26px; }
+.detail-head p { margin:0; color:#50645a; }
+.buyer-detail-facts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; margin:17px 0; }
+.buyer-detail-facts div { padding:10px; border-radius:10px; background:#eef6f1; }
+.buyer-detail-facts dt { color:#50645a; font-size:12px; }
+.buyer-detail-facts dd { margin:4px 0 0; color:#102d20; font-size:15px; font-weight:800; overflow-wrap:anywhere; }
+.buyer-detail-notes,.detail-caution { color:#50645a; font-size:14px; line-height:1.6; }
+.detail-caution { margin:16px 0 0; padding-top:13px; border-top:1px solid #d4e2db; }
+.buyer-detail-actions { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.buyer-offer-grid { display:grid; gap:11px; }
+.buyer-offer-row { display:grid; grid-template-columns:minmax(210px,1fr) 130px 190px auto; gap:18px; align-items:center; padding:18px; border:1px solid #d4e2db; border-radius:15px; background:#fff; }
+.buyer-offer-row h2 { margin:8px 0 5px; font-size:21px; }.buyer-offer-row p,.buyer-offer-row small { margin:0; color:#50645a; font-size:13px; line-height:1.5; }.buyer-offer-row > div>span { display:block; color:#50645a; font-size:12px; }.buyer-offer-row > div>strong { display:block; margin:5px 0; color:#102d20; font-size:18px; }.buyer-offer-actions { display:flex; flex-wrap:wrap; gap:10px; justify-content:flex-end; }
+.notebook-tabs { display:flex; gap:8px; margin:0 0 12px; }.notebook-tabs button { min-height:40px; padding:8px 13px; border:1px solid #d4e2db; border-radius:9px; color:#50645a; background:#fff; font-weight:800; }.notebook-tabs .active { background:#0f5a3f; color:#fff; border-color:#0f5a3f; }.notebook-table-wrap { overflow:auto; border:1px solid #d4e2db; border-radius:15px; background:#fff; }.notebook-table-wrap table { width:100%; min-width:980px; border-collapse:collapse; }.notebook-table-wrap th,.notebook-table-wrap td { padding:13px 14px; border-bottom:1px solid #e5eee9; text-align:left; font-size:14px; }.notebook-table-wrap th { color:#50645a; background:#f5faf7; font-size:12px; }.notebook-note { color:#50645a; font-size:13px; }
+@media(max-width:1050px) { .buyer-brief .brief-grid{grid-template-columns:repeat(3,minmax(0,1fr));}.buyer-split{grid-template-columns:1fr;}.buyer-lot-detail{position:static;}.buyer-offer-row{grid-template-columns:1fr 150px;}.buyer-offer-actions{justify-content:flex-start;}.buyer-more-filter>div{grid-template-columns:1fr 1fr;} }
+@media(max-width:700px) { .buyer-title,.compact-page-head{display:grid;gap:14px;}.buyer-market-mark{width:max-content;}.buyer-summary-strip{grid-template-columns:1fr;}.buyer-brief .brief-grid,.buyer-more-filter>div{grid-template-columns:1fr;}.buyer-lot-row{grid-template-columns:58px minmax(0,1fr);}.buyer-lot-row em{grid-column:2;}.buyer-lot-photo{width:58px;height:58px;}.buyer-offer-row{grid-template-columns:1fr;gap:11px;}.buyer-offer-actions{justify-content:flex-start;}.buyer-page,.buyer-workspace{padding-top:22px;} }
 .quantity-conversion { grid-column: 1 / -1; color: #52695c; }
 @media (max-width: 760px) {
   .hero.page-shell { background-image: linear-gradient(90deg, #f6f3eafa 0%, #f6f3eaf0 45%, #f6f3eabc 74%, #f6f3ea4d 100%), url('./farmer-hero.png'); }
