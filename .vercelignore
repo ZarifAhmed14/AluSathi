@@ -9,4 +9,6 @@ test-results
 competition
 docs
 ml
+api
+requirements.txt
 tests
