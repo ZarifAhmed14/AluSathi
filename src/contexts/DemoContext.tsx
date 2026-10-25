@@ -24,10 +24,10 @@ export function DemoEntry() {
   return <main className={`account-page ${bn ? 'font-bangla' : ''}`}><section className="account-card">
     <Link to="/" className="text-button"><ArrowLeft size={18} />{bn ? 'মূল পাতায় ফিরুন' : 'Back to home'}</Link>
     <span className="brand-mark"><Leaf /></span>
-    <p className="section-kicker">{bn ? 'আলুসাথী · কাজ বেছে নিন' : 'ALUSATHI · CHOOSE YOUR ROLE'}</p>
-    <h1>{bn ? 'আপনি কী কাজ করেন?' : 'Choose your role'}</h1>
-    <p>{bn ? 'কৃষক ও ব্যবসায়ীর জন্য আলাদা পাতা। আপনার কাজ বেছে নিন।' : 'Farmers and businessmen have separate pages. Choose what you do.'}</p>
-    <button className="main-button" onClick={() => { setDemo(true); navigate('/farmer', { replace: true }); }}><Leaf size={22} />{bn ? 'কৃষক হিসেবে ঢুকুন' : 'Enter as farmer'}</button>
-    <a className="main-button" href="/marketplace/buyer.html" onClick={() => { try { for (const store of [sessionStorage, localStorage]) { store.setItem('alusathi-role', 'buyer'); store.setItem('alusathi-demo', 'false'); } } catch { /* Session remains usable in this tab. */ } }}><Truck size={22} />{bn ? 'ব্যবসায়ী হিসেবে ঢুকুন' : 'Enter as businessman'}</a>
+    <p className="section-kicker">{bn ? 'আলুসাথী · প্রবেশ' : 'ALUSATHI · SIGN IN'}</p>
+    <h1>{bn ? 'কোন পরিচয়ে ঢুকবেন?' : 'Choose who to sign in as'}</h1>
+    <p>{bn ? 'কৃষক বা ব্যবসায়ী পরিচয় বেছে নিন। পাসওয়ার্ড লাগবে না।' : 'Choose farmer or businessman. No password needed.'}</p>
+    <button className="main-button" onClick={() => { setDemo(true); navigate('/farmer', { replace: true }); }}><Leaf size={22} />{bn ? 'কৃষক হিসেবে সাইন ইন করুন' : 'Sign in as farmer'}</button>
+    <a className="main-button" href="/marketplace/buyer.html" onClick={() => { try { for (const store of [sessionStorage, localStorage]) { store.setItem('alusathi-role', 'buyer'); store.setItem('alusathi-demo', 'false'); } } catch { /* Session remains usable in this tab. */ } }}><Truck size={22} />{bn ? 'ব্যবসায়ী হিসেবে সাইন ইন করুন' : 'Sign in as businessman'}</a>
   </section></main>;
 }

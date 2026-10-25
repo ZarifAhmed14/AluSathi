@@ -38,9 +38,9 @@ async function toggleLanguage(page) {
       await scanner.waitFor();
       if (viewport.width === 1440) {
         await toggleLanguage(page);
-        await scanner.getByText('Explore examples or add a photo').waitFor();
+        await scanner.getByText('Add a photo of your potato').waitFor();
       }
-      await scanner.getByRole('button', { name: /Enable scanner|স্ক্যানার চালু করুন/ }).click();
+      if (await scanner.getByRole('button', { name: /Enable scanner|স্ক্যানার চালু করুন/ }).count()) throw new Error('Scanner activation gate must be removed');
       const input = scanner.locator('input[type=file]');
       const button = scanner.getByRole('button', { name: /ছবি পরীক্ষা করুন|Check photo/ });
       if (await scanner.locator('input[type=checkbox]').count()) throw new Error('Scanner must not require an opt-in checkbox');

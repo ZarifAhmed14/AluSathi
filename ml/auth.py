@@ -6,6 +6,7 @@ import time
 import urllib.error
 import urllib.request
 import urllib.parse
+from urllib.parse import urlsplit
 from collections import defaultdict, deque
 from pathlib import Path
 from fastapi import APIRouter, HTTPException, Request
@@ -38,13 +39,13 @@ def call(path, data=None, token=None, method=None):
         raise HTTPException(429 if error.code == 429 else 400, code if code in allowed else "auth_failed") from None
     except (OSError, ValueError): raise HTTPException(503, "Account service unavailable") from None
 
-async def guard(request):
+async def guard(request, max_bytes=4096):
     if request.headers.get("origin") not in ORIGINS or request.headers.get("x-alusathi-request") != "1": raise HTTPException(403, "Request not allowed")
     if request.headers.get("content-type", "").split(";")[0] != "application/json": raise HTTPException(415, "JSON required")
     body = b""
     async for chunk in request.stream():
         body += chunk
-        if len(body) > 4096: raise HTTPException(413, "Request too large")
+        if len(body) > max_bytes: raise HTTPException(413, "Request too large")
     ip = request.client.host if request.client else "unknown"
     queue = attempts[ip]; now = time.monotonic()
     while queue and queue[0] < now - 60: queue.popleft()
@@ -64,6 +65,14 @@ def session_response(data, request):
     if data.get("refresh_token"):
         response.set_cookie("alusathi_refresh", data["refresh_token"], httponly=True, secure=request.headers.get("origin", "").startswith("https://"), samesite="strict", path="/api", max_age=30*86400)
     return response
+
+def safe_next(value):
+    if not isinstance(value, str) or len(value) > 300 or not value.startswith("/") or value.startswith("//") or "\\" in value:
+        return "/farmer"
+    parsed = urlsplit(value)
+    if parsed.scheme or parsed.netloc or any(ord(char) < 32 for char in value):
+        return "/farmer"
+    return value
 
 @router.post("/{action}")
 async def auth_action(action: str, request: Request):
@@ -90,10 +99,14 @@ async def auth_action(action: str, request: Request):
     if action == "signup":
         name = data.get("name", "")
         if not isinstance(name, str) or not 1 <= len(name.strip()) <= 80: raise HTTPException(400, "Invalid name")
-        await asyncio.to_thread(call, "signup?redirect_to=" + urllib.parse.quote(request.headers["origin"] + "/auth", safe=""), {"email": email, "password": password, "data": {"farmer_name": name.strip()}})
+        next_path = safe_next(data.get("next"))
+        redirect = request.headers["origin"] + "/account?" + urllib.parse.urlencode({"next": next_path})
+        await asyncio.to_thread(call, "signup?redirect_to=" + urllib.parse.quote(redirect, safe=""), {"email": email, "password": password, "data": {"farmer_name": name.strip()}})
         return {"sent": True}
     if action == "recover":
-        await asyncio.to_thread(call, "recover?redirect_to=" + urllib.parse.quote(request.headers["origin"] + "/auth", safe=""), {"email": email}); return {"sent": True}
+        next_path = safe_next(data.get("next"))
+        redirect = request.headers["origin"] + "/account?" + urllib.parse.urlencode({"next": next_path})
+        await asyncio.to_thread(call, "recover?redirect_to=" + urllib.parse.quote(redirect, safe=""), {"email": email}); return {"sent": True}
     if action == "exchange":
         refresh = data.get("refresh_token")
         if not isinstance(refresh, str) or not 1 <= len(refresh) <= 1024: raise HTTPException(400, "Invalid session")

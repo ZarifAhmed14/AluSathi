@@ -107,19 +107,13 @@ export default function PublicLanding() {
                 <span className="role-card-copy"><strong>{bn ? "আমি কৃষক" : "I’m a farmer"}</strong><small id="farmer-role-help">{bn ? "জমির যত্ন নিন, খাতা রাখুন, আলু বিক্রির তথ্য দিন।" : "Care for your field, keep records, and list potatoes for sale."}</small></span>
                 <ArrowRight size={19} />
               </Link>
-              <a className="button-primary hero-role-card" href={buyerPath} onClick={enterBuyerPage} aria-label={bn ? "আমি আলু কিনব" : "I want to buy potatoes"} aria-describedby="buyer-role-help">
+              <a className="button-primary hero-role-card" href={buyerPath} onClick={enterBuyerPage} aria-label={bn ? "আপনি Businessman হিসেবে আছেন" : "You’re here as a businessman"} aria-describedby="buyer-role-help">
                 <span className="role-card-icon"><UsersRound size={23} /></span>
-                <span className="role-card-copy"><strong>{bn ? "আমি আলু কিনব" : "I want to buy potatoes"}</strong><small id="buyer-role-help">{bn ? "লট খুঁজুন, আগাম দর দিন, কেনাকাটার হিসাব রাখুন।" : "Find lots, make early offers, and track purchase costs."}</small></span>
+                <span className="role-card-copy"><strong>{bn ? "আপনি Businessman হিসেবে আছেন" : "You’re here as a businessman"}</strong><small id="buyer-role-help">{bn ? "লট খুঁজুন, আগাম দর দিন, কেনাকাটার হিসাব রাখুন।" : "Find lots, make early offers, and track purchase costs."}</small></span>
                 <ArrowRight size={19} />
               </a>
             </div>
           </div>
-        </section>
-
-        <section className="journey-band trade-bridge" aria-label={bn ? "কৃষক ও ক্রেতার যাত্রা" : "Farmer and buyer journey"}>
-          <span>{bn ? "কৃষক লটের তথ্য দেন" : "Farmer lists a lot"}</span><ArrowRight aria-hidden="true" />
-          <span>{bn ? "ক্রেতা আগাম দর প্রস্তাব করেন" : "Buyer makes an early offer"}</span><ArrowRight aria-hidden="true" />
-          <span>{bn ? "শর্ত মিলিয়ে সংগ্রহের প্রস্তুতি" : "Agree on terms and prepare pickup"}</span>
         </section>
 
         <section className="business-section" id="business" aria-labelledby="business-title">

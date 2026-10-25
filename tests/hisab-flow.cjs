@@ -9,7 +9,7 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:4176';
   const page = await context.newPage(); const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   try {
-    await page.goto(`${base}/farmer#tools`);
+    await page.goto(`${base}/farmer#tools`, { waitUntil: 'domcontentloaded' });
     await page.locator('.hisab-estimate').waitFor();
     assert.equal(await page.locator('.hisab-picture details').count(), 3);
     assert.equal(await page.locator('.farmer-tools-page .care-library-card').count(), 0);

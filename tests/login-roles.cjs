@@ -17,7 +17,12 @@ assert.ok(vercel.rewrites.some(route => route.source === '/account' && route.des
         page.on('pageerror', error => errors.push(error.message));
         await page.goto(`${base}/auth`);
         await page.goto(`${base}/account`);
-        assert.match(await page.locator('.account-card h1').innerText(), language === 'bn' ? /জমির খাতা/ : /field notebook/);
+        await page.waitForURL(`${base}/auth`);
+        assert.match(await page.locator('.account-card h1').innerText(), language === 'bn' ? /কোন পরিচয়ে ঢুকবেন/ : /Choose who to sign in as/);
+        assert.equal(await page.locator('.account-card input[type="password"]').count(), 0, 'Demo must not show password login');
+        assert.equal(await page.locator('.account-card input[type="email"]').count(), 0, 'Demo must not show email login');
+        assert.equal(await page.locator('.account-card > .main-button').count(), 2);
+        assert.match(await page.locator('.account-card').innerText(), language === 'bn' ? /কৃষক হিসেবে সাইন ইন করুন[\s\S]*ব্যবসায়ী হিসেবে সাইন ইন করুন/ : /Sign in as farmer[\s\S]*Sign in as businessman/);
         await page.goto(`${base}/auth`);
         const bn = language === 'bn';
         const buttons = await page.locator('.account-card > .main-button').evaluateAll(elements => elements.map(element => ({ width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height, background: getComputedStyle(element).backgroundColor })));

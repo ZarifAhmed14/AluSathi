@@ -82,7 +82,7 @@ export default function ScanInsights({ results, weather, district, image, cropAg
     phone.trim() && `${bn ? "যোগাযোগ" : "Contact"}: ${phone.trim()}`, `${bn ? "ছবি" : "Photos"}: ${results.length}`, ...symptomLines,
     severity === null ? (bn ? "পাতার ক্ষতির পরিমাণ মাপা হয়নি।" : "Damaged area has not been measured.") : `${bn ? "চিহ্নিত পাতার ক্ষতি" : "Manually marked leaf damage"}: ${severity}%`,
     outlookText, bn ? "একই রকম দাগ পুষ্টির ঘাটতি, পোকার ক্ষতি বা অন্য রোগেও হয়।" : "Similar marks can come from nutrient stress, pests or other diseases.",
-    bn ? "এই রিপোর্ট নিশ্চিত রোগ নির্ণয় নয়। ওষুধ ব্যবহারের আগে কৃষি বিশেষজ্ঞের পরামর্শ নিন। ১৬১২৩।" : "This report is not a confirmed diagnosis. Confirm treatment with an agricultural expert. 16123."].filter(Boolean).join("\n\n");
+    bn ? "এই রিপোর্ট নিশ্চিত রোগ নির্ণয় নয়। ওষুধ ব্যবহারের আগে স্থানীয় কৃষি কর্মকর্তার পরামর্শ নিন।" : "This report is not a confirmed diagnosis. Confirm treatment with a local agricultural officer."].filter(Boolean).join("\n\n");
   async function share() {
     try {
       if (navigator.share) {
@@ -109,7 +109,7 @@ export default function ScanInsights({ results, weather, district, image, cropAg
     {image && <SeverityMeasure image={image} onMeasure={setSeverity} />}
     {severity !== null && <p className="tool-result" role="status">{bn ? "আপনার চিহ্নিত পাতার" : "Of your outlined leaf,"} {severity}% {bn ? "অংশে দাগ চিহ্নিত হয়েছে।" : "is marked as damaged."}</p>}
     <article className="spread-outlook"><CloudRain /><div><h3>{bn ? "আবহাওয়ায় রোগের ঝুঁকি" : "Disease-favouring weather"}</h3><p>{outlookText}</p><small>{bn ? "নাবি ধসার Hutton আবহাওয়া-নিয়ম; বাংলাদেশের মাঠে যাচাই হয়নি। এটি রোগ নির্ণয় বা ছড়ানোর শতাংশ নয়।" : "Hutton late-blight weather rule; not validated for Bangladesh fields. It is neither a diagnosis nor a probability."} <a href="https://potatoes.ahdb.org.uk/development-and-implementation-of-a-new-national-warning-system-for-potato-late-blight-in-great-britain-hutton-criteria" target="_blank" rel="noreferrer">AHDB</a></small></div></article>
-    <p>{bn ? "ছবি ও উত্তর স্থানীয় কৃষি কর্মকর্তাকে পাঠান। জরুরি পরামর্শের জন্য ১৬১২৩-এ কল করুন।" : "Share the photo and answers with a local agricultural officer. Call 16123 for advice."}</p><a className="expert-call" href="tel:16123">{bn ? "কৃষি পরামর্শ · ১৬১২৩" : "Agricultural advice · 16123"}</a>
+    <p>{bn ? "ছবি ও উত্তর স্থানীয় কৃষি কর্মকর্তাকে পাঠান।" : "Share the photo and answers with a local agricultural officer."}</p>
     <div className="report-actions"><button className="secondary-main" onClick={share}><Share2 size={18} />{bn ? "রিপোর্ট পাঠান" : "Share report"}</button><button className="secondary-main" onClick={() => window.print()}><Printer size={18} />{bn ? "PDF / প্রিন্ট" : "PDF / print"}</button><button className="text-button" onClick={() => downloadFile("AluSathi-report.txt", report)}>{bn ? "ডাউনলোড" : "Download"}</button></div>
     {shareError && <p role="alert">{shareError}</p>}
     <section id="farmer-report" aria-label="Printable farmer report"><h1>আলুসাথী · AluSathi</h1><pre>{report}</pre></section>

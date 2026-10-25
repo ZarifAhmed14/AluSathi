@@ -5,7 +5,7 @@ import { disablePush } from '@/lib/push';
 
 interface AuthContextType {
   configured: boolean; user: User | null; loading: boolean; recovering: boolean;
-  signUp: (email: string, password: string, name: string) => Promise<{error: Error | null}>;
+  signUp: (email: string, password: string, name: string, next?: string) => Promise<{error: Error | null}>;
   signIn: (email: string, password: string) => Promise<{error: Error | null}>;
   signOut: () => Promise<void>; finishRecovery: () => void;
 }
@@ -32,7 +32,7 @@ export function AuthProvider({ children }: {children: ReactNode}) {
         const token = initial ? fragment.get('refresh_token') : null;
         if (token) {
           setRecovering(fragment.get('type') === 'recovery');
-          window.history.replaceState(null, '', '/account');
+          window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
         }
         const data = await accountRequest(token ? 'exchange' : 'session', token ? {refresh_token: token} : {});
         if (active && version === sessionVersion.current) accept(data);
@@ -58,7 +58,7 @@ export function AuthProvider({ children }: {children: ReactNode}) {
   }
   return <AuthContext.Provider value={{configured, user, loading, recovering, finishRecovery: () => setRecovering(false),
     signIn: (email, password) => submit('signin', {email, password}),
-    signUp: (email, password, name) => submit('signup', {email, password, name}), signOut}}>{children}</AuthContext.Provider>;
+    signUp: (email, password, name, next) => submit('signup', {email, password, name, next}), signOut}}>{children}</AuthContext.Provider>;
 }
 export function useAuth() {
   const value = useContext(AuthContext);

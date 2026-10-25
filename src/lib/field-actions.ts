@@ -2,9 +2,12 @@ export type FieldAction = {
   id: string; date: string; text: string; district: string; kind: "task" | "observation";
   category?: "photo" | "fertilizer" | "spray" | "field";
   status?: string; details?: string; variety?: string; cropAge?: string;
+  cause?: string; advice?: "healthy" | "observe" | "late-blight" | "fusarium-wilt" | "leaf-roll-vector"; title?: string; body?: string; image?: string;
+  nextDueDate?: string;
 };
 
 export const FIELD_ACTIONS_KEY = "alusathi-field-actions-v1";
+export const FIELD_ACTIONS_EVENT = "alusathi-field-actions-changed";
 
 export function readFieldActions(): FieldAction[] {
   try {
@@ -17,4 +20,5 @@ export function readFieldActions(): FieldAction[] {
 
 export function saveFieldActions(actions: FieldAction[]): void {
   localStorage.setItem(FIELD_ACTIONS_KEY, JSON.stringify(actions));
+  window.dispatchEvent(new Event(FIELD_ACTIONS_EVENT));
 }

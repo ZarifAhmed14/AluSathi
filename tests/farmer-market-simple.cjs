@@ -1,0 +1,78 @@
+const assert = require("node:assert/strict");
+const path = require("node:path");
+const { chromium } = require("playwright");
+const base = process.env.BASE_URL || "http://127.0.0.1:4176";
+
+(async () => {
+  const browser = await chromium.launch();
+  try {
+    for (const width of [1440, 390]) {
+      const context = await browser.newContext({ viewport: { width, height: 900 }, serviceWorkers: "block" });
+      await context.addInitScript(() => { sessionStorage.setItem("alusathi-demo", "true"); sessionStorage.setItem("alusathi-role", "farmer"); });
+      const page = await context.newPage();
+      const errors = [];
+      page.on("pageerror", error => errors.push(error.message));
+      await page.goto(`${base}/farmer#market`);
+      await page.getByRole("heading", { name: "বাজারে দিন" }).waitFor();
+      await page.screenshot({ path: `artifacts/farmer-market-simple-${width}.png`, fullPage: true });
+      assert.equal(await page.locator(".farmer-market-photo-grid button").count(), 3);
+      await page.locator(".farmer-market-fields input").nth(0).fill("200");
+      await page.locator(".farmer-market-fields input").nth(1).fill("22");
+      await page.getByRole("button", { name: "বাজারে ছাড়ুন" }).dblclick();
+      await page.getByText("সফলভাবে বাজারে দেওয়া হয়েছে").waitFor();
+      const lots = await page.evaluate(() => JSON.parse(localStorage.getItem("alusathi-farmer-demo-lots-v1") || "[]"));
+      assert.equal(lots.length, 1);
+      assert.equal(lots[0].photos.length, 3);
+      assert.equal(lots[0].askingPriceMin, lots[0].askingPriceMax);
+      await page.getByRole("button", { name: /প্রোফাইল/ }).first().click();
+      await page.getByRole("button", { name: "বিক্রির ইতিহাস" }).click();
+      assert.match(await page.locator(".farmer-profile-history").innerText(), /২০০.*২২/);
+      assert.match(await page.locator(".farmer-profile-history").innerText(), /এখনো সম্পন্ন বিক্রি নেই/);
+      await page.getByRole("link", { name: "লট দেখুন" }).click();
+      await page.getByText("নিজের লট কেনা যাবে না").waitFor();
+      assert.equal(await page.locator("#catalogue-request-form").count(), 0);
+      assert.equal(await page.evaluate(() => sessionStorage.getItem("alusathi-role")), "farmer");
+      await page.reload();
+      assert.equal(await page.locator("[data-gallery-slide]").count(), 3);
+      await page.goto(`${base}/farmer#market`);
+      await page.getByRole("button", { name: /প্রোফাইল/ }).first().click();
+      await page.getByRole("button", { name: "বিক্রির ইতিহাস" }).click();
+      assert.equal(await page.locator(".farmer-profile-listing").count(), 1);
+      await page.evaluate(lotId => localStorage.setItem("alusathi-marketplace-pilot-v1", JSON.stringify({ deals: [{ id: "not-finished", lotId, status: "collected", quantityKg: 200, agreedTotal: 4400 }] })), lots[0].id);
+      await page.reload();
+      await page.getByRole("button", { name: /প্রোফাইল/ }).first().click();
+      await page.getByRole("button", { name: "বিক্রির ইতিহাস" }).click();
+      assert.match(await page.locator(".farmer-profile-history").innerText(), /এখনো সম্পন্ন বিক্রি নেই/);
+      await page.evaluate(lotId => localStorage.setItem("alusathi-marketplace-pilot-v1", JSON.stringify({ deals: [{ id: "finished", lotId, status: "paid", quantityKg: 200, agreedTotal: 4400 }] })), lots[0].id);
+      await page.reload();
+      await page.getByRole("button", { name: /প্রোফাইল/ }).first().click();
+      await page.getByRole("button", { name: "বিক্রির ইতিহাস" }).click();
+      assert.equal(await page.locator(".farmer-profile-history .farmer-profile-request").count(), 1);
+      await page.getByRole("button", { name: "বন্ধ করুন" }).click();
+      await page.locator(".farmer-more summary").click();
+      await page.getByRole("button", { name: "English" }).click();
+      await page.getByRole("heading", { name: "List your potatoes" }).waitFor();
+      await page.locator(".farmer-market-fields input").nth(0).fill("120");
+      await page.locator(".farmer-market-fields input").nth(1).fill("20");
+      await page.locator(".farmer-market-upload input").setInputFiles([{ name: "bad.jpg", mimeType: "image/jpeg", buffer: Buffer.from("not an image") }, { name: "bad2.jpg", mimeType: "image/jpeg", buffer: Buffer.from("not an image") }, { name: "bad3.jpg", mimeType: "image/jpeg", buffer: Buffer.from("not an image") }]);
+      await page.getByRole("button", { name: "List potatoes" }).click();
+      await page.getByText("The selected file is not a valid image.").waitFor();
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("alusathi-farmer-demo-lots-v1")).length), 1);
+      const image = path.join(__dirname, "../public/marketplace/demo-lots/potato-01.webp");
+      await page.locator(".farmer-market-upload input").setInputFiles([image, image, image]);
+      await page.getByRole("button", { name: "List potatoes" }).click();
+      await page.getByText("Successfully listed").waitFor();
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("alusathi-farmer-demo-lots-v1")).length), 2);
+      const buyer = await context.newPage();
+      await buyer.goto(`${base}/marketplace/buyer.html#home`);
+      await buyer.locator(`[data-action="open-buyer-lot"][data-id="${lots[0].id}"]`).first().waitFor();
+      await buyer.close();
+      await page.waitForTimeout(700);
+      await page.getByRole("button", { name: "Add another lot" }).click();
+      assert.equal(await page.locator(".farmer-market-fields input").nth(0).inputValue(), "");
+      assert.deepEqual(errors, []);
+      await context.close();
+    }
+    console.log("farmer market simple flow passed");
+  } finally { await browser.close(); }
+})().catch(error => { console.error(error); process.exitCode = 1; });

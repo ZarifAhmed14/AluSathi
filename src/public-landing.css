@@ -79,9 +79,6 @@
 @keyframes birds-cross { from { transform: translateX(-170px); } to { transform: translateX(calc(100vw + 210px)); } }
 @keyframes sprig-sway { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
 
-.journey-band { display: flex; width: min(100% - 48px, 1180px); min-height: 104px; align-items: center; justify-content: center; gap: clamp(22px, 5vw, 74px); margin: -1px auto 0; border: 1px solid #d4e4dd; border-radius: 0 0 24px 24px; background: #fff; box-shadow: 0 12px 28px rgb(21 66 47 / 7%); }
-.trade-bridge { gap: clamp(14px, 3vw, 38px); padding: 16px 24px; color: #214c39; font-size: 16px; font-weight: 750; text-align: center; }
-.trade-bridge > svg { width: 18px; flex: none; color: #789c87; }
 .journey-step { display: flex; align-items: center; gap: 13px; font-size: 17px; font-weight: 700; }
 .journey-illustration { display: grid; width: 52px; height: 52px; place-items: center; border-radius: 50%; background: #e2f1e5; color: #236744; }
 .journey-illustration svg { width: 27px; height: 27px; stroke-width: 2.2; }
@@ -181,9 +178,6 @@
   .public-landing .button-primary, .public-landing .button-secondary { min-height: 52px; gap: 8px; border-radius: 13px; padding: 10px 14px; font-size: 16px; }
   .hero-birds { top: auto; bottom: 170px; width: 112px; }
   .hero-sprig { right: 3%; bottom: 18px; width: 70px; }
-  .journey-band { width: min(100% - 28px, 1180px); min-height: 94px; gap: clamp(6px, 2vw, 14px); padding: 12px; border-radius: 0 0 18px 18px; }
-  .trade-bridge { gap: 7px; padding: 12px 9px; font-size: 11px; line-height: 1.4; }
-  .trade-bridge > svg { width: 13px; }
   .journey-step { flex-direction: column; gap: 3px; text-align: center; font-size: 11px; line-height: 1.25; }
   .journey-illustration { width: 38px; height: 38px; }
   .journey-illustration svg { width: 21px; height: 21px; }

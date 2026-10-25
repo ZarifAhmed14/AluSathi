@@ -6,9 +6,9 @@ import {useDemo} from "@/contexts/DemoContext";
 import {Navigate} from "react-router-dom";
 
 export default function Index({ farmerHome = false }: { farmerHome?: boolean }) {
-  const {user}=useAuth();
+  const {user, loading}=useAuth();
   const {demo}=useDemo();
-  if (farmerHome && !user && !demo) return <Navigate to="/auth" replace />;
+  if (farmerHome && !loading && !user && !demo) return <Navigate to="/auth" replace />;
   return (
     <>
       <Helmet>

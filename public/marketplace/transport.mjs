@@ -40,7 +40,7 @@ try {
   if (Array.isArray(saved)) quotes = saved.filter(q => q && typeof q.id === "string" && typeof q.lotId === "string" && q.input && transportCost(q.input) && transportPlaces[q.input.from] && transportPlaces[q.input.to] && ["operator", "phone", "notes", "pickupDate"].every(key => typeof q.input[key] === "string") && ["fromPoint", "toPoint"].every(key => q.input[key] == null || inBangladesh(q.input[key]))).slice(0, 50);
 } catch { /* A broken local record cannot block transport planning. */ }
 
-function loadLeaflet() {
+export function loadLeaflet() {
   if (window.L) return Promise.resolve(window.L);
   if (leafletPromise) return leafletPromise;
   leafletPromise = new Promise((resolve, reject) => {

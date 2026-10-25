@@ -18,29 +18,45 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:4175';
       await page.waitForURL(`${base}/farmer`);
       assert.equal(await page.locator('#cold-storage').count(), 0);
 
-      if (width < 1024) await page.getByRole('button', { name: 'Open menu' }).click();
-      await page.getByRole('navigation', { name: width < 1024 ? 'Mobile navigation' : 'Primary navigation' })
-        .getByRole('link', { name: 'বিক্রির প্রস্তুতি' }).click();
-      await page.waitForURL(`${base}/selling-preparation`);
-      await page.getByRole('heading', { name: 'বিক্রির প্রস্তুতি', level: 1 }).waitFor();
+      await page.goto(`${base}/selling-preparation`);
+      await page.getByRole('heading', { name: 'বিক্রির আগে', level: 1 }).waitFor();
       const section = page.locator('#cold-storage');
+      assert.equal(await section.count(), 0);
+      assert.equal(await page.getByRole('heading', { name: 'আপনার এলাকার ক্রেতারা' }).count(), 0);
+      await page.getByRole('button', { name: 'ক্রেতার দর ও উত্তর দেখুন' }).click();
+      await page.getByRole('status').filter({ hasText: 'ক্রেতার চাহিদা খুঁজছি' }).waitFor();
+      await page.getByRole('heading', { name: 'আপনার এলাকার ক্রেতারা' }).waitFor();
+      await page.getByRole('status').filter({ hasText: 'ক্রেতার চাহিদা খুঁজছি' }).waitFor({ state: 'detached' });
+      assert.match(await page.locator('.selling-request-card').innerText(), /রহিম ট্রেডার্স[\s\S]*২০০ কেজি[\s\S]*৪,০০০/);
+      await page.getByRole('button', { name: 'হিসাব খুলুন' }).click();
+      const estimate = page.getByRole('dialog', { name: 'সম্ভাব্য লাভ–লোকসান' });
+      await estimate.waitFor();
+      await estimate.getByLabel('এই ২০০ কেজির মোট খরচ').fill('3500');
+      assert.match(await estimate.innerText(), /৳৫০০/);
+      await estimate.getByRole('button', { name: 'বন্ধ করুন' }).click();
+      await page.getByRole('button', { name: 'ক্রেতার তালিকা বন্ধ করুন' }).click();
+      assert.equal(await page.getByRole('heading', { name: 'আপনার এলাকার ক্রেতারা' }).count(), 0);
+      assert.equal(await page.locator('.selling-route-teaser, .selling-intent').count(), 0);
+      assert.equal(await page.getByText('ফোনে আগে জেনে নিন').count(), 0);
+      await page.getByRole('button', { name: 'হিমাগার খুঁজুন' }).click();
+      await page.getByRole('status').filter({ hasText: 'হিমাগারের যোগাযোগ খুঁজছি' }).waitFor();
       await section.getByRole('heading', { name: 'হিমাগারে সরাসরি ফোন করুন' }).waitFor();
-      assert.equal(await section.getByRole('link', { name: 'ফোন করুন' }).count(), 3);
-      for (const href of await section.getByRole('link', { name: 'ফোন করুন' }).evaluateAll(links => links.map(link => link.getAttribute('href')))) {
+      await page.getByRole('status').filter({ hasText: 'হিমাগারের যোগাযোগ খুঁজছি' }).waitFor({ state: 'detached' });
+      const phoneLinks = section.getByRole('link', { name: 'ফোন করুন' });
+      assert.ok((await phoneLinks.count()) <= 20);
+      for (const href of await phoneLinks.evaluateAll(links => links.map(link => link.getAttribute('href')))) {
         assert.match(href, /^tel:\+?[\d]+$/);
       }
-      await page.getByRole('button', { name: 'Change language' }).click();
-      await page.getByRole('heading', { name: 'Prepare to sell', level: 1 }).waitFor();
+      await page.getByText('আরও', { exact: true }).click();
+      await page.getByRole('button', { name: 'English' }).click();
+      await page.getByRole('heading', { name: 'Before selling', level: 1 }).waitFor();
       await section.getByRole('heading', { name: 'Call a cold store directly' }).waitFor();
+      assert.equal(await page.getByText('Ask before you pay').count(), 0);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
       await page.screenshot({ path: `test-results/cold-storage-${width}.png`, fullPage: true });
-      await page.getByRole('link', { name: 'Back to my page' }).click();
-      await page.waitForURL(`${base}/farmer`);
-      await page.goto(`${base}/cold-storage`);
-      await page.waitForURL(`${base}/selling-preparation`);
       assert.deepEqual(errors, []);
       await context.close();
     }
-    console.log('Cold storage separate route, links, languages and layouts passed');
+    console.log('Before-selling requests, estimate dialog, cold-storage disclosure, languages and layouts passed');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

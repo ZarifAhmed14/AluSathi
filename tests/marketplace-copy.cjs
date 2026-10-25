@@ -9,7 +9,7 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:4175';
       const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
       await context.addInitScript(lang => localStorage.setItem('alusathi-lang', lang), language);
       const page = await context.newPage();
-      const check = async () => assert.doesNotMatch(await page.locator('body').innerText(), /ডেমো|\bdemo\b/i, `${language}: ${page.url()}`);
+      const check = async () => assert.doesNotMatch(await page.locator('body').innerText(), /ডেমো|নমুনা|\b(?:demo|sample|not real)\b/i, `${language}: ${page.url()}`);
       for (const path of ['/auth']) {
         await page.goto(`${base}${path}`);
         await check();
@@ -26,6 +26,6 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:4175';
       }
       await context.close();
     }
-    console.log('Visible role and marketplace copy has no repeated demo wording in BN/EN.');
+    console.log('Visible role and marketplace copy is free of presentation-only labels in BN/EN.');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -7,6 +7,7 @@
       { "key": "X-Content-Type-Options", "value": "nosniff" },
       { "key": "Permissions-Policy", "value": "camera=(self), microphone=(self), geolocation=(self)" }
     ] },
+    { "source": "/api/(.*)", "headers": [{ "key": "Cache-Control", "value": "no-store" }] },
     { "source": "/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
   ],
   "rewrites": [

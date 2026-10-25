@@ -1,8 +1,8 @@
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   AlertTriangle, ArrowLeft, ArrowRight, Calculator, Camera, Check, ChevronDown, CloudRain, Eye, Sun, Cloud,
   CloudLightning, Flame, Globe2, History, Leaf, Loader2, MapPin,
-  Menu, Minus, PhoneCall, RefreshCw, ScanLine, ShieldCheck, Snowflake,
+  Menu, Minus, RefreshCw, ScanLine, Snowflake,
   Sprout, Store, Trash2, WifiOff, Wind, X,
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -13,6 +13,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import FarmerTools from "@/components/FarmerTools";
 import FarmerNavigation from "@/components/FarmerNavigation";
+import FarmerMarket from "@/components/FarmerMarket";
 import FarmerToday from "@/components/FarmerToday";
 import { useDemo } from "@/contexts/DemoContext";
 import { deleteRecord, readRecords, writeRecord } from "@/lib/farmer-records";
@@ -21,9 +22,9 @@ import { cropAge } from "@/lib/crop-advice";
 import { localToday } from "@/lib/local-date";
 import { spreadOutlook } from "@/lib/farmer-tools";
 import { DISTRICT_NAMES } from "@/lib/district-names";
-import { readFieldActions, saveFieldActions, type FieldAction } from "@/lib/field-actions";
+import { FIELD_ACTIONS_EVENT, readFieldActions, saveFieldActions, type FieldAction } from "@/lib/field-actions";
 import { LEDGER_EVENT, readLedger, saveLedger, syncLedger, type ExpenseCategory, type FarmExpense, type FarmLedgerEntry } from "@/lib/farm-ledger";
-import { PHOTO_DEMO_CASES } from "@/lib/photo-demo-cases";
+import { PHOTO_DEMO_ADVICE, PHOTO_DEMO_CASES } from "@/lib/photo-demo-cases";
 
 const TuberScan = lazy(() => import("@/components/TuberScan"));
 
@@ -90,7 +91,6 @@ const COPY = {
     why: "আলুসাথী কেন এমন বলল?", confidence: "AI-এর মিল", limitations: "এই ফল সহায়তার জন্য। নিশ্চিত রোগ নির্ণয় নয়।",
     fieldValidationPending: "মাঠের পরীক্ষায় AI এখনো যথেষ্ট নির্ভরযোগ্য নয়। আরও ছবি তথ্য দিতে পারে, কিন্তু এই নিরাপত্তার সীমা বা রোগ নিশ্চিত করতে পারে না।",
     photoProblem: "ছবিটি আরেকবার তুলুন", tooDark: "ছবিতে আলো কম ছিল।", tooBright: "ছবিতে আলো বেশি ছিল।", lowContrast: "পাতাটি পরিষ্কার বোঝা যায়নি।",
-    callExpert: "কৃষি বিশেষজ্ঞকে কল করুন", callCharge: "১৬১২৩ · চার্জ প্রযোজ্য",
     listen: "শুনুন", stop: "বন্ধ করুন", newScan: "নতুন ছবি", offlineResult: "এই ফোনেই AI পরীক্ষা হয়েছে",
     diaryKicker: "রোগের অগ্রগতি", diaryTitle: "আগের ফলের সাথে তুলনা",
     diaryBody: "একই জমি আবার পরীক্ষা করলে উন্নতি হচ্ছে, একই আছে নাকি ঝুঁকি বাড়ছে তা দেখা যাবে।",
@@ -108,7 +108,7 @@ const COPY = {
     aboutTitle: "এই AI সম্পর্কে",
     aboutBody: "১৩,৮০০টি আলাদা আঞ্চলিক ছবির পরীক্ষায় এই AI প্রতি ১০০টির মধ্যে প্রায় ৫১টি ঠিক চিনেছে। তাই এটি এখন শুধু গবেষণার জন্য; কৃষকের রোগ নির্ণয়ের জন্য নয়।",
     modelReady: "AI প্রস্তুত", modelResearch: "গবেষণা পর্যায়", modelMissing: "AI সংযোগ নেই", modelVersion: "মডেল", regionalTest: "আঞ্চলিক পরীক্ষা",
-    privacy: "এখন আপনার ছবি AI প্রশিক্ষণে ব্যবহার করা হয় না।", footer: "আলুসাথী · কৃষকের সিদ্ধান্ত, AI-এর সহায়তা",
+    footer: "আলুসাথী · কৃষকের সিদ্ধান্ত, AI-এর সহায়তা",
   },
   en: {
     brandLine: "Understand potato disease, simply",
@@ -146,7 +146,6 @@ const COPY = {
     why: "Why did AluSathi say this?", confidence: "AI match", limitations: "This result supports decisions. It is not a confirmed diagnosis.",
     fieldValidationPending: "Field testing shows that this AI is not reliable enough yet. More photos can add evidence, but they cannot remove this safety limit or confirm a disease.",
     photoProblem: "Take the photograph again", tooDark: "The photograph was too dark.", tooBright: "The photograph was too bright.", lowContrast: "The leaf was not clear enough.",
-    callExpert: "Call an agricultural expert", callCharge: "16123 · charges apply",
     listen: "Listen", stop: "Stop", newScan: "New scan", offlineResult: "AI checked this on your phone",
     diaryKicker: "Disease progress", diaryTitle: "Compare past checks", diaryBody: "Check the same field again to see if it looks better, the same, or worse.",
     emptyDiary: "No checks saved yet", emptyDiaryBody: "Your first completed check will appear here.",
@@ -163,7 +162,7 @@ const COPY = {
     aboutTitle: "About this AI",
     aboutBody: "On 13,800 separate regional images, this AI identified about 51 in every 100 correctly. It is therefore research-only, not ready for farmer diagnosis.",
     modelReady: "AI ready", modelResearch: "Research stage", modelMissing: "AI disconnected", modelVersion: "Model", regionalTest: "Regional test",
-    privacy: "Your photos are not used for AI training in this version.", footer: "AluSathi · Farmer decisions, assisted by AI",
+    footer: "AluSathi · Farmer decisions, assisted by AI",
   },
 } as const;
 
@@ -300,9 +299,7 @@ export default function AluSathiDashboard({ farmerHome = false }: { farmerHome?:
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [blurWarning, setBlurWarning] = useState(false);
-  const [todayDemoResult, setTodayDemoResult] = useState<typeof PHOTO_DEMO_CASES[number] | null>(null);
   const [farmerView, setFarmerView] = useState(() => window.location.hash.slice(1) || "today");
-  const [tuberConsent, setTuberConsent] = useState(false);
   const location = useLocation();
   useEffect(() => {
     if (!farmerHome) return;
@@ -317,6 +314,7 @@ export default function AluSathiDashboard({ farmerHome = false }: { farmerHome?:
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [diary, setDiary] = useState<DiaryEntry[]>(() => readDiary());
+  const [fieldActions, setFieldActions] = useState<FieldAction[]>(readFieldActions);
   const [ledger, setLedger] = useState<FarmLedgerEntry[]>(() => readLedger(user?.id));
   const [activeDiaryId, setActiveDiaryId] = useState<string>();
   const [cloudMessage, setCloudMessage] = useState("");
@@ -344,6 +342,12 @@ export default function AluSathiDashboard({ farmerHome = false }: { farmerHome?:
   }, [user, diaryKey, language]);
 
   useEffect(() => {
+    const refresh = () => setFieldActions(readFieldActions());
+    window.addEventListener(FIELD_ACTIONS_EVENT, refresh); window.addEventListener("storage", refresh);
+    return () => { window.removeEventListener(FIELD_ACTIONS_EVENT, refresh); window.removeEventListener("storage", refresh); };
+  }, []);
+
+  useEffect(() => {
     const refresh = () => setLedger(readLedger(user?.id));
     refresh(); window.addEventListener(LEDGER_EVENT, refresh); window.addEventListener("storage", refresh);
     if (user) {
@@ -360,6 +364,7 @@ export default function AluSathiDashboard({ farmerHome = false }: { farmerHome?:
   const [notebookTab, setNotebookTab] = useState<"work" | "expenses">("work");
   const [expenseCategory, setExpenseCategory] = useState<ExpenseCategory>("seed");
   const [expenseAmount, setExpenseAmount] = useState(""); const [expenseDate, setExpenseDate] = useState(localToday()); const [expenseNote, setExpenseNote] = useState(""); const [expenseMessage, setExpenseMessage] = useState("");
+  const [editingExpenseId, setEditingExpenseId] = useState<string>();
   const [followUpOf, setFollowUpOf] = useState<string | undefined>();
   const landingRef = useRef<HTMLDivElement>(null);
   const syncingRef = useRef(false);
@@ -459,18 +464,18 @@ export default function AluSathiDashboard({ farmerHome = false }: { farmerHome?:
     if (!farmerHome) requestAnimationFrame(() => document.getElementById("scan")?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }
 
-  function showDemoInToday(demo: typeof PHOTO_DEMO_CASES[number]) {
-    const profile = demo[language];
+  function showDemoInToday(demoPhoto: typeof PHOTO_DEMO_CASES[number]) {
+    const profile = demoPhoto[language];
+    const advice = PHOTO_DEMO_ADVICE[demoPhoto.id];
     const entry: FieldAction = {
-      id: `demo-${demo.id}-${localToday()}`, date: localToday(), district, kind: "observation", category: "photo",
+      id: `demo-${demoPhoto.id}-${localToday()}`, date: localToday(), district, kind: "observation", category: "photo",
       text: `${language === "bn" ? "ছবি পরীক্ষা" : "Photo check"} · ${profile.variety}`,
-      status: profile.health, details: profile.action, variety: profile.variety, cropAge: profile.age,
+      status: profile.health, details: profile.action, variety: profile.variety, cropAge: profile.age, title: profile.title, body: profile.body, image: demoPhoto.image,
+      cause: `${profile.title}. ${profile.body}`, advice,
     };
     saveFieldActions([entry, ...readFieldActions().filter(item => item.id !== entry.id)].slice(0, 100));
-    setTodayDemoResult(demo);
     setFarmerView("today");
-    if (window.location.hash) window.location.hash = "";
-    else window.scrollTo({ top: 0, behavior: "instant" });
+    window.location.hash = "";
   }
 
   function chooseFile(next?: File) {
@@ -563,7 +568,7 @@ export default function AluSathiDashboard({ farmerHome = false }: { farmerHome?:
   const marketHref = dashboardAccess ? "/marketplace/farmer.html" : "/marketplace/";
   const timeline = [
     ...diary.map((entry): TimelineEntry => ({ type: "scan", createdAt: entry.createdAt, entry })),
-    ...readFieldActions().map((entry): TimelineEntry => ({ type: "action", createdAt: `${entry.date}T12:00:00`, entry })),
+    ...fieldActions.map((entry): TimelineEntry => ({ type: "action", createdAt: `${entry.date}T12:00:00`, entry })),
     ...ledger.map((entry): TimelineEntry => ({ type: "ledger", createdAt: `${entry.date}T12:00:00`, entry })),
   ].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt)).slice(0, 100);
 
@@ -579,11 +584,17 @@ export default function AluSathiDashboard({ farmerHome = false }: { farmerHome?:
   function addNotebookExpense(event: React.FormEvent) {
     event.preventDefault(); const amount = Number(expenseAmount);
     if (!Number.isFinite(amount) || amount <= 0 || amount > 1e9 || !/^\d{4}-\d{2}-\d{2}$/.test(expenseDate)) { setExpenseMessage(language === "bn" ? "তারিখ ও খরচ ঠিক করে লিখুন।" : "Check the date and amount."); return; }
-    const entry: FarmExpense = { type: "expense", id: crypto.randomUUID(), date: expenseDate, category: expenseCategory, amount, note: expenseNote.trim().slice(0, 120) };
-    try { saveLedger(entry, user?.id); setExpenseAmount(""); setExpenseNote(""); setExpenseMessage(language === "bn" ? "খরচ খাতায় রাখা হয়েছে।" : "Expense recorded in Notebook."); }
+    const entry: FarmExpense = { type: "expense", id: editingExpenseId || crypto.randomUUID(), date: expenseDate, category: expenseCategory, amount, note: expenseNote.trim().slice(0, 120) };
+    try { saveLedger(entry, user?.id); setExpenseAmount(""); setExpenseNote(""); setEditingExpenseId(undefined); setExpenseMessage(language === "bn" ? (editingExpenseId ? "পরিবর্তন রাখা হয়েছে।" : "খরচ খাতায় রাখা হয়েছে।") : (editingExpenseId ? "Changes saved." : "Expense recorded in Notebook.")); }
     catch { setExpenseMessage(language === "bn" ? "খরচ সেভ হয়নি। আবার চেষ্টা করুন।" : "Could not save the expense. Please retry."); }
   }
-
+  function editNotebookExpense(entry: FarmExpense) {
+    setNotebookTab("expenses"); setEditingExpenseId(entry.id); setExpenseCategory(entry.category); setExpenseAmount(String(entry.amount)); setExpenseDate(entry.date); setExpenseNote(entry.note); setExpenseMessage("");
+    requestAnimationFrame(() => document.querySelector(".notebook-expense-form")?.scrollIntoView({ behavior: "smooth", block: "center" }));
+  }
+  function cancelExpenseEdit() {
+    setEditingExpenseId(undefined); setExpenseAmount(""); setExpenseNote(""); setExpenseDate(localToday()); setExpenseMessage("");
+  }
   return <div ref={landingRef} className={`${language === "bn" ? "font-bangla" : ""} ${farmerHome ? "farmer-v2" : "landing-motion"}`} data-view={farmerView}>
     <a href="#main" className="skip-link">{language === "bn" ? "মূল অংশে যান" : "Skip to content"}</a>
     {farmerHome ? <FarmerNavigation active={farmerView} /> : <header className={`site-header ${activeRole ? "signed-in" : ""}`}>
@@ -618,7 +629,8 @@ export default function AluSathiDashboard({ farmerHome = false }: { farmerHome?:
         </section>
       </div>}
 
-      {farmerHome && <div hidden={farmerView !== "today"}><FarmerToday weather={weather} loading={weatherLoading} district={district} districts={districtOptions} plantingDate={plantingDate} onPhoto={() => { window.location.hash = "photos"; setFarmerView("photos"); }} demoResult={todayDemoResult} onClearDemo={() => setTodayDemoResult(null)} lastCheckin={diary[0] ? { createdAt: diary[0].createdAt, thumbnails: (diary[0].thumbnails || []).filter(src => /^data:image\/jpeg;base64,/.test(src)) } : undefined} /></div>}
+      {farmerHome && <div hidden={farmerView !== "today"}><FarmerToday active={farmerView === "today"} weather={weather} loading={weatherLoading} district={district} districts={districtOptions} plantingDate={plantingDate} onPhoto={() => { window.location.hash = "photos"; setFarmerView("photos"); }} /></div>}
+      {farmerHome && farmerView === "market" && <FarmerMarket district={district} />}
 
       {farmerHome && <section hidden={farmerView !== "settings"} className="app-shell farmer-settings"><p className="section-kicker">{language === "bn" ? "সেটিংস" : "SETTINGS"}</p><h1>{language === "bn" ? "জেলা ও চাষের সময়" : "District and planting time"}</h1><p>{language === "bn" ? "এগুলো একবার ঠিক করলে আজকের কাজ ও আবহাওয়া সেই অনুযায়ী দেখাবে।" : "Set these once to tailor today's work and weather."}</p><div><label>{language === "bn" ? "জেলা" : "District"}<select value={district} onChange={event => setDistrict(event.target.value)}>{Object.entries(districtOptions).map(([id, name]) => <option key={id} value={id}>{language === "bn" ? name : id}</option>)}</select></label><label>{language === "bn" ? "লাগানোর সঠিক তারিখ (ঐচ্ছিক)" : "Exact planting date (optional)"}<input type="date" value={plantingDate} max={localToday()} onChange={event => { setPlantingDate(event.target.value); localStorage.setItem("alusathi-planting-date", event.target.value); }} /></label></div></section>}
 
@@ -627,13 +639,12 @@ export default function AluSathiDashboard({ farmerHome = false }: { farmerHome?:
         <span className="field-bird field-bird-one"><svg viewBox="0 0 62 28" fill="none"><path d="M2 20 Q9 11 17 19 Q25 11 32 20 M29 9 Q35 2 41 9 Q48 2 54 10" /></svg></span>
         <span className="field-bird field-bird-two"><svg viewBox="0 0 62 28" fill="none"><path d="M2 21 Q15 2 30 17 Q45 2 60 21" /></svg></span>
       </div>}
-      {farmerHome && farmerView === "photos" && <section className="app-shell photo-page-titlebar" aria-labelledby="photo-page-title"><div className="farmer-greeting"><div><p className="section-kicker">{language === "bn" ? "ছবি" : "PHOTO"}</p><h1 id="photo-page-title">{language === "bn" ? "আলুর নমুনা দেখুন বা ছবি দিন" : "View a potato sample or add a photo"}</h1><p>{language === "bn" ? "আজকের কাজের জন্য পরিষ্কার ছবি দিন বা একটি নমুনা বেছে নিন।" : "Add a clear photo or choose a sample for today's work."}</p></div></div></section>}
-      {farmerHome && farmerView === "photos" && <section className="app-shell photo-today-bridge" aria-labelledby="photo-today-title"><div><p className="section-kicker">{language === "bn" ? "আজকের কাজ" : "TODAY'S WORK"}</p><h2 id="photo-today-title">{language === "bn" ? "ছবি দিন, আজকের কাজ বুঝুন" : "Add a photo for today's work"}</h2><p>{language === "bn" ? "ছবির দৃশ্যমান লক্ষণ দেখে আজকের কাজের পাতায় পরের ছোট ধাপ দেখুন।" : "Use visible signs in the photo to find the next small step for today."}</p><a className="secondary-main" href="/farmer#today">{language === "bn" ? "আজকের কাজ দেখুন" : "View today's work"}</a></div></section>}
-      {(!farmerHome || farmerView === "photos") && <div className={farmerHome ? "" : "landing-reveal"}><Suspense fallback={<div id="scan" className="app-shell py-12" role="status">{language === "bn" ? "ছবি স্ক্যানার খুলছে…" : "Loading photo scanner…"}</div>}><TuberScan modelsAllowed={!farmerHome || tuberConsent} onEnableModels={() => setTuberConsent(true)} onDemo={farmerHome ? showDemoInToday : undefined} /></Suspense></div>}
+      {farmerHome && farmerView === "photos" && <section className="app-shell photo-page-titlebar" aria-labelledby="photo-page-title"><div className="farmer-greeting"><div><h1 id="photo-page-title">{language === "bn" ? "আলুর ছবি দেখুন বা ছবি দিন" : "Choose or add a potato photo"}</h1><p>{language === "bn" ? "দেওয়া ছবি বেছে নিন, অথবা নিজের আলুর পরিষ্কার ছবি দিন।" : "Choose a provided photo or add a clear photo of your potato."}<br />{language === "bn" ? "ছবির দৃশ্যমান লক্ষণ দেখে আজকের কাজের পাতায় পরের ছোট ধাপ দেখুন।" : "Use visible signs in the photo to find the next small step for today."}</p></div></div></section>}
+      {(!farmerHome || farmerView === "photos") && <div className={farmerHome ? "" : "landing-reveal"}><Suspense fallback={<div id="scan" className="app-shell py-12" role="status">{language === "bn" ? "ছবি স্ক্যানার খুলছে…" : "Loading photo scanner…"}</div>}><TuberScan onDemo={farmerHome ? showDemoInToday : undefined} /></Suspense></div>}
       {farmerHome && farmerView === "tools" && <div className="farmer-tools-scene" aria-hidden="true" />}
       <div hidden={farmerHome && farmerView !== "tools" && farmerView !== "today"} className={farmerHome ? "" : "landing-reveal"}><FarmerTools showReminders={!farmerHome} todayMode={farmerHome && farmerView === "today"} /></div>
       {farmerHome && farmerView === "diary" && <div className="farmer-diary-scene" aria-hidden="true" />}
-      {dashboardAccess && (farmerHome || timeline.length > 0) && <section hidden={farmerHome && farmerView !== "diary"} id="diary" className={`diary-section scroll-mt-20 ${timeline.length ? "" : "diary-empty-section"}`}><div className="app-shell py-16 sm:py-24"><div className="section-heading light"><div><p className="section-kicker"><History size={16} />{language === "bn" ? "আমার খাতা" : "MY NOTEBOOK"}</p><h2>{language === "bn" ? "দিনভিত্তিক জমির খাতা" : "Daily field notebook"}</h2><p>{language === "bn" ? "কাজ ও খরচ আলাদা তালিকায়—তারিখ ধরে সহজে মিলিয়ে দেখুন।" : "Work and expenses stay in separate dated tables."}</p><p>{user ? (language === "bn" ? "আপনার ব্যক্তিগত অনলাইন খাতা" : "Your private account history") : (language === "bn" ? "এই ফোনের খাতা; অনলাইনে সেভ হয় না।" : "Saved on this device; no cloud sync.")}</p>{cloudMessage && <p role="status">{cloudMessage}</p>}<div className="notebook-tabs" role="tablist"><button role="tab" aria-selected={notebookTab === "work"} className={notebookTab === "work" ? "active" : ""} onClick={() => setNotebookTab("work")}>{language === "bn" ? "কাজ" : "Work"}</button><button role="tab" aria-selected={notebookTab === "expenses"} className={notebookTab === "expenses" ? "active" : ""} onClick={() => setNotebookTab("expenses")}>{language === "bn" ? "খরচ" : "Expenses"}</button></div>{notebookTab === "expenses" && <form className="notebook-expense-form" onSubmit={addNotebookExpense}><label>{language === "bn" ? "ধরন" : "Type"}<select value={expenseCategory} onChange={event => setExpenseCategory(event.target.value as ExpenseCategory)}><option value="seed">{language === "bn" ? "বীজ" : "Seed"}</option><option value="manure">{language === "bn" ? "সার / গোবর" : "Manure"}</option><option value="labour">{language === "bn" ? "শ্রম" : "Labour"}</option><option value="irrigation">{language === "bn" ? "সেচ" : "Irrigation"}</option><option value="transport">{language === "bn" ? "পরিবহন" : "Transport"}</option><option value="other">{language === "bn" ? "অন্যান্য" : "Other"}</option></select></label><label>{language === "bn" ? "টাকা" : "Amount"}<input required type="number" min="0.01" max="1000000000" step="any" value={expenseAmount} onChange={event => setExpenseAmount(event.target.value)} /></label><label>{language === "bn" ? "তারিখ" : "Date"}<input required type="date" max={localToday()} value={expenseDate} onChange={event => setExpenseDate(event.target.value)} /></label><label>{language === "bn" ? "নোট" : "Note"}<input maxLength={120} value={expenseNote} onChange={event => setExpenseNote(event.target.value)} /></label><button className="secondary-main">{language === "bn" ? "খরচ রাখুন" : "Save expense"}</button>{expenseMessage && <small role="status">{expenseMessage}</small>}</form>}</div>{diary.length > 0 && <button className="text-button" onClick={() => removeDiary()}><Trash2 size={16} />{language === "bn" ? "ছবির পুরোনো নোট মুছুন" : "Delete photo notes"}</button>}</div><NotebookTable items={timeline} tab={notebookTab} language={language} copy={copy} /></div></section>}
+      {dashboardAccess && (farmerHome || timeline.length > 0) && <section hidden={farmerHome && farmerView !== "diary"} id="diary" className={`diary-section scroll-mt-20 ${timeline.length ? "" : "diary-empty-section"}`}><div className="app-shell py-16 sm:py-24"><div className="section-heading light"><div><p className="section-kicker"><History size={16} />{language === "bn" ? "আমার খাতা" : "MY NOTEBOOK"}</p><h2>{language === "bn" ? "দিনভিত্তিক জমির খাতা" : "Daily field notebook"}</h2><p>{language === "bn" ? "কাজ ও খরচ আলাদা তালিকায়—তারিখ ধরে সহজে মিলিয়ে দেখুন।" : "Work and expenses stay in separate dated tables."}</p><p>{user ? (language === "bn" ? "আপনার ব্যক্তিগত অনলাইন খাতা" : "Your private account history") : (language === "bn" ? "এই ফোনের খাতা; অনলাইনে সেভ হয় না।" : "Saved on this device; no cloud sync.")}</p>{cloudMessage && <p role="status">{cloudMessage}</p>}<div className="notebook-tabs" role="tablist"><button role="tab" aria-selected={notebookTab === "work"} className={notebookTab === "work" ? "active" : ""} onClick={() => setNotebookTab("work")}>{language === "bn" ? "কাজ" : "Work"}</button><button role="tab" aria-selected={notebookTab === "expenses"} className={notebookTab === "expenses" ? "active" : ""} onClick={() => setNotebookTab("expenses")}>{language === "bn" ? "খরচ" : "Expenses"}</button></div>{notebookTab === "expenses" && <form className="notebook-expense-form" onSubmit={addNotebookExpense}><label>{language === "bn" ? "ধরন" : "Type"}<select value={expenseCategory} onChange={event => setExpenseCategory(event.target.value as ExpenseCategory)}><option value="seed">{language === "bn" ? "বীজ" : "Seed"}</option><option value="manure">{language === "bn" ? "সার / গোবর" : "Manure"}</option><option value="labour">{language === "bn" ? "শ্রম" : "Labour"}</option><option value="irrigation">{language === "bn" ? "সেচ" : "Irrigation"}</option><option value="transport">{language === "bn" ? "পরিবহন" : "Transport"}</option><option value="other">{language === "bn" ? "অন্যান্য" : "Other"}</option></select></label><label>{language === "bn" ? "টাকা" : "Amount"}<input required type="number" min="0.01" max="1000000000" step="any" value={expenseAmount} onChange={event => setExpenseAmount(event.target.value)} /></label><label>{language === "bn" ? "তারিখ" : "Date"}<input required type="date" max={localToday()} value={expenseDate} onChange={event => setExpenseDate(event.target.value)} /><small className="notebook-date-bn">{new Intl.DateTimeFormat(language === "bn" ? "bn-BD-u-nu-beng" : "en-GB", { day: "numeric", month: "long", year: "numeric" }).format(new Date(`${expenseDate}T12:00:00`))}</small></label><label>{language === "bn" ? "নোট" : "Note"}<input maxLength={120} value={expenseNote} onChange={event => setExpenseNote(event.target.value)} /></label><button className="secondary-main">{editingExpenseId ? (language === "bn" ? "পরিবর্তন রাখুন" : "Save changes") : (language === "bn" ? "খরচ রাখুন" : "Save expense")}</button>{editingExpenseId && <button className="text-button" type="button" onClick={cancelExpenseEdit}>{language === "bn" ? "বাতিল" : "Cancel"}</button>}{expenseMessage && <small role="status">{expenseMessage}</small>}</form>}</div>{diary.length > 0 && <button className="text-button" onClick={() => removeDiary()}><Trash2 size={16} />{language === "bn" ? "ছবির পুরোনো নোট মুছুন" : "Delete photo notes"}</button>}</div><NotebookTable items={timeline} tab={notebookTab} language={language} copy={copy} fertilizerDueDate={localStorage.getItem(`alusathi-next-fertilizer-${user?.id || "guest"}`) || ""} onEditExpense={editNotebookExpense} /></div></section>}
 
       <section id="help" hidden={farmerHome && farmerView !== "help"} className={`app-shell scroll-mt-20 py-16 sm:py-24 ${farmerHome ? "" : "landing-reveal"}`}>
         <div className="section-heading"><div><p className="section-kicker">{copy.helpKicker}</p><h2>{copy.helpTitle}</h2></div></div>
@@ -651,25 +662,50 @@ export default function AluSathiDashboard({ farmerHome = false }: { farmerHome?:
       </section>
     </main>
 
-    <footer><div className="app-shell"><div className="footer-brand"><span className="brand-mark"><Leaf size={22} /></span><div><strong>আলুসাথী</strong><small>{copy.footer}</small></div></div><p><ShieldCheck size={15} />{copy.privacy}</p></div></footer>
+    <footer><div className="app-shell"><div className="footer-brand"><span className="brand-mark"><Leaf size={22} /></span><div><strong>আলুসাথী</strong><small>{copy.footer}</small></div></div></div></footer>
     {!farmerHome && <nav className="bottom-nav" style={{ gridTemplateColumns: `repeat(${dashboardAccess ? 4 : 3}, minmax(0, 1fr))` }} aria-label="Mobile navigation"><a href="#scan"><Camera />{copy.navScan}</a><a href={marketHref}><Store />{language === "bn" ? "বাজার" : "Market"}</a>{dashboardAccess && <a href="#diary"><History />{copy.navField}</a>}<Link to="/life-cycle"><Sprout />{language === "bn" ? "আলুর জীবন" : "Potato life"}</Link></nav>}
   </div>;
 }
 
-function NotebookTable({ items, tab, language, copy }: { items: TimelineEntry[]; tab: "work" | "expenses"; language: "bn" | "en"; copy: Copy }) {
+function NotebookTable({ items, tab, language, copy, fertilizerDueDate, onEditExpense }: { items: TimelineEntry[]; tab: "work" | "expenses"; language: "bn" | "en"; copy: Copy; fertilizerDueDate: string; onEditExpense: (entry: FarmExpense) => void }) {
   const bn = language === "bn";
-  const rows = items.filter(item => tab === "work" ? item.type !== "ledger" : item.type === "ledger");
-  const date = (value: string) => new Intl.DateTimeFormat(bn ? "bn-BD" : "en-GB", { day: "numeric", month: "short", year: "numeric" }).format(new Date(value));
+  const [selected, setSelected] = useState<string[]>([]);
+  const [quickDate, setQuickDate] = useState(localToday());
+  const [quickMessage, setQuickMessage] = useState("");
+  const quickEntry: TimelineEntry = { type: "action", createdAt: `${localToday()}T23:59:59`, entry: { id: "khata-quick-controls", date: localToday(), district: "", kind: "task", text: "" } };
+  const savedRows = items.filter(item => tab === "work" ? item.type !== "ledger" : item.type === "ledger");
+  const rows = tab === "work" ? [quickEntry, ...savedRows] : savedRows;
+  const date = (value: string) => new Intl.DateTimeFormat(bn ? "bn-BD-u-nu-beng" : "en-GB", { day: "numeric", month: "long", year: "numeric" }).format(new Date(value));
+  const day = (value: string) => new Intl.DateTimeFormat(bn ? "bn-BD-u-nu-beng" : "en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date(value));
+  const selectedTotal = rows.reduce((sum, item) => item.type === "ledger" && item.entry.type === "expense" && selected.includes(item.entry.id) ? sum + item.entry.amount : sum, 0);
+  const toggleSelected = (id: string) => setSelected(current => current.includes(id) ? current.filter(value => value !== id) : [...current, id]);
+  const addQuickWork = (category: "fertilizer" | "spray") => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(quickDate) || quickDate > localToday()) { setQuickMessage(bn ? "সঠিক তারিখ বেছে নিন।" : "Choose a valid date."); return; }
+    const id = `khata-${category}-${quickDate}`;
+    const entry: FieldAction = { id, date: quickDate, district: "", kind: "task", category, status: bn ? "সম্পন্ন" : "Done", text: category === "fertilizer" ? (bn ? "সার দেওয়া হয়েছে" : "Fertilizer applied") : (bn ? "স্প্রে দেওয়া হয়েছে" : "Spray applied"), details: bn ? "খাতা থেকে রাখা হয়েছে" : "Recorded from Notebook" };
+    try { saveFieldActions([entry, ...readFieldActions().filter(item => item.id !== id)].slice(0, 100)); setQuickMessage(bn ? "কাজটি খাতায় রাখা হয়েছে।" : "Work saved in Notebook."); }
+    catch { setQuickMessage(bn ? "কাজটি রাখা যায়নি।" : "Could not save the work."); }
+  };
   if (!rows.length) return <div className="notebook-sheet-empty"><History size={24} /><strong>{tab === "work" ? (bn ? "এখনও কোনো কাজ রাখা হয়নি" : "No work recorded yet") : (bn ? "এখনও কোনো খরচ রাখা হয়নি" : "No expenses recorded yet")}</strong><p>{tab === "work" ? (bn ? "আজকের কাজ থেকে সার, স্প্রে বা ছবি পরীক্ষা রাখলে এখানে দেখা যাবে।" : "Saved fertilizer, spray and photo checks from Today will appear here.") : (bn ? "হিসাব পাতায় খরচ রাখলে এখানে দেখা যাবে।" : "Expenses saved from Tools will appear here.")}</p></div>;
-  return <div className="notebook-sheet-wrap"><table className="notebook-sheet"><thead><tr><th>{bn ? "তারিখ" : "Date"}</th><th>{tab === "work" ? (bn ? "কাজ" : "Work") : (bn ? "ধরন" : "Type")}</th><th>{tab === "work" ? (bn ? "অবস্থা" : "Status") : (bn ? "পরিমাণ / ফল" : "Amount / result")}</th><th>{bn ? "বিস্তারিত" : "Details"}</th></tr></thead><tbody>{rows.map(item => {
-    if (item.type === "scan") return <tr key={`scan-${item.entry.id}`}><td>{date(item.createdAt)}</td><td>{bn ? "ছবি পরীক্ষা" : "Photo check"}</td><td>{riskText(item.entry.risk, copy)}</td><td>{item.entry.symptoms?.join(" · ") || (bn ? `${item.entry.scanCount.toLocaleString("bn-BD")}টি ছবি` : `${item.entry.scanCount} photo${item.entry.scanCount === 1 ? "" : "s"}`)}</td></tr>;
-    if (item.type === "action") {
-      const labels = { photo: bn ? "ছবি পরীক্ষা" : "Photo check", fertilizer: bn ? "সার" : "Fertilizer", spray: bn ? "স্প্রে" : "Spray", field: bn ? "মাঠের কাজ" : "Field work" };
-      return <tr key={`action-${item.entry.id}`}><td>{date(`${item.entry.date}T12:00:00`)}</td><td>{item.entry.category ? labels[item.entry.category] : item.entry.text}</td><td>{item.entry.status || (item.entry.kind === "task" ? (bn ? "সম্পন্ন" : "Done") : (bn ? "রাখা হয়েছে" : "Recorded"))}</td><td>{[item.entry.variety, item.entry.cropAge, item.entry.details || item.entry.text].filter(Boolean).join(" · ")}</td></tr>;
+  return <div className="notebook-sheet-wrap">{tab === "expenses" && <div className="notebook-math"><strong>{bn ? "যে খরচগুলো যোগ করবেন, টিক দিন" : "Select expenses to add"}</strong><output className="notebook-selected-total" aria-live="polite">{bn ? "নির্বাচিত মোট" : "Selected total"}: ৳{selectedTotal.toLocaleString(bn ? "bn-BD" : "en-GB")}</output></div>}<table className="notebook-sheet"><thead><tr>{tab === "expenses" && <th>{bn ? "যোগ" : "Add"}</th>}<th>{bn ? "তারিখ" : "Date"}</th><th>{tab === "work" ? (bn ? "কাজ" : "Work") : (bn ? "ধরন" : "Type")}</th><th>{tab === "work" ? (bn ? "অবস্থা" : "Status") : (bn ? "পরিমাণ / ফল" : "Amount / result")}</th><th>{bn ? "বিস্তারিত" : "Details"}</th>{tab === "expenses" && <th>{bn ? "পরিবর্তন" : "Edit"}</th>}</tr></thead><tbody>{rows.map((item, index) => {
+    const dayKey = item.createdAt.slice(0, 10);
+    const isQuickEntry = item.type === "action" && item.entry.id === "khata-quick-controls";
+    const showDay = !isQuickEntry && (index === 0 || rows[index - 1].entry.id === "khata-quick-controls" || rows[index - 1].createdAt.slice(0, 10) !== dayKey);
+    let row;
+    if (isQuickEntry) row = <tr className="notebook-quick-work"><td colSpan={4}><div><label>{bn ? "কোন দিনের কাজ?" : "Work date"}<input type="date" max={localToday()} value={quickDate} onChange={event => { setQuickDate(event.target.value); setQuickMessage(""); }} /></label><section><strong>{bn ? "সার দিয়েছেন?" : "Applied fertilizer?"}</strong><button className="text-button" type="button" onClick={() => addQuickWork("fertilizer")}>{bn ? "হ্যাঁ, সার দিয়েছি" : "Yes, fertilizer applied"}</button></section><section><strong>{bn ? "স্প্রে দিয়েছেন?" : "Applied spray?"}</strong><button className="text-button" type="button" onClick={() => addQuickWork("spray")}>{bn ? "হ্যাঁ, স্প্রে দিয়েছি" : "Yes, spray applied"}</button></section>{quickMessage && <small role="status">{quickMessage}</small>}</div></td></tr>;
+    if (item.type === "scan") row = <tr className="notebook-entry-row"><td>{date(item.createdAt)}</td><td>{bn ? "ছবি পরীক্ষা" : "Photo check"}</td><td>{riskText(item.entry.risk, copy)}</td><td>{item.entry.symptoms?.join(" · ") || (bn ? `${item.entry.scanCount.toLocaleString("bn-BD")}টি ছবি` : `${item.entry.scanCount} photo${item.entry.scanCount === 1 ? "" : "s"}`)}</td></tr>;
+    if (item.type === "action" && !isQuickEntry) {
+      const labels = { photo: bn ? "ছবি পরীক্ষা" : "Photo check", fertilizer: bn ? "সার দেওয়া" : "Fertilizer applied", spray: bn ? "স্প্রে দেওয়া" : "Spray applied", field: bn ? "মাঠের কাজ" : "Field work" };
+      const due = item.entry.category === "fertilizer" && /^\d{4}-\d{2}-\d{2}$/.test(item.entry.nextDueDate || fertilizerDueDate) ? (item.entry.nextDueDate || fertilizerDueDate) : "";
+      row = <tr className="notebook-entry-row"><td>{date(`${item.entry.date}T12:00:00`)}</td><td>{item.entry.category ? labels[item.entry.category] : item.entry.text}</td><td>{item.entry.status || (item.entry.kind === "task" ? (bn ? "সম্পন্ন" : "Done") : (bn ? "রাখা হয়েছে" : "Recorded"))}</td><td>{[item.entry.variety, item.entry.cropAge, item.entry.details || item.entry.text, due && `${bn ? "কবে সার দিতে হবে" : "Next fertilizer date"}: ${date(`${due}T12:00:00`)}`].filter(Boolean).join(" · ")}</td></tr>;
     }
-    const entry = item.entry;
-    const amount = entry.type === "expense" ? `৳${entry.amount.toLocaleString(bn ? "bn-BD" : "en-GB")}` : Object.values(entry.result).join(" · ");
-    return <tr key={`ledger-${entry.id}`}><td>{date(`${entry.date}T12:00:00`)}</td><td>{entry.type === "expense" ? (bn ? "খরচ" : "Expense") : entry.title}</td><td>{amount}</td><td>{entry.type === "expense" ? (entry.note || "—") : (bn ? "সংরক্ষিত হিসাব" : "Saved calculation")}</td></tr>;
+    if (item.type === "ledger") {
+      const entry = item.entry;
+      const amount = entry.type === "expense" ? `৳${entry.amount.toLocaleString(bn ? "bn-BD" : "en-GB")}` : Object.values(entry.result).join(" · ");
+      row = <tr className="notebook-entry-row">{tab === "expenses" && <td>{entry.type === "expense" && <input type="checkbox" checked={selected.includes(entry.id)} onChange={() => toggleSelected(entry.id)} aria-label={bn ? `${entry.note || "খরচ"} যোগ করুন` : `Add ${entry.note || "expense"}`} />}</td>}<td>{date(`${entry.date}T12:00:00`)}</td><td>{entry.type === "expense" ? (bn ? "খরচ" : "Expense") : entry.title}</td><td>{amount}</td><td>{entry.type === "expense" ? (entry.note || "—") : (bn ? "সংরক্ষিত হিসাব" : "Saved calculation")}</td>{tab === "expenses" && <td>{entry.type === "expense" && <button className="text-button" type="button" onClick={() => onEditExpense(entry)}>{bn ? "সম্পাদনা" : "Edit"}</button>}</td>}</tr>;
+    }
+    const key = `${item.type}-${item.entry.id}`;
+    return <Fragment key={key}>{showDay && <tr className="notebook-day-row"><th colSpan={tab === "expenses" ? 6 : 4}><time dateTime={dayKey}>{day(`${dayKey}T12:00:00`)}</time></th></tr>}{row}</Fragment>;
   })}</tbody></table></div>;
 }
 

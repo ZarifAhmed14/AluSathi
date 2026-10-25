@@ -8,7 +8,6 @@ import ColdStoragePage from "@/pages/ColdStoragePage";
 import SellingPreparationDetails from "@/pages/SellingPreparationDetails";
 import { DemoProvider, DemoEntry } from "@/contexts/DemoContext";
 import { AuthProvider } from "@/contexts/AuthContext";
-import Auth from "@/pages/Auth";
 
 function PageTitle() {
   const { pathname } = useLocation();
@@ -18,7 +17,7 @@ function PageTitle() {
       "/": ["আলুসাথী — আলু চাষ, বিক্রি ও কেনার সহায়তা", "AluSathi — Grow, sell, and buy potatoes"],
       "/farmer": ["আমার পাতা — আলুসাথী", "My farmer page — AluSathi"],
       "/auth": ["কৃষক নাকি ব্যবসায়ী — আলুসাথী", "Farmer or businessman — AluSathi"],
-      "/account": ["আমার অ্যাকাউন্ট — আলুসাথী", "My account — AluSathi"],
+      "/account": ["পরিচয় বাছুন — আলুসাথী", "Choose a role — AluSathi"],
       "/life-cycle": ["আলুর জীবন — আলুসাথী", "Potato life cycle — AluSathi"],
       "/selling-preparation": ["বিক্রির প্রস্তুতি — আলুসাথী", "Prepare to sell — AluSathi"],
     };
@@ -36,7 +35,7 @@ export default function App() {
           <Route path="/" element={<Index />} />
           <Route path="/farmer" element={<Index farmerHome />} />
           <Route path="/auth" element={<DemoEntry />} />
-          <Route path="/account" element={<Auth />} />
+          <Route path="/account" element={<Navigate to="/auth" replace />} />
           <Route path="/life-cycle" element={<PotatoLifeCycle />} />
           <Route path="/selling-preparation" element={<ColdStoragePage />} />
           <Route path="/selling-preparation/details" element={<SellingPreparationDetails />} />
