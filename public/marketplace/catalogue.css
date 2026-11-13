@@ -157,38 +157,40 @@
 .public-market .public-sort-chips button[aria-pressed="true"] { border-color: var(--home-green); }
 .public-market .buyer-catalogue-filters input[name="minKg"] { padding-inline-end: 3.5rem; }
 .public-kg-unit { position: absolute; inset-inline-end: 12px; bottom: 11px; pointer-events: none; color: var(--home-muted, #52695c); }
-.public-market .buyer-catalogue .lot-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-.public-market .lot-grid .buyer-contact-card { grid-template-columns: minmax(0, 1fr); align-items: stretch; grid-template-rows: 1fr auto auto; padding: 14px; gap: 9px; }
-.public-market .lot-grid .catalogue-card-identity { display: grid; align-content: start; gap: 7px; }
-.public-market .catalogue-card-identity small { display: inline-block; color: var(--home-muted, #52695c); font-size: 13px; }
-.public-market .lot-grid h3 { font-size: 24px; overflow-wrap: anywhere; }
-.public-market .catalogue-row-gallery { width: 100%; min-width: 0; }
-.public-market .lot-grid .catalogue-card-identity :is(.lot-photo, .public-photo-fallback) { width: 100%; height: clamp(160px, 16vw, 270px); min-height: 0; object-fit: cover; }
+.catalogue-photo-grid :is(.buyer-catalogue, .buyer-picks) .lot-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.catalogue-photo-grid .lot-grid .buyer-contact-card { grid-template-columns: minmax(0, 1fr); align-items: stretch; grid-template-rows: 1fr auto auto; padding: 14px; gap: 9px; }
+.catalogue-photo-grid .lot-grid .catalogue-card-identity { display: grid; align-content: start; gap: 7px; }
+.catalogue-photo-grid .catalogue-card-identity small { display: inline-block; color: var(--home-muted, #52695c); font-size: 13px; }
+.catalogue-photo-grid .lot-grid h3 { font-size: 24px; overflow-wrap: anywhere; }
+.catalogue-photo-grid .catalogue-row-gallery { width: 100%; min-width: 0; }
+.catalogue-photo-grid .lot-grid .catalogue-card-identity :is(.lot-photo, .public-photo-fallback) { width: 100%; height: clamp(160px, 16vw, 270px); min-height: 0; object-fit: cover; }
 .public-lot-name { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px; overflow-wrap: anywhere; }
-.public-market .public-sample-gallery .catalogue-row-gallery-window { background: var(--home-tint, #e0eee5); }
-.public-market .lot-grid .catalogue-card-identity .public-sample-gallery .lot-photo { object-fit: contain; }
-.public-market .lot-grid .catalogue-card-identity .public-sample-gallery .catalogue-row-gallery-slide:first-child .lot-photo { object-fit: cover; }
+.catalogue-photo-grid .public-sample-gallery .catalogue-row-gallery-window { background: var(--home-tint, #e0eee5); }
+.catalogue-photo-grid .lot-grid .catalogue-card-identity .public-sample-gallery .lot-photo { object-fit: contain; }
+.catalogue-photo-grid .lot-grid .catalogue-card-identity .public-sample-gallery .catalogue-row-gallery-slide:first-child .lot-photo { object-fit: cover; }
 .public-listing-note { margin: 0 0 12px; font-size: 13px; color: var(--home-muted, #52695c); }
 .public-photo-fallback:not([hidden]) { display: grid; place-items: center; min-height: 120px; background: var(--home-tint, #e0eee5); color: var(--home-muted, #52695c); }
-.public-market-page img[hidden], .catalogue-detail-gallery > img[hidden]:has(+ .public-photo-fallback) { display: none; }
+.catalogue-row-gallery img[hidden], .public-market-page img[hidden], .catalogue-detail-gallery > img[hidden]:has(+ .public-photo-fallback) { display: none; }
 .public-reference-label { display: none; }
 img:not([hidden])[src^="/marketplace/demo-lots/"] ~ .public-reference-label { display: block; position: absolute; inset: auto 8px 8px auto; padding: 2px 7px; border-radius: 5px; background: #102e25; color: white; font-size: 12px; }
 .catalogue-detail-gallery:has(> .public-reference-label) { position: relative; }
 .catalogue-detail-gallery > .public-reference-label { inset-block: 8px auto !important; }
 .catalogue-detail-gallery > .public-photo-fallback { border-radius: 12px; }
-.public-market .catalogue-row-gallery-window button { width: 34px; height: 36px; }
-.public-market .catalogue-row-gallery-window button:focus-visible { outline-color: white; outline-offset: -3px; }
-.public-market .lot-grid .catalogue-card-facts { padding: 8px 0; gap: 8px; border-block: 1px solid var(--home-line); overflow-wrap: anywhere; line-height: 1.45; }
-.public-market .catalogue-card-facts > div { display: grid; grid-template-rows: subgrid; grid-row: span 2; }
-.public-market .lot-grid .buyer-card-actions .button { width: 100%; font-size: 15px; }
+.catalogue-photo-grid .catalogue-row-gallery-window button { width: 34px; height: 36px; }
+.catalogue-photo-grid .catalogue-row-gallery-window button:focus-visible { outline-color: white; outline-offset: -3px; }
+.catalogue-photo-grid .lot-grid .catalogue-card-facts { padding: 8px 0; gap: 8px; border-block: 1px solid var(--home-line); overflow-wrap: anywhere; line-height: 1.45; }
+.catalogue-photo-grid .catalogue-card-facts > div { display: grid; grid-template-rows: subgrid; grid-row: span 2; }
+.catalogue-photo-grid .lot-grid .buyer-card-actions .button { width: 100%; font-size: 15px; }
+.catalogue-photo-grid:not(.public-market) .lot-grid .buyer-card-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.catalogue-photo-grid .buyer-card-actions [data-action="contact-lot"] { grid-column: 1 / -1; }
 @media (max-width: 767px) {
-  .public-market .buyer-catalogue .lot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .catalogue-photo-grid :is(.buyer-catalogue, .buyer-picks) .lot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 640px) {
   .public-market-page .page-shell { padding-inline: 14px; }
   .public-market-header > div { gap: 8px; }
   .public-market .catalogue-hero-copy { background: linear-gradient(90deg, #082f25, #082f25ad); }
-  .public-market .buyer-catalogue .lot-grid { grid-template-columns: minmax(0, 1fr); }
+  .catalogue-photo-grid :is(.buyer-catalogue, .buyer-picks) .lot-grid { grid-template-columns: minmax(0, 1fr); }
   .public-market .buyer-catalogue-filters label { flex-basis: 42%; }
 }
 @media (prefers-reduced-motion: reduce) {

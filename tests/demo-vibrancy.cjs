@@ -33,7 +33,16 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:4175';
       await page.goto(`${base}/marketplace/buyer.html`);
       assert.equal(await page.locator('.buyer-catalogue .buyer-contact-card').count(), 6);
       const first = page.locator('.buyer-catalogue .buyer-contact-card').first();
-      assert.equal(await first.locator('.catalogue-row-gallery-slide img').count(), 1);
+      assert.equal(await first.locator('.catalogue-row-gallery-slide img').count(), 3);
+      const gallery = first.locator('.catalogue-row-gallery');
+      const otherGallery = page.locator('.buyer-catalogue .catalogue-row-gallery').nth(1);
+      for (const index of [1, 2, 0]) {
+        await gallery.locator('.catalogue-row-next').press('Enter');
+        assert.equal(await gallery.getAttribute('data-index'), String(index));
+        assert.equal(await gallery.locator('[aria-pressed="true"]').getAttribute('data-slide'), String(index));
+        assert.equal(await otherGallery.getAttribute('data-index'), '0');
+        await gallery.locator('.catalogue-row-gallery-slide[aria-hidden="false"] img').evaluate(img => img.decode());
+      }
       assert(await first.locator('img').first().evaluate(img => img.complete && img.naturalWidth > 0));
       await first.locator('[data-action="view-lot"]').click();
       assert(await page.locator('.catalogue-detail-copy dl').innerText().then(text => text.includes(language === 'bn' ? 'প্যাকিং' : 'Packing')));
@@ -44,6 +53,14 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:4175';
       assert.equal(await page.locator('.catalogue-contact-dialog [data-action="copy-enquiry"]').count(), 1);
       await page.locator('.catalogue-contact-dialog [data-action="close-contact"]').click();
       if (width === 1365) {
+        const grid = page.locator('.buyer-catalogue .lot-grid');
+        assert.equal(await grid.evaluate(el => getComputedStyle(el).gridTemplateColumns.split(" ").length), 3);
+        assert((await gallery.locator('.catalogue-row-gallery-window').boundingBox()).height > 200);
+        const firstId = await first.locator('[data-action="view-lot"]').getAttribute('data-id');
+        await page.locator('[data-action="catalogue-page"][data-page="2"]').click();
+        assert.notEqual(await first.locator('[data-action="view-lot"]').getAttribute('data-id'), firstId);
+        await page.locator('[data-action="catalogue-page"][data-page="1"]').last().click();
+        assert.equal(await first.locator('[data-action="view-lot"]').getAttribute('data-id'), firstId);
         await page.locator('#buyer-catalogue-filters [name="district"]').selectOption('Bogura');
         await page.locator('#buyer-catalogue-filters button[type="submit"]').click();
         assert.equal(await page.locator('.buyer-catalogue .buyer-contact-card').count(), 2);

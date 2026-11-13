@@ -101,6 +101,7 @@ export default defineConfig(() => ({
       },
       workbox: {
         importScripts: ["/push-events.js"],
+        navigateFallbackDenylist: [/^\/marketplace(?:\/|$)/],
         globPatterns: ["**/*.{js,mjs,css,html,ico,svg,woff2,json}"],
         maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
         runtimeCaching: [
