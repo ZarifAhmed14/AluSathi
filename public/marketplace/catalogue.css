@@ -94,6 +94,7 @@
 .catalogue-compare-tray { display: flex; align-items: center; justify-content: space-between; gap: 16px; position: sticky; bottom: 16px; margin-top: 18px; padding: 10px 16px; background: #e9f3ed; border: 1px solid #b6cbbf; border-radius: 12px; box-shadow: 0 6px 20px #102d2314; z-index: 3; }
 .catalogue-detail-dialog.modal { width: min(960px, calc(100vw - 64px)); max-width: none; max-height: calc(100vh - 64px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 26px; overflow-y: auto; padding: 28px; }
 .catalogue-detail-gallery { align-self: start; min-width: 0; }
+.catalogue-detail-dialog > .modal-close { z-index: 2; }
 .catalogue-detail-gallery > img { display: block; width: 100%; height: 340px; object-fit: contain; background: #edf2eb; border-radius: 12px; }
 .catalogue-gallery-controls { display: flex; justify-content: center; align-items: center; gap: 18px; padding-top: 12px; }
 .catalogue-gallery-controls .button { min-width: 44px; min-height: 44px; padding: 8px; }
