@@ -1,0 +1,114 @@
+const {chromium}=require('playwright');
+const assert=require('node:assert/strict');
+const fs=require('node:fs/promises');
+const base=process.env.BASE_URL || 'http://127.0.0.1:8080';
+const key='alusathi-buyer-profile-v1';
+(async()=>{
+ const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL || undefined});
+ await fs.mkdir('test-results/buyer-profile',{recursive:true});
+ try {
+  for(const [width,lang] of [[1440,'bn'],[390,'bn'],[390,'en']]) {
+   const bn=lang==='bn',context=await browser.newContext({viewport:{width,height:1000},serviceWorkers:'block'});
+   await context.addInitScript(({lang,key})=>{
+    localStorage.setItem('alusathi-lang',lang);
+    if(!localStorage.getItem(key)) localStorage.setItem(key,JSON.stringify({district:'Bogura',upazila:'Shibganj',destinationDistrict:'Dhaka',preferredLanguage:'en',legacyNote:'keep',contactPhone:'01912345678'}));
+   },{lang,key});
+   const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
+   await page.goto(base+'/marketplace/buyer.html#profile');
+   const form=page.locator('#buyer-profile-form');await form.waitFor();
+   assert.equal(await form.getAttribute('data-demo'),'false');
+   assert.equal(await form.locator('input:not([type=file])').count(),4);
+   assert.equal(await form.locator('select').count(),1);
+   assert.equal(await form.locator('.demo-form-note').count(),0);
+   assert.equal(await form.locator('[name=collectionPreference]').inputValue(),'','Old profiles have no assumed collection preference');
+   assert.deepEqual(await form.locator('[name=collectionPreference] option:not([value=""])').evaluateAll(options=>options.map(option=>option.value)),['pickup','delivery','discuss']);
+   assert.equal(await form.locator('[name=businessName]').getAttribute('required'),null);
+   assert.equal(await form.locator('[name=contactPerson]').inputValue(),'','No demo autofill');
+   await form.locator('[name=contactPerson]').fill('মোঃ আব্দুল করিম');
+   await form.locator('[name=phone]').fill('০১৭১২৩৪৫৬৭৮');
+   await form.locator('[name=whatsapp]').fill('+880 1812-345678');
+   const save=()=>form.getByRole('button',{name:bn?'সেভ করুন':'Save profile',exact:true}).click();
+   await save();
+   await form.locator('[data-profile-status]').filter({hasText:bn?'সেভ হয়েছে':'Profile saved'}).waitFor();
+   let saved=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
+   assert.equal(saved.businessName,'');assert.equal(saved.phone,'01712345678');assert.equal(saved.whatsapp,'+8801812345678');
+   assert.equal(saved.legacyNote,'keep');assert.equal(saved.destinationDistrict,'Dhaka');assert.equal(saved.preferredLanguage,'en');
+   assert.equal(await page.evaluate(()=>localStorage.getItem('alusathi-farmer-profile-v1')),null);
+   for(const preference of ['pickup','delivery','discuss']) {
+    await form.locator('[name=collectionPreference]').selectOption(preference);await save();await page.reload();await form.waitFor();
+    assert.equal(await form.locator('[name=collectionPreference]').inputValue(),preference);
+    assert.equal(await page.evaluate(k=>JSON.parse(localStorage.getItem(k)).collectionPreference,key),preference);
+   }
+   await form.locator('[name=contactPerson]').fill('Unsaved name');
+   await form.locator('[name=collectionPreference]').selectOption('pickup');
+   await page.locator('[data-action=open-profile]').click();
+   assert.equal(await page.locator('.profile-drawer h2').innerText(),saved.contactPerson);
+   await page.keyboard.press('Escape');
+   assert.equal(await form.locator('[name=contactPerson]').inputValue(),'Unsaved name','Drawer preserves edits');
+   await page.locator('[data-action=language]').click();
+   assert.equal(await form.locator('[name=contactPerson]').inputValue(),'Unsaved name','Language toggle preserves edits');
+   assert.equal(await form.locator('[name=collectionPreference]').inputValue(),'pickup','Language toggle preserves preference');
+   await page.locator('[data-action=language]').click();
+   await form.locator('[data-buyer-profile=cancel]').click();
+   assert.equal(await form.locator('[name=contactPerson]').inputValue(),saved.contactPerson);
+   assert.equal(await form.locator('[name=collectionPreference]').inputValue(),'discuss','Cancel restores saved preference');
+   await form.locator('[name=phone]').fill('invalid');await save();
+   await form.locator('[data-profile-error]').filter({hasText:bn?'নম্বরটি':'valid phone'}).waitFor();
+   assert.equal(await page.evaluate(k=>JSON.parse(localStorage.getItem(k)).phone,key),saved.phone);
+   await form.locator('[data-buyer-profile=cancel]').click();
+   await form.locator('input[type=file]').focus();
+   assert.ok(await page.locator('.buyer-photo-upload').evaluate(el=>getComputedStyle(el).outlineStyle!=='none'));
+   const large=await page.evaluate(()=>{
+    const canvas=document.createElement('canvas');canvas.width=1100;canvas.height=900;
+    const ctx=canvas.getContext('2d'),data=ctx.createImageData(1100,900);let seed=123456789;
+    for(let i=0;i<data.data.length;i+=4){seed^=seed<<13;seed^=seed>>>17;seed^=seed<<5;data.data[i]=seed&255;data.data[i+1]=(seed>>>8)&255;data.data[i+2]=(seed>>>16)&255;data.data[i+3]=255;}
+    ctx.putImageData(data,0,0);return canvas.toDataURL('image/png').split(',')[1];
+   });
+   const file=Buffer.from(large,'base64');assert.ok(file.length>2*1024*1024);
+   await form.locator('input[type=file]').setInputFiles({name:'large-profile.png',mimeType:'image/png',buffer:file});
+   await form.locator('.buyer-account-avatar img').waitFor();
+   const photo=await form.locator('.buyer-account-avatar img').getAttribute('src');
+   const bytes=Buffer.from(photo.split(',')[1],'base64').length;assert.ok(bytes<2*1024*1024);
+   assert.ok(!(await form.innerText()).includes('ছবি তৈরি। রাখতে সেভ করুন।'));
+   await page.locator('[data-action=open-profile]').click();assert.equal(await page.locator('.profile-drawer img').count(),0);
+   await page.keyboard.press('Escape');
+   await save();await page.reload();await form.locator('.buyer-account-avatar img').waitFor();
+   assert.equal(await form.locator('.buyer-account-avatar img').getAttribute('src'),photo);
+   await page.locator('[data-action=open-profile]').click();await page.locator('.profile-drawer img').waitFor();
+   assert.equal(await page.locator('.profile-drawer img').getAttribute('src'),photo);
+   const box=await page.locator('.profile-drawer img').boundingBox();assert.ok(Math.abs(box.width-box.height)<1);
+   await page.screenshot({path:`test-results/buyer-profile/drawer-${width}-${lang}.png`});
+   await page.keyboard.press('Escape');
+   await page.locator('[data-view=home]:visible').first().click();
+   await page.locator('.buyer-discovery').waitFor();
+   await page.locator('[data-action=open-profile]').click();
+   assert.equal(await page.locator('.profile-drawer img').getAttribute('src'),photo);
+   await page.locator('[data-action=profile-page]').click();await form.waitFor();
+   await form.locator('[data-buyer-photo=remove]').click();await form.locator('[data-buyer-profile=cancel]').click();
+   assert.equal(await form.locator('.buyer-account-avatar img').getAttribute('src'),photo,'Cancel restores photo');
+   await form.locator('[data-buyer-photo=remove]').click();await save();await page.reload();
+   assert.equal(await form.locator('.buyer-account-avatar img').count(),0);
+   await form.locator('input[type=file]').setInputFiles({name:'bad.svg',mimeType:'image/svg+xml',buffer:Buffer.from('<svg onload="alert(1)"/>')});
+   await form.locator('[data-photo-error]').filter({hasText:bn?'বৈধ JPG':'valid JPG'}).waitFor();
+   assert.equal(await page.evaluate(k=>JSON.parse(localStorage.getItem(k)).photo,key),'');
+   await form.locator('[name=contactPerson]').fill('<img src=x onerror=alert(1)>');await save();await page.reload();
+   assert.equal(await form.locator('[name=contactPerson]').inputValue(),'<img src=x onerror=alert(1)>');
+   await page.locator('[data-action=open-profile]').click();
+   assert.equal(await page.locator('img[src=x]').count(),0);
+   assert.equal(await page.locator('.profile-drawer h2').innerText(),'<img src=x onerror=alert(1)>');
+   await page.keyboard.press('Escape');
+   await form.locator('[name=contactPerson]').fill('মোঃ আব্দুল করিম');await save();
+   await page.evaluate(()=>scrollTo(0,0));
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+   await page.screenshot({path:`test-results/buyer-profile/profile-${width}-${lang}.png`,fullPage:true});
+   await page.evaluate(()=>{Storage.prototype.setItem=()=>{throw new DOMException('Full','QuotaExceededError');};});
+   await form.locator('[name=businessName]').fill('New business');await save();
+   await form.locator('[data-profile-error]').filter({hasText:bn?'সেভ হয়নি':'Could not save'}).waitFor();
+   assert.equal(await form.locator('[name=businessName]').inputValue(),'New business');
+   assert.equal(await page.evaluate(k=>JSON.parse(localStorage.getItem(k)).businessName,key),'');
+   assert.deepEqual(errors,[]);
+   console.log(`Buyer profile ${width}px ${lang}: fields, optional business, save/cancel, legacy data, numbers, ${file.length} -> ${bytes} byte compression, saved drawer photo, safe text and storage failure passed`);
+   await context.close();
+  }
+ } finally {await browser.close();}
+})().catch(error=>{console.error(error);process.exitCode=1;});
