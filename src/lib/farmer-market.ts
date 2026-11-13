@@ -96,12 +96,10 @@ export function buyerInterests(): BuyerInterest[] {
   }) : []), ...legacy];
 }
 
-export function salePhoto(file: File) {
-  return preparePhoto(file, 1000);
-}
-
-export async function preparePhoto(file: File, maxSide: number): Promise<{src: string}> {
-  if (!/^image\/(jpeg|png|webp)$/.test(file.type) || !file.size || file.size > 2 * 1024 * 1024) throw new Error("photo");
+export function salePhoto(file: File) { return preparePhoto(file, 1000); }
+export function profilePhoto(file: File) { return preparePhoto(file, 512, 50 * 1024 * 1024); }
+export async function preparePhoto(file: File, maxSide: number, maxInputBytes = 2 * 1024 * 1024): Promise<{src: string}> {
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type) || !file.size || file.size > maxInputBytes) throw new Error("photo");
   const bytes = new Uint8Array(await file.slice(0, 12).arrayBuffer());
   const valid = file.type === "image/jpeg" ? bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255 : file.type === "image/png" ? [137,80,78,71,13,10,26,10].every((v,i) => bytes[i] === v) : String.fromCharCode(...bytes.slice(0,4)) === "RIFF" && String.fromCharCode(...bytes.slice(8,12)) === "WEBP";
   if (!valid) throw new Error("photo");

@@ -7,6 +7,7 @@ import { districtPlaces } from "./districts.mjs";
 import { prepareDemoForms } from "./demo-forms.mjs";
 import { notebook, mountNotebook } from "./buyer-personal.mjs";
 import { buyerExamples } from "./buyer-examples.mjs";
+import { renderBuyerProfile as renderBuyerAccount, mountBuyerProfile, profileAvatar, mountProfileAvatars } from "./buyer-profile.mjs";
 import { workspace, mountWorkspace, keepContact, mountWeightConverter, enquiryQuestions } from "./buyer-workspace.mjs";
 
 const storeKey = "alusathi-marketplace-pilot-v1";
@@ -48,6 +49,9 @@ const districts = [...Object.keys(districtPlaces), "Other"];
 const districtNamesBn = Object.fromEntries(Object.entries(districtPlaces).map(([name, place]) => [name, place.bn]));
 districtNamesBn.Other = "অন্য জেলা";
 const iconPaths = {
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/>',
+  camera: '<path d="M14 4h-4L8 7H3v13h18V7h-5l-2-3Z"/><circle cx="12" cy="13" r="3"/>',
+  phone: '<path d="M22 16.9v3a2 2 0 0 1-2.2 2A20 20 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7l.5 2.8a2 2 0 0 1-.6 1.7L7.8 9.4a16 16 0 0 0 6.8 6.8l1.2-1.2a2 2 0 0 1 1.7-.6l2.8.5a2 2 0 0 1 1.7 2Z"/>',
   arrow: '<path d="M5 12h14m-6-6 6 6-6 6"/>',
   bag: '<path d="M5 8h14l-1.2 12H6.2L5 8Z"/><path d="M9 8c0-2 1-4 3-4s3 2 3 4"/>',
   check: '<path d="m4 12 5 5L20 6"/>',
@@ -104,8 +108,12 @@ const sessionKey = `alusathi-market-demo-${role}`;
 let displayName = role === "farmer" ? "কৃষক" : "ক্রেতা";
 try { if (role !== "choose" && !farmerPreview && !publicPreview) { sessionStorage.setItem("alusathi-role", role); sessionStorage.setItem("alusathi-demo", String(role === "farmer")); displayName = sessionStorage.getItem(sessionKey) || displayName; } } catch { /* Page remains usable without session storage. */ }
 const buyerProfileKey = "alusathi-buyer-profile-v1";
-let buyerProfile = {};
-try { buyerProfile = JSON.parse(localStorage.getItem(buyerProfileKey) || "{}") || {}; } catch { buyerProfile = {}; }
+function readBuyerProfile() {
+  try { const value=JSON.parse(localStorage.getItem(buyerProfileKey) || "{}");return value && typeof value==='object' && !Array.isArray(value) ? value : {}; }
+  catch {return {};}
+}
+let buyerProfile = readBuyerProfile();
+let buyerProfileDraft = null;
 const farmerProfileKey = "alusathi-farmer-profile-v1";
 let farmerProfile = {};
 try { farmerProfile = JSON.parse(localStorage.getItem(farmerProfileKey) || "{}") || {}; } catch { farmerProfile = {}; }
@@ -234,6 +242,7 @@ function setView(next) {
   if (!SALES_FEATURE_ENABLED && legacyViews.includes(next)) next = "unavailable";
   const allowed = role === "farmer" ? ["home", "list", "offers", "transport", "storage", "deals", "passport", "profile", "unavailable"] : ["home", "transport", "saved", "profile", "buyer-plan", "notebook", "needs", "contacts", "unavailable"];
   if (!displayName || !allowed.includes(next)) return;
+  if(role==='buyer' && next==='profile' && view!=='profile') buyerProfileDraft=null;
   view = next; reviewOfferId = ""; window.scrollTo({ top: 0, behavior: "smooth" }); render();
   const url = new URL(location.href); url.hash = next === "home" ? "" : next; history.replaceState(null, "", url);
 }
@@ -285,7 +294,7 @@ function renderShell(content) {
       <header class="topbar">
         <button class="brand" data-view="home" aria-label="AluSathi marketplace home"><span class="brand-mark">${icon("leaf", 23)}</span><span><strong>আলুসাথী<span class="brand-dot">.</span></strong><small>${role === "farmer" ? t("কৃষকের পাতা", "Farmer page") : t("ক্রেতার পাতা", "Buyer page")}</small></span></button>
         <nav class="desktop-nav" aria-label="${t("প্রধান মেনু", "Main navigation")}">${role === "farmer" ? farmerNav : buyerNav}</nav>
-        <div class="header-actions"><button class="account-name" data-action="open-profile" aria-label="${t("প্রোফাইল খুলুন", "Open profile")}">${h(role === "farmer" ? (farmerProfile.name || t("কৃষক", "Farmer")) : (buyerProfile.businessName || t("ক্রেতা", "Buyer")))}</button><button class="language-btn" data-action="language" aria-label="Change language">${language === "bn" ? "EN" : "বাংলা"}</button><button class="mode-button" data-action="logout">${icon("arrow", 15)}${role === "farmer" ? t("মূল পাতায় ফিরুন", "Main page") : t("বের হন", "Sign out")}</button></div>
+        <div class="header-actions"><button class="account-name" data-action="open-profile" aria-label="${t("প্রোফাইল খুলুন", "Open profile")}">${h(role === "farmer" ? (farmerProfile.name || t("কৃষক", "Farmer")) : (buyerProfile.contactPerson || buyerProfile.businessName || t("ক্রেতা", "Buyer")))}</button><button class="language-btn" data-action="language" aria-label="Change language">${language === "bn" ? "EN" : "বাংলা"}</button><button class="mode-button" data-action="logout">${icon("arrow", 15)}${role === "farmer" ? t("মূল পাতায় ফিরুন", "Main page") : t("বের হন", "Sign out")}</button></div>
       </header>
       ${notice ? `<div class="notice" role="status">${h(notice)}<button data-action="dismiss" aria-label="Dismiss">×</button></div>` : ""}
       <main id="main">${role === "farmer" ? `<div class="page-shell farmer-market-tools"><a href="/selling-preparation">← ${t("বিক্রির আগে", "Before selling")}</a>${["passport","list"].includes(view) ? "" : `<details><summary>${t("বিক্রির আরও সরঞ্জাম", "More selling tools")}</summary><div>${[navButton(t("আমার আলু", "My potatoes"), "home", "bag"), navButton(t("আলু যোগ করুন", "Add potatoes"), "list", "bag"), navButton(t("গাড়ি", "Transport"), "transport", "truck")].join("")}</div></details>`}</div>` : ""}${content}</main>
@@ -462,8 +471,8 @@ function parseBuyerQuery(query) {
 function renderUnavailable() { return `<section class="section page-shell"><div class="empty-state"><h1>${t("এই অংশটি এখন বন্ধ আছে", "This section is currently unavailable")}</h1></div></section>`; }
 
 function renderBuyerProfilePage() {
-  const field = (key,bn,en,max=100) => `<label>${t(bn,en)}<input name="${key}" maxlength="${max}" ${['phone','whatsapp'].includes(key)?'inputmode="tel"':''} value="${h(buyerProfile[key] || '')}"></label>`;
-  return `<section class="section page-shell buyer-personal buyer-profile"><header class="personal-heading"><div><p class="section-kicker">${t('আপনার পরিচয়','YOUR DETAILS')}</p><h1>${t('ক্রেতার প্রোফাইল','Buyer profile')}</h1><p>${t('যে তথ্য দিতে চান, একবারই লিখুন।','All fields are optional. Enter them once, not repeatedly.')}</p></div><span class="personal-avatar" aria-hidden="true">${h((buyerProfile.businessName || buyerProfile.contactPerson || 'B').slice(0,1))}</span></header><div class="personal-profile-layout"><form id="buyer-profile-form" class="personal-profile-form"><fieldset><legend>${t('ব্যবসা ও এলাকা','Business and location')}</legend><div class="personal-fields">${field('businessName','ব্যবসার নাম','Business name')}${field('contactPerson','আপনার নাম','Contact person',80)}<label>${t('জেলা','District')}<select name="district">${districtOptions(buyerProfile.district || '')}</select></label>${field('upazila','উপজেলা','Upazila',80)}</div></fieldset><fieldset><legend>${t('যোগাযোগ','Contact details')}</legend><div class="personal-fields">${field('phone','ফোন','Phone',25)}${field('whatsapp','WhatsApp','WhatsApp',25)}</div></fieldset><fieldset><legend>${t('আপনার পছন্দ','Preferences')}</legend><div class="personal-fields"><label>${t('আলু কোথায় নেবেন','Destination district')}<select name="destinationDistrict">${districtOptions(buyerProfile.destinationDistrict || 'Dhaka')}</select></label><label>${t('ভাষা','Language')}<select name="preferredLanguage"><option value="bn" ${buyerProfile.preferredLanguage!=='en'?'selected':''}>বাংলা</option><option value="en" ${buyerProfile.preferredLanguage==='en'?'selected':''}>English</option></select></label></div></fieldset><p data-profile-error role="alert"></p><button class="button button-green" type="submit">${t('সেভ করুন','Save profile')}</button><p class="personal-footnote">${t('এই ব্রাউজারেই সেভ হয়। অন্য ডিভাইসে দেখা যাবে না।','Saved in this browser only, not shared across devices.')}</p></form><aside class="personal-shortcuts"><h2>${t('আপনার কাজ','Your workspace')}</h2><button class="button button-outline" data-view="saved">${t('পছন্দের লট ও তুলনা','Liked lots and comparison')}</button><button class="button button-outline" data-view="buyer-plan">${t('লাভ ও সংগ্রহ','Cost and collection')}</button><button class="button button-outline" data-view="notebook">${t('খাতা','Notebook')}</button><p>${t('আলুসাথীতে কৃষক খুঁজুন, সরাসরি কথা বলুন। কেনাবেচা আপনাদের মধ্যে।','Find farmers here and contact them directly. Buying and selling stay between you.')}</p></aside></div></section>`;
+  buyerProfileDraft ||= {...buyerProfile};
+  return renderBuyerAccount({profile:buyerProfileDraft,t,h,icon,photoSrc});
 }
 
 function renderFarmerProfilePage() {
@@ -473,8 +482,9 @@ function renderFarmerProfilePage() {
 
 function renderProfileDrawer() {
   const profile = role === "farmer" ? farmerProfile : buyerProfile;
-  const name = role === "farmer" ? (profile.name || t("কৃষক", "Farmer")) : (profile.businessName || profile.contactPerson || t("ক্রেতা", "Buyer"));
-  return `<div class="modal-backdrop profile-backdrop" data-action="close-profile"><aside class="profile-drawer" role="dialog" aria-modal="true" aria-label="${t("প্রোফাইল", "Profile")}"><button class="modal-close" data-action="close-profile" aria-label="Close">×</button><p class="section-kicker">${t("প্রোফাইল", "PROFILE")}</p><h2>${h(name)}</h2><p>${h(profile.district || profile.destinationDistrict || t("জেলা যোগ করা হয়নি", "District not set"))}</p><button class="button button-green" data-action="profile-page">${t("প্রোফাইল দেখুন", "View profile")}</button>${role === "buyer" ? `<button class="button button-outline" data-view="saved">${t("পছন্দের লট ও তুলনা", "Liked lots and comparison")}</button>` : `<a class="button button-outline" href="/farmer#market">${t("আমার তালিকা", "My listings")}</a>`}</aside></div>`;
+  const name = role === "farmer" ? (profile.name || t("কৃষক", "Farmer")) : (profile.contactPerson || profile.businessName || t("ক্রেতা", "Buyer"));
+  const buyerIdentity=role==='buyer' ? profileAvatar({photo:profile.photo,t,h,icon,photoSrc}) : '';
+  return `<div class="modal-backdrop profile-backdrop" data-action="close-profile"><aside class="profile-drawer" role="dialog" aria-modal="true" aria-label="${t("প্রোফাইল", "Profile")}"><button class="modal-close" data-action="close-profile" aria-label="Close">×</button><p class="section-kicker">${t("আমার প্রোফাইল", "MY PROFILE")}</p>${buyerIdentity}<h2>${h(name)}</h2>${role==='buyer' ? `<p>${t('ক্রেতা','Buyer')}${typeof profile.businessName==='string' && profile.businessName ? ` · ${h(profile.businessName)}` : ''}</p>` : ''}${role==='farmer' ? `<p>${h(profile.district || t("জেলা যোগ করা হয়নি", "District not set"))}</p>` : ''}<button class="button button-green" data-action="profile-page">${t("প্রোফাইল দেখুন", "View profile")}</button>${role === "buyer" ? `<button class="button button-outline" data-view="saved">${t("পছন্দের লট ও তুলনা", "Liked lots and comparison")}</button>` : `<a class="button button-outline" href="/farmer#market">${t("আমার তালিকা", "My listings")}</a>`}</aside></div>`;
 }
 
 function comparisonTotal(lot, quantity) {
@@ -900,16 +910,19 @@ function render() {
     app.querySelector('main')?.insertAdjacentHTML('beforeend', `<details class="page-shell contact-enquiry"><summary>${t('কৃষকের সঙ্গে কথার নোট','Farmer follow-up notes')}</summary>${workspace('contacts',sourcingContext)}</details>`);
     mountWorkspace('contacts',sourcingContext);
   }
-  if (role === 'buyer' && view === 'profile') {
-    document.querySelector('#buyer-profile-form').dataset.demo='false';
-    document.querySelector('.buyer-personal').classList.remove('buyer-profile');
-    document.querySelector('.buyer-personal').classList.add('buyer-profile-page');
-    const district = document.querySelector('#buyer-profile-form [name=district]');
-    district.insertAdjacentHTML('afterbegin', `<option value="">${t('জেলা বাছুন (ঐচ্ছিক)','Choose district (optional)')}</option>`);
-    district.value = districts.includes(buyerProfile.district) ? buyerProfile.district : '';
-  }
+  if (role === 'buyer' && view === 'profile') mountBuyerProfile({
+    draft:buyerProfileDraft,getProfile:()=>buyerProfile,t,h,icon,photoSrc,compressPhoto,
+    onSave:profile=>{
+      localStorage.setItem(buyerProfileKey,JSON.stringify(profile));
+      buyerProfile=profile;
+      const account=document.querySelector('[data-action=open-profile]');
+      if(account) account.textContent=profile.contactPerson || profile.businessName || t('ক্রেতা','Buyer');
+      window.dispatchEvent(new Event('alusathi-buyer-profile-changed'));
+    }
+  });
   if (role === 'buyer' && profileOpen) {
     document.querySelector('.profile-drawer').insertAdjacentHTML('beforeend', `<button class="button button-outline" data-action="open-notebook">${t('খাতা','Notebook')}</button>`);
+    mountProfileAvatars(document.querySelector('.profile-drawer'));
     document.querySelector('.profile-drawer .modal-close')?.focus();
   }
   if (detailLotId) {
@@ -994,18 +1007,20 @@ function showStorageResult(form, input) {
   form.querySelector("#storage-result").innerHTML = `<span>${t("পরে অন্তত এই দর লাগবে", "Future price needed to break even")}</span><strong>${rate(result.futurePriceKg)}<small>/${t("কেজি", "kg")}</small></strong><p>${t("আজ বিক্রি করলে", "Sell today")}: ${money(result.todayValue)} · ${t("সংরক্ষণ ও অন্য খরচ", "Storage and extra costs")}: ${money(result.storageCost)} · ${t("পরে বিক্রিযোগ্য অনুমান", "Estimated saleable later")}: ${kg(result.saleableKg)}</p><small>${t("সুদ, অজানা ফি বা দরের ওঠানামা ধরা নেই।", "Does not include financing, unknown fees or changing market prices.")}</small>`;
 }
 
-async function compressPhoto(file) {
+async function compressPhoto(file, {maxBytes=2_000_000,maxEdge=900}={}) {
   if (!file) return "";
-  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 2_000_000) throw new Error(t("শুধু JPG, PNG বা WEBP ছবি দিন, সর্বোচ্চ ২ MB।", "Use a JPG, PNG or WEBP image under 2 MB."));
+  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || !file.size || file.size > maxBytes) throw new Error(t("শুধু JPG, PNG বা WEBP ছবি দিন, সর্বোচ্চ ২ MB।", "Use a JPG, PNG or WEBP image under 2 MB."));
   const bytes = new Uint8Array(await file.slice(0, 12).arrayBuffer());
   const signatureMatches = file.type === "image/jpeg" ? bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255 : file.type === "image/png" ? [137,80,78,71,13,10,26,10].every((byte, index) => bytes[index] === byte) : String.fromCharCode(...bytes.slice(0, 4)) === "RIFF" && String.fromCharCode(...bytes.slice(8, 12)) === "WEBP";
   if (!signatureMatches) throw new Error(t("ফাইলটি সঠিক ছবি নয়। অন্য ছবি দিন।", "This is not a valid image file. Choose another photo."));
   const bitmap = await createImageBitmap(file);
   if (!bitmap.width || !bitmap.height || bitmap.width * bitmap.height > 32_000_000) { bitmap.close(); throw new Error(t("ছবিটি খুব বড়। ছোট ছবি দিন।", "The image dimensions are too large. Choose a smaller photo.")); }
-  const scale = Math.min(1, 900 / Math.max(bitmap.width, bitmap.height));
+  const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(bitmap.width * scale); canvas.height = Math.round(bitmap.height * scale);
-  canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  const context=canvas.getContext("2d");
+  if(maxEdge===512) {context.fillStyle="white";context.fillRect(0,0,canvas.width,canvas.height);}
+  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   bitmap.close();
   return canvas.toDataURL("image/jpeg", 0.72);
 }
@@ -1340,24 +1355,13 @@ document.addEventListener("submit", async event => {
     buyerCataloguePage = 1;
     render(); return;
   }
-  if (form.id === "buyer-profile-form" || form.id === "farmer-profile-form") {
-    const isBuyer = form.id === "buyer-profile-form";
-    const keys = isBuyer ? ["businessName", "contactPerson", "district", "upazila", "phone", "whatsapp", "destinationDistrict", "preferredLanguage"] : ["name", "district", "upazila", "village", "phone", "whatsapp", "land", "landUnit", "tenure", "preferredLanguage", "contactSharingEnabled"];
-    const profile = {...(isBuyer ? buyerProfile : farmerProfile), ...Object.fromEntries(keys.map(key => [key, String(values[key] || "").trim().slice(0, key === "phone" || key === "whatsapp" ? 25 : 100)]))};
-    const profileError = form.querySelector('[data-profile-error]');
-    if (isBuyer) {
-      const validPhone = value => !value || /^\+?[\d\s()-]+$/.test(value.replace(/[০-৯]/g,d=>'০১২৩৪৫৬৭৮৯'.indexOf(d)));
-      const digits = value => value.replace(/[০-৯]/g,d=>'০১২৩৪৫৬৭৮৯'.indexOf(d)).replace(/\D/g,'');
-      if (['phone','whatsapp'].some(k => profile[k] && (!validPhone(profile[k]) || digits(profile[k]).length < 7 || digits(profile[k]).length > 15)) || (profile.district && !districts.includes(profile.district)) || !districts.includes(profile.destinationDistrict) || !['bn','en'].includes(profile.preferredLanguage)) { profileError.textContent=t('ফোন নম্বর ও জেলা মিলিয়ে দিন।','Check your phone numbers and district.'); return; }
-    }
-    if (!isBuyer) profile.contactSharingEnabled = form.elements.contactSharingEnabled.checked;
-    if (profile.land && validNumber(profile.land, 0, 100000) === null) { notice = t("জমির পরিমাণ ঠিক করে দিন।", "Enter a valid land area."); render(); return; }
-    try {
-      localStorage.setItem(isBuyer ? buyerProfileKey : farmerProfileKey, JSON.stringify(profile));
-      if (isBuyer) buyerProfile = profile; else farmerProfile = profile;
-      notice = t("প্রোফাইল সংরক্ষণ হয়েছে।", "Profile saved.");
-    } catch { if (isBuyer) {profileError.textContent=t('সেভ হয়নি। আপনার লেখা আছে—আবার চেষ্টা করুন।','Could not save. Your edits are still here; try again.');return;} notice = t("সংরক্ষণ করা যায়নি। জায়গা খালি করে আবার চেষ্টা করুন।", "Could not save. Free browser storage and try again."); }
-    render(); return;
+  if (form.id === "farmer-profile-form") {
+    const keys=["name","district","upazila","village","phone","whatsapp","land","landUnit","tenure","preferredLanguage"];
+    const profile={...farmerProfile,...Object.fromEntries(keys.map(key=>[key,String(values[key] || "").trim().slice(0,key==='phone' || key==='whatsapp'?25:100)])),contactSharingEnabled:form.elements.contactSharingEnabled.checked};
+    if (profile.land && validNumber(profile.land,0,100000)===null) {notice=t('জমির পরিমাণ ঠিক করে দিন।','Enter a valid land area.');render();return;}
+    try {localStorage.setItem(farmerProfileKey,JSON.stringify(profile));farmerProfile=profile;notice=t('প্রোফাইল সংরক্ষণ হয়েছে।','Profile saved.');}
+    catch {notice=t('সংরক্ষণ করা যায়নি। জায়গা খালি করে আবার চেষ্টা করুন।','Could not save. Free browser storage and try again.');}
+    render();return;
   }
   if (form.id === "lot-form") {
     if (form.closest('.sale-details-page')) {

@@ -1,29 +1,84 @@
-.farmer-v2 .farmer-profile-page { max-width:1120px; padding:32px 28px 70px; color:var(--home-ink); }
 .farmer-v2[data-view="profile"] { background:var(--home-sky); }
-.farmer-profile-page>header { display:flex; align-items:center; gap:18px; }
-.profile-avatar { display:grid; place-items:center; flex:none; width:64px; height:64px; border-radius:20px; background:var(--home-soft); color:var(--home-green); }
-.profile-avatar img { width:100%; height:100%; object-fit:cover; border-radius:inherit; }
-.profile-photo-controls { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-bottom:18px; }
-.profile-photo-controls label { cursor:pointer; }
-.profile-photo-controls label:focus-within { outline:3px solid var(--home-green); outline-offset:3px; }
-.profile-calculators { margin-top:18px; }
-.farmer-v2 .farmer-profile-page h1 { font-size:32px; font-weight:700; line-height:1.4; margin:3px 0 5px; }
-.farmer-profile-page header>div>p:last-child { color:var(--home-muted); font-size:16px; line-height:1.7; }
-.farmer-profile-page .farmer-profile-form { display:block; margin-top:26px; padding:0; border:0; background:transparent; }
-.farmer-profile-form fieldset { min-width:0; padding:22px 24px; margin-bottom:18px; border:1px solid var(--home-line); border-radius:16px; background:white; }
-.farmer-profile-form legend { display:flex; align-items:center; gap:9px; padding:0 8px; font-size:21px; font-weight:700; color:var(--home-green); }
-.farmer-profile-form fieldset>p { margin-bottom:18px; color:var(--home-muted); font-size:16px; line-height:1.6; }
-.profile-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px 24px; }
-.farmer-profile-field { font-size:16px; font-weight:600; }
-.farmer-profile-page .farmer-profile-field input,.farmer-profile-page .farmer-profile-field select { border-color:var(--home-line); color:var(--home-ink); font-size:17px; }
-.profile-sharing { display:flex; align-items:flex-start; gap:12px; margin-top:20px; padding-top:18px; border-top:1px solid var(--home-line); cursor:pointer; font-size:17px; line-height:1.6; }
-.profile-sharing input { flex:none; width:23px; height:23px; margin-top:3px; accent-color:var(--home-green); }
-.profile-sharing small { display:block; margin-top:5px; font-size:15px; color:var(--home-muted); }
-.farmer-profile-actions { gap:12px; }
-.farmer-v2 .farmer-profile-actions .main-button { width:auto; min-width:180px; background:var(--home-green); }
-.farmer-profile-actions button,.farmer-profile-actions a { min-height:48px; padding:10px 20px; font-size:17px; }
-.farmer-profile-actions span { margin-left:auto; color:var(--home-muted); font-size:14px; }
-.farmer-profile-page .farmer-profile-status { margin-top:18px; padding:12px 16px; border-radius:10px; background:var(--home-soft); color:var(--home-green); }
-.farmer-profile-status[role=alert] { border-left:3px solid #a13d21; }
-.farmer-profile-page :focus-visible { outline:3px solid var(--home-green); outline-offset:3px; }
-@media(max-width:700px) { .profile-fields { grid-template-columns:1fr; } .farmer-profile-actions span { margin-left:0; } }
+.farmer-v2 .farmer-profile-page { max-width:1100px; padding:38px 28px 84px; color:var(--home-ink); }
+.farmer-profile-page > header { display:flex; align-items:center; justify-content:space-between; gap:20px; margin-bottom:26px; }
+.farmer-v2 .farmer-profile-page h1 { margin:3px 0 6px; font-size:clamp(28px,3vw,38px); font-weight:700; line-height:1.4; }
+.farmer-profile-page p { line-height:1.65; }
+.farmer-profile-page > header p:last-child { color:var(--home-muted); font-size:17px; }
+.profile-role { display:flex; align-items:center; gap:7px; padding:8px 15px; border:1px solid #c1d9cb; border-radius:30px; background:#dfeee5; color:#18583e; font-weight:600; white-space:nowrap; }
+.profile-account-card { overflow:hidden; border:1px solid #cbded3; border-radius:24px; background:#fff; box-shadow:0 12px 32px #153e2910; }
+.farmer-profile-page .farmer-profile-form { display:block; margin:0; padding:0; border:0; border-radius:0; background:transparent; }
+.profile-photo-section { display:flex; gap:24px; align-items:center; padding:30px 34px; background:#fbfcf9; border-bottom:1px solid #e0e9e2; }
+.profile-photo-preview { position:relative; display:grid; place-items:center; flex:none; width:104px; height:104px; border:1px solid #bcd4c5; border-radius:50%; background:#e5f0e8; color:#356b50; }
+.farmer-profile-page .profile-photo-preview > img { position:absolute; inset:0; display:block; width:100%; height:100%; min-width:0; min-height:0; max-width:100%; max-height:100%; object-fit:cover; border-radius:50%; }
+.profile-photo-preview > span { position:absolute; bottom:0; right:0; display:grid; place-items:center; width:30px; height:30px; border:3px solid white; border-radius:50%; background:#205c42; color:white; }
+.farmer-profile-page h2 { font-size:23px; font-weight:700; line-height:1.4; }
+.profile-photo-section h2 { font-size:20px; }
+.profile-photo-section p { margin:3px 0 12px; color:var(--home-muted); }
+.profile-photo-controls { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+.profile-photo-controls > button,.profile-upload-button { position:relative; display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:44px; padding:8px 16px; border:1px solid #c8d8cd; border-radius:10px; background:white; color:#20533c; font-size:16px; font-weight:600; cursor:pointer; }
+.profile-upload-button { background:#205c42; color:white; border-color:#205c42; }
+.profile-upload-button input { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; }
+.profile-upload-button:focus-within { outline:3px solid #bb891b; outline-offset:3px; }
+.profile-photo-section small { display:block; margin-top:10px; font-size:13px; color:var(--home-muted); }
+.farmer-profile-form fieldset { min-width:0; padding:26px 34px 30px; margin:0; border:0; border-bottom:1px solid #e0e9e2; }
+.farmer-profile-form legend { float:left; display:flex; align-items:center; gap:9px; width:100%; margin:0 0 6px; padding:0; color:#21523a; font-size:20px; font-weight:700; }
+.farmer-profile-form fieldset > p { clear:both; margin:0 0 22px; color:var(--home-muted); font-size:15px; }
+.farmer-profile-form legend + .profile-fields { clear:both; padding-top:16px; }
+.farmer-profile-field small { font-size:14px; font-weight:400; color:var(--home-muted); }
+.farmer-profile-page .farmer-profile-field select:disabled { background:#f1f4f1; color:#566b5d; cursor:not-allowed; opacity:1; }
+.profile-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:22px 26px; }
+.farmer-profile-field { display:grid; gap:8px; min-width:0; font-size:16px; font-weight:600; }
+.farmer-profile-page .farmer-profile-field input,.farmer-profile-page .farmer-profile-field select { display:block; width:100%; min-width:0; min-height:50px; margin:0; padding:10px 14px; border:1px solid #b9d0c1; border-radius:11px; background:#fff; color:#193c2a; font-size:17px; font-weight:400; }
+.profile-sharing { display:flex; align-items:flex-start; gap:12px; margin-top:22px; padding:15px 17px; border:1px solid #d8e7dc; border-radius:12px; background:#f2f7f3; cursor:pointer; font-size:16px; line-height:1.6; }
+.profile-sharing input { flex:none; width:21px; height:21px; margin-top:3px; accent-color:#205c42; }
+.profile-sharing small { display:block; margin-top:4px; font-size:14px; color:var(--home-muted); }
+.farmer-profile-page .farmer-profile-actions { display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding:22px 34px; background:#fbfcf9; }
+.farmer-profile-page .farmer-profile-actions { justify-content:flex-end; }
+.farmer-profile-page .farmer-profile-actions span { flex:1; color:var(--home-muted); font-size:14px; }
+.farmer-profile-page .main-button { display:inline-flex; align-items:center; justify-content:center; gap:8px; width:auto; min-height:46px; padding:10px 20px; border-radius:11px; background:#205c42; color:white; font-size:16px; }
+.farmer-profile-page .secondary-main { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:46px; padding:10px 18px; border:1px solid #bdcfc3; border-radius:11px; background:white; color:#214d37; font-size:16px; }
+.farmer-profile-page button:disabled { opacity:.6; cursor:wait; }
+.farmer-profile-page .farmer-profile-status { margin:0; padding:14px 34px; border-top:1px solid #c8ddcf; background:#e7f2e9; color:#20513a; }
+.farmer-profile-page .farmer-profile-status[role=alert] { background:#fff1e9; color:#88351e; }
+.profile-sale-section { margin-top:38px; }
+.profile-sale-section > header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; margin-bottom:18px; }
+.profile-sale-section h2 { margin-top:3px; }
+.profile-listings { display:grid; gap:16px; }
+.profile-lot { display:flex; gap:22px; padding:20px; border:1px solid #cbded3; border-radius:18px; background:white; }
+.profile-lot > img,.profile-lot-placeholder { flex:none; width:144px; height:144px; object-fit:cover; border-radius:12px; background:#edf2e8; color:#617a4b; }
+.profile-lot-placeholder { display:grid; place-items:center; }
+.profile-lot-body { flex:1; min-width:0; }
+.profile-lot-heading { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; }
+.profile-lot h3 { font-size:21px; font-weight:700; overflow-wrap:anywhere; }
+.profile-lot-status { padding:4px 10px; border-radius:30px; background:#e8f3e9; color:#235936; font-size:13px; }
+.profile-lot-status.muted { background:#f1eee5; color:#635b43; }
+.profile-lot-body > p { display:flex; align-items:center; gap:5px; margin:7px 0 14px; color:var(--home-muted); overflow-wrap:anywhere; }
+.profile-lot dl { display:flex; flex-wrap:wrap; gap:18px 40px; margin-bottom:14px; }
+.profile-lot dt { font-size:13px; color:var(--home-muted); }
+.profile-lot dd { margin-top:3px; font-size:18px; font-weight:600; }
+.profile-lot a { color:#1a603e; font-size:15px; font-weight:600; text-decoration:underline; text-underline-offset:4px; }
+.profile-listings-empty { display:flex; flex-direction:column; align-items:center; padding:32px 24px; border:1px dashed #9cbfa9; border-radius:18px; background:#f8fbf7; text-align:center; }
+.profile-listings-empty > span { display:grid; place-items:center; width:58px; height:58px; margin-bottom:14px; border-radius:18px; background:#e6efdf; color:#477543; }
+.profile-listings-empty h3 { font-size:21px; font-weight:600; }
+.profile-listings-empty p { margin:7px 0 20px; color:var(--home-muted); }
+.farmer-profile-page :focus-visible { outline:3px solid #b8881b; outline-offset:3px; }
+@media(max-width:700px) {
+  .farmer-v2 .farmer-profile-page { padding:24px 16px 100px; }
+  .farmer-profile-page > header { align-items:flex-start; gap:10px; }
+  .profile-role { padding:6px 10px; font-size:13px; }
+  .farmer-profile-page > header p:last-child { font-size:16px; }
+  .profile-account-card { border-radius:18px; }
+  .profile-photo-section { gap:16px; padding:24px 20px; align-items:flex-start; }
+  .profile-photo-preview { width:76px; height:76px; }
+  .profile-photo-controls { gap:8px; }
+  .profile-photo-controls > button,.profile-upload-button { padding:8px 12px; font-size:15px; }
+  .farmer-profile-form fieldset { padding:24px 20px; }
+  .profile-fields { grid-template-columns:1fr; gap:18px; }
+  .farmer-profile-page .farmer-profile-actions { padding:20px; }
+  .farmer-profile-page .farmer-profile-actions span { flex-basis:100%; }
+  .farmer-profile-actions button { flex:1; }
+  .farmer-profile-page .farmer-profile-status { padding:14px 20px; }
+  .profile-sale-section { margin-top:30px; }
+  .profile-lot { gap:16px; padding:16px; flex-direction:column; }
+  .profile-lot > img,.profile-lot-placeholder { width:100%; height:170px; }
+}
