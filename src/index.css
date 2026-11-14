@@ -842,6 +842,8 @@
 .farmer-profile-overlay { position: fixed; inset: 0; z-index: 120; display: flex; justify-content: flex-end; background: #17392e77; }
 .farmer-profile-drawer { position: relative; width: min(420px, 92vw); height: 100%; padding: 34px 24px; background: #f5f8f4; box-shadow: -20px 0 60px #10342833; }
 .farmer-profile-drawer h2 { margin: 18px 0 6px; font-size: 28px; }
+.farmer-drawer-avatar { position: relative; display: grid; place-items: center; width: 96px; height: 96px; margin-top: 24px; overflow: hidden; border: 1px solid #bcd4c5; border-radius: 50%; background: #e5f0e8; color: #356b50; }
+.farmer-drawer-avatar > img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: cover; }
 .farmer-profile-drawer p { color: #61766b; }
 .farmer-profile-drawer .secondary-main { display: flex; justify-content: center; margin-top: 14px; }
 .farmer-profile-close { position: absolute; top: 16px; right: 18px; width: 40px; height: 40px; border: 1px solid #cbded5; border-radius: 50%; background: white; color: #164432; font-size: 26px; }
