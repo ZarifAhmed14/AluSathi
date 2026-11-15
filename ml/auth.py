@@ -24,7 +24,7 @@ ORIGINS = set(os.getenv("ALUSATHI_ORIGINS", "http://127.0.0.1:4173,http://127.0.
 attempts = defaultdict(deque)
 
 def call(path, data=None, token=None, method=None):
-    if not URL or not KEY: raise HTTPException(503, "Account service is not configured")
+    if not URL or not KEY: raise HTTPException(503, "Account services are not connected yet. Please try again later.")
     headers = {"apikey": KEY, "Content-Type": "application/json"}
     if token: headers["Authorization"] = "Bearer " + token
     request = urllib.request.Request(URL + "/auth/v1/" + path, data=json.dumps(data).encode() if data is not None else None, headers=headers, method=method)
@@ -36,7 +36,7 @@ def call(path, data=None, token=None, method=None):
         except ValueError: pass
         allowed = {"email_not_confirmed", "over_email_send_rate_limit", "email_address_not_authorized", "weak_password", "user_already_exists"}
         raise HTTPException(429 if error.code == 429 else 400, code if code in allowed else "auth_failed") from None
-    except (OSError, ValueError): raise HTTPException(503, "Account service unavailable") from None
+    except (OSError, ValueError): raise HTTPException(503, "Account services are not available now. Please try again later.") from None
 
 async def guard(request):
     if request.headers.get("origin") not in ORIGINS or request.headers.get("x-alusathi-request") != "1": raise HTTPException(403, "Request not allowed")
@@ -83,13 +83,13 @@ async def auth_action(action: str, request: Request):
         response = session_response({}, request); response.delete_cookie("alusathi_refresh", path="/api"); return response
     email, password = data.get("email", ""), data.get("password", "")
     if action in {"signin", "signup", "recover"}:
-        if not isinstance(email, str) or not 3 <= len(email) <= 254 or "@" not in email: raise HTTPException(400, "Invalid email")
+        if not isinstance(email, str) or not 3 <= len(email) <= 254 or "@" not in email: raise HTTPException(400, "Please check your email address.")
     if action in {"signin", "signup", "password"}:
         if not isinstance(password, str) or not (8 if action != "signin" else 1) <= len(password) <= 128: raise HTTPException(400, "Invalid password length")
     if action == "signin": return session_response(await asyncio.to_thread(call, "token?grant_type=password", {"email": email, "password": password}), request)
     if action == "signup":
         name = data.get("name", "")
-        if not isinstance(name, str) or not 1 <= len(name.strip()) <= 80: raise HTTPException(400, "Invalid name")
+        if not isinstance(name, str) or not 1 <= len(name.strip()) <= 80: raise HTTPException(400, "Please check your name.")
         await asyncio.to_thread(call, "signup?redirect_to=" + urllib.parse.quote(request.headers["origin"] + "/account", safe=""), {"email": email, "password": password, "data": {"farmer_name": name.strip()}})
         return {"sent": True}
     if action == "recover":

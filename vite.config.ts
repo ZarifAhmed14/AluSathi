@@ -77,7 +77,7 @@ export default defineConfig(() => ({
       manifest: {
         name: "AluSathi FieldWatch",
         short_name: "AluSathi",
-        description: "Bangla-first potato leaf screening and whole-field checks for Bangladesh farmers",
+        description: "Potato photo checks and field care for Bangladesh's Farmers, in Bangla.",
         theme_color: "#112a20",
         background_color: "#f7f1df",
         display: "standalone",

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CalendarDays, ChevronDown, CircleCheck, Flower2, Leaf, PackageCheck, Sprout } from "lucide-react";
 import { areaSquareMetres } from "@/lib/farmer-tools";
 import { cropGuidance } from "@/lib/crop-advice";
@@ -8,6 +8,7 @@ import { readCareArea } from "@/lib/care-area";
 import CareLandEditor from "./CareLandEditor";
 import { recentPhoto, sprayReference } from "@/lib/today-plan";
 import { PROFILE_CHANGED } from "@/lib/farmer-profile";
+import { seasonTips, seasonTipsNote } from "@/data/season-tips";
 
 // BAMIS potato bulletin: basal rates and one urea top dressing, kg/hectare.
 const nutrients = [
@@ -20,17 +21,17 @@ const nutrients = [
 ] as const;
 
 const milestones = [
-  { start: 1, end: 14, icon: Sprout, bn: "রোপণ", en: "Planting", note: ["লাগানো আলু থেকে অঙ্কুর বের হতে শুরু করে।", "Shoots begin to emerge from planted tubers."] },
+  { start: 1, end: 14, icon: Sprout, bn: "রোপণ", en: "Planting", note: ["লাগানো আলু থেকে অঙ্কুর বের হতে শুরু করে।", "Sprouts start to grow from the planted potatoes."] },
   { start: 15, end: 30, icon: Leaf, bn: "প্রাথমিক বৃদ্ধি", en: "Early growth", note: ["গাছের কাণ্ড ও পাতা বাড়তে থাকে।", "Stems and leaves continue to grow."] },
-  { start: 31, end: 45, icon: Flower2, bn: "কন্দ গঠন", en: "Tuber formation", note: ["মাটির নিচে নতুন আলু গঠন শুরু হতে পারে।", "New tubers may begin forming below ground."] },
-  { start: 46, end: 70, icon: Sprout, bn: "কন্দ বৃদ্ধি", en: "Tuber growth", note: ["মাটির নিচে আলুর আকার বাড়তে থাকে।", "Tubers continue to grow below ground."] },
+  { start: 31, end: 45, icon: Flower2, bn: "কন্দ গঠন", en: "Potato formation", note: ["মাটির নিচে নতুন আলু গঠন শুরু হতে পারে।", "New potatoes may start forming below ground."] },
+  { start: 46, end: 70, icon: Sprout, bn: "কন্দ বৃদ্ধি", en: "Potato growth", note: ["মাটির নিচে আলুর আকার বাড়তে থাকে।", "Potatoes keep growing below ground."] },
   { start: 71, end: 90, icon: PackageCheck, bn: "ফসল সংগ্রহ", en: "Harvest", note: ["ফসল তোলার সময় জাত ও জমির অবস্থা অনুযায়ী বদলায়।", "Harvest timing varies by variety and field conditions."] },
 ] as const;
 
 const upcoming = [
   { start: 15, end: 30, bn: "আগাছা আছে কি না ও গাছ কেমন বাড়ছে দেখুন", en: "Check for weeds and watch plant growth" },
-  { start: 30, end: 35, bn: "গোড়ায় মাটি দেওয়ার সময় মিলিয়ে নিন", en: "Check when to earth up the plants", note: ["মাটি দিয়ে আলু ঢেকে রাখলে সবুজ হওয়ার ঝুঁকি কমে।", "Covering tubers with soil helps prevent greening."] },
-  { start: 48, end: 63, bn: "মাটি দেখে সেচ লাগবে কি না বুঝে নিন", en: "Check soil moisture to see whether irrigation is needed" },
+  { start: 30, end: 35, bn: "গোড়ায় মাটি দেওয়ার সময় মিলিয়ে নিন", en: "Check when to earth up the plants", note: ["মাটি দিয়ে আলু ঢেকে রাখলে সবুজ হওয়ার ঝুঁকি কমে।", "Covering potatoes with soil helps prevent them turning green."] },
+  { start: 48, end: 63, bn: "মাটি দেখে সেচ লাগবে কি না বুঝে নিন", en: "Check the soil to see if watering is needed" },
   { start: 71, end: 90, bn: "আলু তোলার সময় হয়েছে কি না দেখুন", en: "Check whether the crop is ready to harvest" },
 ] as const;
 
@@ -46,6 +47,13 @@ export default function SeasonProgress({ bn, district }: { bn: boolean; district
   const actual = 8;
   const [selected, setSelected] = useState<number | null>(null);
   const preview = selected ?? actual;
+  const calendarRef = useRef<HTMLUListElement>(null);
+  useEffect(() => {
+    const calendar = calendarRef.current;
+    const selectedDay = calendar?.querySelector<HTMLButtonElement>('[aria-pressed="true"]');
+    if (!calendar || !selectedDay) return;
+    calendar.scrollLeft += selectedDay.getBoundingClientRect().left - calendar.getBoundingClientRect().left - (calendar.clientWidth - selectedDay.offsetWidth) / 2;
+  }, [preview]);
   const [area, setArea] = useState(readSeasonArea);
   useEffect(() => {
     const refresh = () => setArea(readSeasonArea());
@@ -55,7 +63,7 @@ export default function SeasonProgress({ bn, district }: { bn: boolean; district
   }, []);
   const areaM2 = areaSquareMetres(Number(area.value), area.unit, Number(area.bigha));
   const fmt = (value: number) => value.toLocaleString(bn ? "bn-BD" : "en-GB", { maximumFractionDigits: 2 });
-  const areaLabel = `${fmt(Number(area.value))} ${({ acre: t("একর", Number(area.value) === 1 ? "acre" : "acres"), decimal: t("শতক", "shotok"), bigha: t("বিঘা", "bigha"), hectare: t("হেক্টর", "ha") })[area.unit]}`;
+  const areaLabel = `${fmt(Number(area.value))} ${({ acre: t("একর", Number(area.value) === 1 ? "acre" : "acres"), decimal: t("শতক", "shatak"), bigha: t("বিঘা", "bigha"), hectare: t("হেক্টর", "ha") })[area.unit]}`;
   const amount = (range: readonly number[], metres: number) => `${fmt(range[0] * metres / 10000)}–${fmt(range[1] * metres / 10000)}`;
   const actions = readFieldActions();
   const stage = milestones.find(item => preview <= item.end) ?? milestones[0];
@@ -74,7 +82,7 @@ export default function SeasonProgress({ bn, district }: { bn: boolean; district
     const date = localToday(day);
     const records = date <= today ? actions.filter(item => item.date === date && (item.district === district || !item.district) && (item.kind === "task" || item.category === "fertilizer" && item.status === "applied")) : [];
     const guidance = upcoming.filter(item => item.start === number);
-    return { number, day, date, records, guidance };
+    return { number, day, date, records, guidance, tip: seasonTips[number - 1] };
   });
   const activeDay = days[preview - firstDay];
   const isToday = preview === actual;
@@ -102,7 +110,7 @@ export default function SeasonProgress({ bn, district }: { bn: boolean; district
         <p>{stage.note[bn ? 0 : 1]}</p>
         <p className="season-activity"><CircleCheck size={16} aria-hidden="true" /><span>{t("এই ধাপের কাজ:", "Stage activity:")} {cropGuidance(preview, null, bn).reminders[0]}</span></p>
       </section>
-      <p className="season-safety">{t("এটি আনুমানিক ধাপ, জমির নিশ্চিত অবস্থা নয়। সার বা স্প্রে প্রয়োগের নির্দেশও নয়।", "Stages are approximate, not verified field conditions or instructions to apply fertilizer or spray.")}</p>
+      <p className="season-safety">{t("এটি আনুমানিক ধাপ, জমির নিশ্চিত অবস্থা নয়। সার বা স্প্রে প্রয়োগের নির্দেশও নয়।", "These stages are estimates, not confirmed field conditions. They are not instructions to add fertiliser or spray.")}</p>
     </section>
     <div className="season-side">
     <section className="season-card season-upcoming" aria-labelledby="season-upcoming-title">
@@ -133,26 +141,27 @@ export default function SeasonProgress({ bn, district }: { bn: boolean; district
           <button type="button" onClick={() => setSelected(90)}>{t("দিন ৯০", "Day 90")} ↗</button>
         </div>
       </header>
-      <ul className="season-calendar-grid" key={week}>{days.map(({ number, day, date, records, guidance }) => (
+      <ul className="season-calendar-grid" key={week} ref={calendarRef}>{days.map(({ number, day, date, records, tip }) => (
         <li key={date}>
           <button type="button" data-day={number} disabled={number < 1 || number > 90} aria-current={number === actual ? "date" : undefined} aria-pressed={number === preview} aria-controls="season-day-details" onClick={() => setSelected(number)}>
             <span className="season-calendar-weekday">{day.toLocaleDateString(bn ? "bn-BD" : "en-GB", { weekday: "short" })}</span>
             <time dateTime={date}><strong>{fmt(day.getDate())}</strong> {day.toLocaleDateString(bn ? "bn-BD" : "en-GB", { month: "short" })}</time>
             {number >= 1 && number <= 90 && <small>{number === actual ? t("আজ · ", "Today · ") : ""}{t(`দিন ${fmt(number)}`, `Day ${fmt(number)}`)}</small>}
             {records.length > 0 && <span className="season-calendar-event recorded"><CircleCheck size={14} role="img" aria-label={t("কাজ শেষ", "Completed")} /> {t("খাতায় আছে", "In Khata")} · {fmt(records.length)}</span>}
-            {number === actual && <span className="season-calendar-event">{t("আজকের কাজ", "Today’s work")}</span>}
-            {guidance.map(item => <span className="season-calendar-event" key={item.start}>{bn ? item.bn : item.en}</span>)}
+            {number === actual && <span className="season-calendar-event">{t("আজকের কাজ", "Today's tasks")}</span>}
+            {tip && <span className="season-calendar-tip">{bn ? tip.bn : tip.en}</span>}
           </button>
         </li>
       ))}</ul>
+      <p className="season-calendar-note">{bn ? seasonTipsNote.bn : seasonTipsNote.en}</p>
       <div id="season-day-details" className="season-day-details" aria-live="polite">
         <span className="season-calendar-phase"><StageIcon size={16} aria-hidden="true" />{bn ? stage.bn : stage.en}</span>
         <h3>{t(`দিন ${fmt(preview)}`, `Day ${fmt(preview)}`)} · {activeDay.day.toLocaleDateString(bn ? "bn-BD" : "en-GB", { weekday: "long", day: "numeric", month: "short" })}</h3>
+        {activeDay.tip && <p className="season-day-tip">{bn ? activeDay.tip.bn : activeDay.tip.en}</p>}
         {isToday && <p>{cropGuidance(actual, null, bn).reminders[0]}</p>}
         {isToday && weeklySpray && <p>{t("শুধু মাঠে লেট ব্লাইট নিশ্চিত হলে তথ্যসূত্র:", "Reference only if field late blight is confirmed:")} {weeklySpray}.</p>}
         {activeDay.guidance.map(item => <p key={item.start}>{bn ? item.bn : item.en}</p>)}
         {activeDay.records.map(record => <p className="season-record" key={record.id}>{t("খাতায় রাখা হয়েছে:", "Recorded in Khata:")} {record.text}</p>)}
-        {!isToday && !activeDay.records.length && !activeDay.guidance.length && <p>{t("এই দিনে আলাদা কাজ বা খাতার রেকর্ড নেই।", "No separate activity or Khata entry for this day.")}</p>}
       </div>
     </section>
     <div className="season-reference-strip">
@@ -178,13 +187,13 @@ export default function SeasonProgress({ bn, district }: { bn: boolean; district
       </summary>
       <p>{t("পুরো মৌসুমের আনুমানিক হিসাব। মাটি ও জাতভেদে বদলাতে পারে।", "Full-season estimates vary by soil and variety.")}</p>
       <CareLandEditor bn={bn} area={area} />
-      <div className="farming-table-wrap"><table><thead><tr><th>{t("সার", "Fertiliser")}</th><th>{t("পর্যায়", "Stage")}</th><th>{t("কেজি/একর", "kg/acre")}</th><th>{t("এই জমিতে মোট কেজি", "Total kg for field")}</th><th>{t("জমি তৈরির হিসাব (কেজি)", "Basal estimate (kg)")}</th><th>{t("পরের কিস্তির হিসাব (কেজি)", "Later estimate (kg)")}</th></tr></thead>
+      <div className="farming-table-wrap"><table><thead><tr><th>{t("সার", "Fertiliser")}</th><th>{t("পর্যায়", "Stage")}</th><th>{t("কেজি/একর", "kg/acre")}</th><th>{t("এই জমিতে মোট কেজি", "Total kg for field")}</th><th>{t("জমি তৈরির হিসাব (কেজি)", "Field preparation amount (kg)")}</th><th>{t("পরের কিস্তির হিসাব (কেজি)", "Later amount (kg)")}</th></tr></thead>
         <tbody>{nutrients.map(item => {
           const later = "later" in item ? item.later : null;
           const total = later ? [item.basal[0] + later[0], item.basal[1] + later[1]] : item.basal;
-          return <tr key={item.en}><th scope="row">{bn ? item.bn : item.en}</th><td>{later ? t("জমি তৈরি + ৩০–৩৫ দিন", "Basal + days 30–35") : t("জমি তৈরি", "Basal")}</td><td>{amount(total, areaSquareMetres(1, "acre"))}</td><td>{amount(total, areaM2)}</td><td>{amount(item.basal, areaM2)}</td><td>{later ? amount(later, areaM2) : fmt(0)}</td></tr>;
+          return <tr key={item.en}><th scope="row">{bn ? item.bn : item.en}</th><td>{later ? t("জমি তৈরি + ৩০–৩৫ দিন", "Field preparation + days 30–35") : t("জমি তৈরি", "Field preparation")}</td><td>{amount(total, areaSquareMetres(1, "acre"))}</td><td>{amount(total, areaM2)}</td><td>{amount(item.basal, areaM2)}</td><td>{later ? amount(later, areaM2) : fmt(0)}</td></tr>;
         })}</tbody></table></div>
-      <p><a href="https://www.bamis.gov.bd/en/bulletin/view/37638/" target="_blank" rel="noopener noreferrer">BAMIS · {t("জমি তৈরি", "basal rates")} ↗</a> · <a href="https://www.bamis.gov.bd/en/bulletin/view/32495/" target="_blank" rel="noopener noreferrer">BAMIS · {t("ইউরিয়া", "urea top dressing")} ↗</a></p>
+      <p><a href="https://www.bamis.gov.bd/en/bulletin/view/37638/" target="_blank" rel="noopener noreferrer">BAMIS · {t("জমি তৈরি", "Field preparation")} ↗</a> · <a href="https://www.bamis.gov.bd/en/bulletin/view/32495/" target="_blank" rel="noopener noreferrer">BAMIS · {t("ইউরিয়া", "Urea")} ↗</a></p>
     </details>
     </div>
   </div>;

@@ -19,7 +19,7 @@ Deno.serve(async (req: Request) => {
       try {
         const url = new URL(sub.endpoint);
         if (url.protocol !== "https:" || url.port || url.username || url.password || !allowedHosts.has(url.hostname)) throw new Error("Invalid push host");
-        const payload = JSON.stringify({id: job.id, title: "আলুসাথী · AluSathi", body: sub.language === "bn" ? "জমির কাজের সময় হয়েছে। খাতা খুলে দেখুন।" : "A field task is due. Open your notebook."});
+        const payload = JSON.stringify({id: job.id, title: "আলুসাথী · AluSathi", body: sub.language === "bn" ? "জমির কাজের সময় হয়েছে। খাতা খুলে দেখুন।" : "It is time for a field task. Open your Khata."});
         const request = webpush.generateRequestDetails({endpoint: sub.endpoint, keys: {p256dh: sub.p256dh, auth: sub.auth}}, payload, {
           TTL: 3600, urgency: "normal", vapidDetails: {subject: Deno.env.get("SUPABASE_URL")!, publicKey: key.public_key, privateKey: config.alusathi_push_private},
         });

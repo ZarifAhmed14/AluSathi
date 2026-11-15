@@ -72,7 +72,7 @@ export default function PublicLanding() {
     : [
         [Camera, "Add a photo and your field details"],
         [ClipboardCheck, "Organise today’s tasks"],
-        [Sprout, "Record your progress"],
+        [Sprout, "Keep your progress in Khata"],
       ] as const;
 
   const buyerSteps = bn
@@ -83,8 +83,8 @@ export default function PublicLanding() {
       ] as const
     : [
         [Sprout, "Find the potatoes you need", "Filter by district, variety, quantity, and ready date."],
-        [Scale, "Compare your shortlist", "Explore potato prices and estimated transport costs."],
-        [Phone, "Speak directly to the farmer", "Discuss price and collection between yourselves."],
+        [Scale, "Compare your saved lots", "Compare potato prices and estimated transport costs."],
+        [Phone, "Speak directly to the farmer", "Agree the price and collection directly with each other."],
       ] as const;
 
   return (
@@ -104,7 +104,7 @@ export default function PublicLanding() {
           <details className="home-palette">
             <summary aria-label={bn ? "রং বেছে নিন" : "Choose homepage colours"}><Palette size={18} /><span>{bn ? "পাতার রং" : "Page colours"}</span></summary>
             <div className="home-palette-panel">
-              <p>{bn ? "পাতার রং বদলে দেখুন" : "Try a colour palette"}</p>
+              <p>{bn ? "পাতার রং বদলে দেখুন" : "Try page colours"}</p>
               <div className="home-palette-options">
                 {homeThemes.map(item => <button key={item.id} type="button" aria-pressed={theme === item.id} onClick={() => chooseTheme(item.id)}><span style={{ backgroundColor: item.color }} aria-hidden="true" />{bn ? item.bn : item.name}</button>)}
               </div>
@@ -121,9 +121,9 @@ export default function PublicLanding() {
         <section className="public-hero" aria-labelledby="home-title">
           <svg className="home-botanical-detail" viewBox="0 0 200 200" fill="none" aria-hidden="true"><path d="M15 190C40 145 75 110 161 19M62 129C18 132 24 83 62 129ZM85 101C63 65 102 47 85 101ZM110 74C139 82 166 55 110 74ZM137 45C120 20 151 1 137 45Z" stroke="currentColor" strokeWidth="1.3" /></svg>
           <div className="hero-content">
-            <p className="home-eyebrow"><span />{bn ? "বাংলার মাটি, বাংলার মানুষ" : "THE SOIL AND PEOPLE OF BANGLADESH"}</p>
-            <h1 id="home-title">{bn ? <><span>মাটির মানুষের</span>{" "}<em>পাশে।</em></> : <><span>Beside the people</span>{" "}<em>of the soil.</em></>}</h1>
-            <p className="hero-description">{bn ? "ছবিতে সমস্যা বুঝুন, দিনের কাজ গুছিয়ে নিন, খাতায় রাখুন জমির খবর। আলু বিক্রির সময় সরাসরি যুক্ত হোন ক্রেতার সঙ্গে।" : "Understand what your photo shows, organise daily tasks, and keep your field records. When it’s time to sell, connect directly with buyers."}</p>
+            <p className="home-eyebrow"><span />{bn ? "বাংলার মাটি, বাংলার মানুষ" : "The soil and people of bangladesh"}</p>
+            <h1 id="home-title">{bn ? <><span>মাটির মানুষের</span>{" "}<em>পাশে।</em></> : <><span>Supporting the people</span>{" "}<em>who farm.</em></>}</h1>
+            <p className="hero-description">{bn ? "ছবিতে সমস্যা বুঝুন, দিনের কাজ গুছিয়ে নিন, খাতায় রাখুন জমির খবর। আলু বিক্রির সময় সরাসরি যুক্ত হোন ক্রেতার সঙ্গে।" : "Understand problems shown in your photo. Plan daily tasks and keep field notes in Khata. When you sell, contact Buyers directly."}</p>
             <div className="hero-actions" id="roles">
               <Link className="button-primary hero-role-card" to="/farmer#photos" onClick={() => setDemo(true)} aria-label={bn ? "আমি কৃষক" : "I’m a farmer"} aria-describedby="farmer-role-help">
                 <span className="role-card-icon"><Sprout size={23} /></span>
@@ -138,7 +138,7 @@ export default function PublicLanding() {
             </div>
             <section className="farmer-selling-link" aria-label={bn ? "আলু বিক্রি করুন" : "Sell potatoes"}>
               <p>{bn ? "আলু বিক্রি করতে চান?" : "Ready to sell your potatoes?"}</p>
-              <Link to="/farmer#market" onClick={() => setDemo(true)}>{bn ? "আলু বাজারে দিন" : "Showcase your potatoes"}<ArrowRight size={17} /></Link>
+              <Link to="/farmer#market" onClick={() => setDemo(true)}>{bn ? "আলু বাজারে দিন" : "List your potatoes for sale"}<ArrowRight size={17} /></Link>
             </section>
           </div>
           <div className="home-growth-panel">
@@ -156,7 +156,7 @@ export default function PublicLanding() {
         <section className="home-audience home-audience-farmer" aria-labelledby="farmer-section-title">
           <header className="home-audience-heading">
             <h2 id="farmer-section-title"><Sprout size={24} aria-hidden="true" />{bn ? "কৃষকের জন্য" : "For farmers"}</h2>
-            <p>{bn ? "জমির যত্ন, দিনের কাজ, বাজারে নিজের আলু।" : "Care for your field. Plan your day. Showcase your potatoes."}</p>
+            <p>{bn ? "জমির যত্ন, দিনের কাজ, বাজারে নিজের আলু।" : "Care for your field. Plan your day. List your potatoes for sale."}</p>
           </header>
         <section className="workflow-section" id="how-it-works" aria-labelledby="workflow-title">
           <div className="workflow-art-wrap">
@@ -180,12 +180,12 @@ export default function PublicLanding() {
         <section className="farmer-tools" id="farmer" aria-label={bn ? "কৃষকের সহায়তা" : "Farmer tools"}>
           <Link className="tool-card" to="/farmer#today" onClick={() => setDemo(true)}>
             <img src="/alusathi-home-today-work.webp" alt="" loading="lazy" />
-            <span className="tool-copy"><small>{bn ? "প্রতিদিনের মাঠের কাজ" : "YOUR FIELD, DAY BY DAY"}</small><strong>{bn ? "আজকের কাজ" : "Today’s work"}</strong><span>{bn ? "জমির বয়স অনুযায়ী দরকারি কাজ মনে রাখুন।" : "Keep track of useful work for your field."}</span></span>
+            <span className="tool-copy"><small>{bn ? "প্রতিদিনের মাঠের কাজ" : "Your field, day by day"}</small><strong>{bn ? "আজকের কাজ" : "Today's tasks"}</strong><span>{bn ? "জমির বয়স অনুযায়ী দরকারি কাজ মনে রাখুন।" : "Remember useful tasks based on your field's age."}</span></span>
             <span className="tool-arrow"><ArrowRight /></span>
           </Link>
           <Link className="tool-card" to="/farmer#diary" onClick={() => setDemo(true)}>
             <img src="/alusathi-home-field-record.webp" alt="" loading="lazy" />
-            <span className="tool-copy"><small>{bn ? "ছবি ও নোট" : "PHOTOS AND NOTES"}</small><strong>{bn ? "জমির খাতা" : "Field diary"}</strong><span>{bn ? "ছবি, কাজ আর জমির নোট এক জায়গায় রাখুন।" : "Keep photos, tasks, and observations together."}</span></span>
+            <span className="tool-copy"><small>{bn ? "ছবি ও নোট" : "Photos and notes"}</small><strong>{bn ? "জমির খাতা" : "Field Khata"}</strong><span>{bn ? "ছবি, কাজ আর জমির নোট এক জায়গায় রাখুন।" : "Keep photos, tasks, and observations together."}</span></span>
             <span className="tool-arrow"><ArrowRight /></span>
           </Link>
         </section>
@@ -198,8 +198,8 @@ export default function PublicLanding() {
           </header>
         <section className="business-section" id="business" aria-labelledby="business-title">
           <div className="business-copy">
-            <h3 id="business-title">{bn ? <>আলু কৃষকের।<br /><em>যোগাযোগ সরাসরি।</em></> : <>Their potatoes.<br /><em>Your direct connection.</em></>}</h3>
-            <p className="section-intro">{bn ? "কৃষক তাঁর আলু দেখান। আপনি তথ্য মিলিয়ে পছন্দ করুন, তারপর কথা বলুন।" : "Farmers showcase their potatoes. Explore the facts, compare, then get in touch."}</p>
+            <h3 id="business-title">{bn ? <>আলু কৃষকের।<br /><em>যোগাযোগ সরাসরি।</em></> : <>The Farmer's potatoes.<br /><em>Contact them directly.</em></>}</h3>
+            <p className="section-intro">{bn ? "কৃষক তাঁর আলু দেখান। আপনি তথ্য মিলিয়ে পছন্দ করুন, তারপর কথা বলুন।" : "Farmers show their potatoes. Check the details and choose what you need. Then contact the Farmer."}</p>
             <ol className="workflow-steps buyer-steps">
               {buyerSteps.map(([Icon, title, detail], index) => <li key={title}>
                 <span className="step-icon"><Icon size={21} /></span>
@@ -214,7 +214,7 @@ export default function PublicLanding() {
             <span className="trade-stamp"><UsersRound size={18} />{bn ? "পরিচয় থেকে সম্পর্ক" : "From introductions to relationships"}</span>
           </div>
         </section>
-          <p className="home-connection-note"><UsersRound size={19} aria-hidden="true" /><span>{bn ? "আলুসাথীর বাজার পরিচয় ও যোগাযোগের সেতু। কেনাবেচা ও টাকা লেনদেন কৃষক–ক্রেতা নিজেদের মধ্যে করেন, আলুসাথীর মাধ্যমে নয়।" : "Our marketplace makes the connection. Sales and payments are arranged directly between farmers and buyers, not through AluSathi."}</span></p>
+          <p className="home-connection-note"><UsersRound size={19} aria-hidden="true" /><span>{bn ? "আলুসাথীর বাজার পরিচয় ও যোগাযোগের সেতু। কেনাবেচা ও টাকা লেনদেন কৃষক–ক্রেতা নিজেদের মধ্যে করেন, আলুসাথীর মাধ্যমে নয়।" : "AluSathi helps Farmers and Buyers contact each other. They arrange sales and payments directly, outside AluSathi."}</span></p>
         </section>
       </main>
 

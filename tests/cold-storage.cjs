@@ -19,7 +19,7 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:4175';
       assert.equal(await page.locator('#cold-storage').count(), 0);
 
       if (width < 1024) await page.getByRole('button', { name: 'Open menu' }).click();
-      await page.getByRole('navigation', { name: width < 1024 ? 'Mobile navigation' : 'Primary navigation' })
+      await page.getByRole('navigation', { name: width < 1024 ? 'Mobile menu' : 'Main menu' })
         .getByRole('link', { name: 'বিক্রির প্রস্তুতি' }).click();
       await page.waitForURL(`${base}/selling-preparation`);
       await page.getByRole('heading', { name: 'বিক্রির প্রস্তুতি', level: 1 }).waitFor();
@@ -30,7 +30,7 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:4175';
         assert.match(href, /^tel:\+?[\d]+$/);
       }
       await page.getByRole('button', { name: 'Change language' }).click();
-      await page.getByRole('heading', { name: 'Prepare to sell', level: 1 }).waitFor();
+      await page.getByRole('heading', { name: 'Before selling', level: 1 }).waitFor();
       await section.getByRole('heading', { name: 'Call a cold store directly' }).waitFor();
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
       await page.screenshot({ path: `test-results/cold-storage-${width}.png`, fullPage: true });

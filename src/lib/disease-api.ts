@@ -36,7 +36,7 @@ export async function scanPotatoLeaf(file: File): Promise<DiseaseResult> {
   body.append("file", file);
   const response = await fetch(`${API_BASE_URL}/disease/predict`, { method: "POST", body, signal: AbortSignal.timeout(20000) });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.detail || "The scan could not be completed.");
+  if (!response.ok) throw new Error(payload.detail || "We could not check this photo. Please try again.");
   return { ...payload, inference_mode: "online" };
 }
 

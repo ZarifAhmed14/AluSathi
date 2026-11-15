@@ -28,20 +28,20 @@ type Status = "empty" | "invalid" | "ready-more" | "not-potato" | "needs-potato"
 function storageAgeReading(signs: typeof AGE_SIGNS[number], bn: boolean) {
   if (signs === "sprouts" || signs === "both") return bn
     ? "আন্দাজ: তোলার পর কয়েক সপ্তাহ থেকে কয়েক মাস, অনেক ক্ষেত্রে ১–৫ মাস বা বেশি। গরমে তাড়াতাড়ি, ঠান্ডায় দেরিতে অঙ্কুর বের হতে পারে।"
-    : "Rough guess: several weeks to months since harvest, often 1–5 months or more. Warm storage can cause earlier sprouting; cold storage can delay it.";
+    : "A guess: a few weeks to months since harvest. This is often 1–5 months or more. Sprouts can grow sooner in warm storage and later in cold storage.";
   if (signs === "shriveled") return bn
     ? "আন্দাজ: কিছুদিন রাখা হয়ে থাকতে পারে, কিন্তু কত দিন তা বলা যায় না। পানি কমে গেলে দ্রুতও আলু কুঁচকে যেতে পারে।"
-    : "Rough guess: it may have been stored for some time, but the number of days is unknown. Water loss can cause shrivelling quickly.";
+    : "A guess: it may have been stored for some time. The number of days is not known. Losing water can make potatoes wrinkle quickly.";
   return bn
     ? "আন্দাজ: নতুন তোলা বা ভালোভাবে রাখা পুরোনো আলু—দুটোই হতে পারে। শুধু ছবি দেখে দিনের হিসাব করা যায় না।"
-    : "Rough guess: it could be recently harvested or older and well stored. The photo cannot narrow this down to a number of days.";
+    : "A guess: it may be newly harvested or older and stored well. The photo cannot tell how many days have passed.";
 }
 
 function conditionText(label: TuberModelResult["label"], bn: boolean) {
   if (label === "defective") return bn
     ? "ছবিতে ত্রুটির লক্ষণ থাকতে পারে। আলুটি আলাদা করে সব দিক হাতে দেখুন।"
-    : "A visible defect may be present. Separate the tuber and inspect every side by hand.";
-  return bn ? "ছবিতে বড় ধরনের দৃশ্যমান ত্রুটি ধরা পড়েনি।" : "No major visible defect was detected in this image.";
+    : "There may be a visible mark or damaged area. Keep the potato separate and check every side by hand.";
+  return bn ? "ছবিতে বড় ধরনের দৃশ্যমান ত্রুটি ধরা পড়েনি।" : "No major visible damage was found in this photo.";
 }
 
 function statusText(status: Status, bn: boolean, finalCondition: TuberModelResult["label"] | null) {
@@ -50,13 +50,13 @@ function statusText(status: Status, bn: boolean, finalCondition: TuberModelResul
     invalid: bn ? "৮ MB-এর মধ্যে JPG, PNG বা WebP ছবি দিন।" : "Choose a JPG, PNG or WebP up to 8 MB.",
     "ready-more": bn ? "আরেকটি ছবি প্রস্তুত। এবার পরীক্ষা করুন।" : "Another photo is ready. Check it now.",
     "not-potato": bn ? "ছবিতে আলু শনাক্ত হয়নি।" : "No potato detected in this photo.",
-    "needs-potato": bn ? "ছবিতে আলু থাকতে পারে, তবে দূর থেকে অবস্থা বোঝা যাচ্ছে না। একটি আলু আলাদা করে কাছে থেকে পরিষ্কার ছবি দিন।" : "Potatoes may be present, but this wide view is not clear enough to assess them. Photograph one potato by itself, up close.",
+    "needs-potato": bn ? "ছবিতে আলু থাকতে পারে, তবে দূর থেকে অবস্থা বোঝা যাচ্ছে না। একটি আলু আলাদা করে কাছে থেকে পরিষ্কার ছবি দিন।" : "There may be potatoes, but they are too far away to check. Take a clear close-up photo of one potato on its own.",
     "needs-detail": bn ? "এই ছবিতে ফল পরিষ্কার নয়। একই আলুর আরেক দিক থেকে ছবি দিন।" : "The result is unclear. Take another photo of the same potato from a different side.",
-    unclear: bn ? "এই ছবিগুলো থেকে আলু বা তার জাত নিশ্চিত করা যায়নি। নতুন করে দিনের আলোতে একটি পরিষ্কার ছবি তুলুন।" : "I couldn't confirm a potato or its variety from these photos. Start again with one clear photo in daylight.",
+    unclear: bn ? "এই ছবিগুলো থেকে আলু বা তার জাত নিশ্চিত করা যায়নি। নতুন করে দিনের আলোতে একটি পরিষ্কার ছবি তুলুন।" : "These photos could not confirm a potato or its variety. Start again with 1 clear photo in daylight.",
     error: bn ? "ছবিটি পরীক্ষা করা যায়নি। আবার চেষ্টা করুন।" : "The photo could not be checked. Please try again.",
     done: finalCondition ? `${conditionText(finalCondition, bn)} ${bn
       ? "এটি ফোনেই চলা পরীক্ষামূলক AI ফল; ছবি কোথাও পাঠানো হয়নি। এটি রোগের নাম, খাওয়ার নিরাপত্তা বা বাজারের গ্রেড নিশ্চিত করে না।"
-      : "This experimental AI check ran on this device; the photo was not uploaded. It does not confirm a disease name, food safety or a market grade."}` : "",
+      : "This is an experimental AI result from this device. The photo was not uploaded. It does not confirm a disease name, food safety or market grade."}` : "",
   };
   return messages[status];
 }
@@ -177,7 +177,7 @@ export default function TuberScan({ onLeafPhoto }: {
           title: VARIETY_NAMES[result.label], body: conditionText(surface.label, bn),
           cause: surface.label === "healthy"
             ? (bn ? "আলুর গায়ে বড় দৃশ্যমান দাগ, নরম বা ভেজা অংশ ধরা পড়েনি।" : "No major visible mark, soft area or wet area was detected.")
-            : (bn ? "আলুর গায়ে দৃশ্যমান ক্ষত বা দাগ মিলেছে; এটি আঘাত, পচন বা অন্য সমস্যার লক্ষণ হতে পারে।" : "A visible mark or damaged area was found; it may come from injury, rot or another problem."),
+            : (bn ? "আলুর গায়ে দৃশ্যমান ক্ষত বা দাগ মিলেছে; এটি আঘাত, পচন বা অন্য সমস্যার লক্ষণ হতে পারে।" : "A visible mark or damaged area was found. It may come from injury, rot or another problem."),
           advice: surface.label === "healthy" ? "healthy" : "observe",
           image: next.find(item => item.condition === surface)?.thumbnail,
           tuberModelResult: surface.label === "healthy" ? "healthy" : "defective",
@@ -203,7 +203,7 @@ export default function TuberScan({ onLeafPhoto }: {
 
   return <section id="scan" className="app-shell potato-scan scroll-mt-24 py-12">
     <span id="tuber" />
-    <div className="section-heading"><div><p className="section-kicker"><ScanLine size={16} />{bn ? "ছবি স্ক্যানার" : "Photo scanner"}</p><h2>{bn ? "আলুর ছবি দেখুন বা ছবি দিন" : "Choose or add your potato photo"}</h2><p>{bn ? "ছবি বেছে নিলে তার ফল এখানেই দেখাবে।" : "Choose a photo to see its result here."}</p></div></div>
+    <div className="section-heading"><div><p className="section-kicker"><ScanLine size={16} />{bn ? "ছবি স্ক্যানার" : "Photo check"}</p><h2>{bn ? "আলুর ছবি দেখুন বা ছবি দিন" : "Choose or add your potato photo"}</h2><p>{bn ? "ছবি বেছে নিলে তার ফল এখানেই দেখাবে।" : "Choose a photo to see its result here."}</p></div></div>
     <div className={`scan-workspace ${!file && !text ? "scan-workspace-empty" : ""}`}>
       <div className="scan-capture">
         <label className={`camera-stage ${preview ? "has-image" : ""}`}>
@@ -217,19 +217,19 @@ export default function TuberScan({ onLeafPhoto }: {
       </div>
       {demoBusy && <p className="result-stage photo-demo-calculating" role="status"><Loader2 size={20} className="animate-spin" />{bn ? "ছবি দেখা হচ্ছে…" : "Checking your photo…"}</p>}
       {!demoBusy && !demo && (busy || text) && <div className="result-stage tuber-result" aria-live="polite"><h3>{bn ? "ছবির ফল" : "Photo result"}</h3>
-        {checked && <p><strong>{bn ? "ছবিতে সবচেয়ে মিলছে: " : "Closest photo match: "}</strong>{VARIETY_NAMES[variety!]}<span className="block text-sm">{bn ? "এখন শুধু Diamant ও Asterix-এর সঙ্গে তুলনা হয়। অন্য জাত দিলেও এই দুটির একটি দেখাতে পারে। বিক্রির আগে বীজের রেকর্ড দেখুন।" : "Currently compares only Diamant and Asterix. Another variety may still match one of them. Check the seed record before selling."}</span></p>}
+        {checked && <p><strong>{bn ? "ছবিতে সবচেয়ে মিলছে: " : "Closest photo match: "}</strong>{VARIETY_NAMES[variety!]}<span className="block text-sm">{bn ? "এখন শুধু Diamant ও Asterix-এর সঙ্গে তুলনা হয়। অন্য জাত দিলেও এই দুটির একটি দেখাতে পারে। বিক্রির আগে বীজের রেকর্ড দেখুন।" : "This compares only Diamant and Asterix. Other varieties may also match one of these. Check the seed record before selling."}</span></p>}
         <p>{busy ? (bn ? "ছবি দেখা হচ্ছে…" : "Checking your photo…") : text}</p>
         {checked && <div className="photo-result-action"><strong>{bn ? "করণীয়" : "Next step"}</strong><p>{bn ? "আলুটি ঘুরিয়ে অন্য পাশও দেখুন। নরম বা ভেজা অংশ থাকলে আলাদা রাখুন।" : "Turn the potato and check the other side. Keep it apart if you find soft or wet areas."}</p></div>}
-        {checked && <fieldset className="mt-5 border-t border-stone-200 pt-4"><legend className="font-semibold">{bn ? "তোলার পর কতদিন?" : "How long since harvest?"}</legend><p className="my-2 text-sm">{bn ? "ছবিতে কী দেখছেন? অঙ্কুর বা কুঁচকানো আছে কি না বেছে নিন। এই মডেল এখনো নিজে তা চিনতে পারে না।" : "What do you see in the photo? Choose whether it has sprouts or shrivelling. This model cannot detect those signs by itself yet."}</p><div className="flex flex-wrap gap-2">{AGE_SIGNS.map(signs => <label key={signs} className={`cursor-pointer rounded-full border px-3 py-2 text-sm ${ageSigns === signs ? "border-emerald-800 bg-emerald-50" : "border-stone-300"}`}><input type="radio" className="sr-only" name="potato-age-signs" value={signs} checked={ageSigns === signs} onChange={() => setAgeSigns(signs)} />{({ none: bn ? "কোনোটিই না" : "Neither", sprouts: bn ? "অঙ্কুর আছে" : "Sprouts", shriveled: bn ? "কুঁচকে গেছে" : "Shrivelled", both: bn ? "দুটোই আছে" : "Both" })[signs]}</label>)}</div>{ageSigns && <p className="mt-3" role="status">{storageAgeReading(ageSigns, bn)}</p>}</fieldset>}
-        {onLeafPhoto && status === "not-potato" && file && <div className="mt-5 border-t border-stone-200 pt-4"><p>{bn ? "এতে আলু পাওয়া যায়নি—ছবি থেকে এটি পাতা কি না নিশ্চিত করা যায় না।" : "No potato was found; this check cannot tell whether the image is a leaf."}</p><button className="secondary-main mt-3" type="button" onClick={() => onLeafPhoto(file)}>{bn ? "পাতার ছবি হিসেবে চালিয়ে যান" : "Continue with leaf questions"}</button></div>}
+        {checked && <fieldset className="mt-5 border-t border-stone-200 pt-4"><legend className="font-semibold">{bn ? "তোলার পর কতদিন?" : "How long since harvest?"}</legend><p className="my-2 text-sm">{bn ? "ছবিতে কী দেখছেন? অঙ্কুর বা কুঁচকানো আছে কি না বেছে নিন। এই মডেল এখনো নিজে তা চিনতে পারে না।" : "What do you see in the photo? Choose sprouts, wrinkles, both or neither. This model cannot find these signs by itself yet."}</p><div className="flex flex-wrap gap-2">{AGE_SIGNS.map(signs => <label key={signs} className={`cursor-pointer rounded-full border px-3 py-2 text-sm ${ageSigns === signs ? "border-emerald-800 bg-emerald-50" : "border-stone-300"}`}><input type="radio" className="sr-only" name="potato-age-signs" value={signs} checked={ageSigns === signs} onChange={() => setAgeSigns(signs)} />{({ none: bn ? "কোনোটিই না" : "Neither", sprouts: bn ? "অঙ্কুর আছে" : "Sprouts", shriveled: bn ? "কুঁচকে গেছে" : "Wrinkled", both: bn ? "দুটোই আছে" : "Both" })[signs]}</label>)}</div>{ageSigns && <p className="mt-3" role="status">{storageAgeReading(ageSigns, bn)}</p>}</fieldset>}
+        {onLeafPhoto && status === "not-potato" && file && <div className="mt-5 border-t border-stone-200 pt-4"><p>{bn ? "এতে আলু পাওয়া যায়নি—ছবি থেকে এটি পাতা কি না নিশ্চিত করা যায় না।" : "No potato was found. This check cannot confirm if the photo shows a leaf."}</p><button className="secondary-main mt-3" type="button" onClick={() => onLeafPhoto(file)}>{bn ? "পাতার ছবি হিসেবে চালিয়ে যান" : "Continue with leaf questions"}</button></div>}
       </div>}
       {!demoBusy && demo && savedPhoto && <article className="result-stage photo-demo-result" aria-live="polite">
         <p className="section-kicker">{bn ? "ছবির ফল" : "Photo result"}</p><h3>{demo[language].title}</h3><p>{demo[language].body}</p>
         <div className="photo-result-action"><strong>{bn ? "করণীয়" : "Next step"}</strong><p>{demo[language].action}</p></div>
       </article>}
-      {!demoBusy && !busy && (demo && savedPhoto || checked) && <div className="photo-next-action"><Link className="main-button" to="/farmer">{bn ? "আজকের কাজে যান" : "Go to today's work"}<span aria-hidden="true">→</span></Link></div>}
+      {!demoBusy && !busy && (demo && savedPhoto || checked) && <div className="photo-next-action"><Link className="main-button" to="/farmer">{bn ? "আজকের কাজে যান" : "View today's tasks"}<span aria-hidden="true">→</span></Link></div>}
     </div>
-    <section className="photo-demo-section" aria-labelledby="photo-demo-heading"><div className="photo-demo-heading"><div><strong id="photo-demo-heading">{bn ? "দেওয়া ছবি বেছে নিন" : "Choose a provided photo"}</strong><small>{bn ? "ফল দেখতে একটি ছবিতে চাপুন।" : "Choose one to see its preset result."}</small></div></div><div className="photo-demo-grid" aria-label={bn ? "আলুর ছবি" : "Potato photos"}>
+    <section className="photo-demo-section" aria-labelledby="photo-demo-heading"><div className="photo-demo-heading"><div><strong id="photo-demo-heading">{bn ? "দেওয়া ছবি বেছে নিন" : "Choose an example photo"}</strong><small>{bn ? "ফল দেখতে একটি ছবিতে চাপুন।" : "Choose a photo to see its prepared example result."}</small></div></div><div className="photo-demo-grid" aria-label={bn ? "আলুর ছবি" : "Potato photos"}>
       {PHOTO_DEMO_CASES.map((item, index) => <button key={item.id} type="button" className="photo-demo-card" aria-pressed={demoId === item.id} disabled={demoBusy || busy} onClick={() => chooseDemo(item)}>
         <img src={item.image} loading="lazy" alt={bn ? `আলুর ছবি ${index + 1}` : `Potato photo ${index + 1}`} />
         <span>{bn ? `ছবি ${index + 1}` : `Photo ${index + 1}`}</span>

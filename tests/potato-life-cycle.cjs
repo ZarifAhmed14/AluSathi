@@ -13,9 +13,9 @@ const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:4175/life-cycle';
       const errors = [];
       page.on('pageerror', error => errors.push(error.message));
       await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
-      await page.getByRole('heading', { name: 'Sprouting eyes' }).waitFor();
+      await page.getByRole('heading', { name: 'Sprouts appearing' }).waitFor();
       assert.equal(await page.locator('.life-timeline button').count(), 5);
-      const slider = page.getByRole('slider', { name: 'Time in the potato life' });
+      const slider = page.getByRole('slider', { name: 'Potato growing time' });
       assert.equal(await slider.getAttribute('max'), '90');
       assert.equal(await page.locator('.life-growth-seed').count(), 1, 'Seed potato must be separate from the static soil');
       const seedState = () => page.locator('.life-growth-seed').evaluate(node => {

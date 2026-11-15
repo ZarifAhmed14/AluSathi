@@ -90,7 +90,7 @@ export default function FarmerToday({ weather, loading, district, districts, pla
     const done = completedActions.filter(action => !candidate.photo || !action.id.split("|")[3]?.startsWith("photo-") || action.id.split("|")[4] === candidate.photo.id).slice(0, 3).map(action => {
       const saved = action.planTask;
       const valid = saved && [saved.id, saved.text, saved.why, saved.how].every(value => typeof value === "string");
-      return { ...valid ? saved : oldTasks.find(task => action.id.split("|")[3] === task.id) || { id: action.id.split("|")[3], text: action.text, why: bn ? "আগে শেষ করেছেন।" : "Previously completed.", how: bn ? "কাজটি খাতায় রাখা আছে।" : "This task is in Khata." }, key: action.id };
+      return { ...valid ? saved : oldTasks.find(task => action.id.split("|")[3] === task.id) || { id: action.id.split("|")[3], text: action.text, why: bn ? "আগে শেষ করেছেন।" : "You completed this earlier.", how: bn ? "কাজটি খাতায় রাখা আছে।" : "This task is in Khata." }, key: action.id };
     });
     const current = buildTodayTasks(candidate, bn).map(task => ({ ...task, key: actionKey(task) }));
     const result = current.slice(0, 3);
@@ -108,7 +108,7 @@ export default function FarmerToday({ weather, loading, district, districts, pla
   const completed = new Set(completedActions.map(action => action.id));
   const saveActions = (next: FieldAction[]) => {
     try { localStorage.setItem("alusathi-today-plan-v1",contextKey); saveFieldActions(next); setActions(next); setSaveError(""); }
-    catch { setSaveError(bn ? "রাখা যায়নি। আবার চেষ্টা করুন।" : "Could not save. Please retry."); }
+    catch { setSaveError(bn ? "রাখা যায়নি। আবার চেষ্টা করুন।" : "Could not save. Please try again."); }
   };
   const toggleTask = (task: PlanTask & { key: string }) => {
     const current = readActions();
@@ -131,22 +131,22 @@ export default function FarmerToday({ weather, loading, district, districts, pla
     {["one", "two", "three", "four", "five"].map(name => <img key={name} className={`field-leaves field-leaves-${name}`} src="/field-potato-leaves.webp" alt="" />)}
     {["one", "two"].map(name => <img key={name} className={`field-tree field-tree-${name}`} src="/field-tree-canopy.webp" alt="" />)}
     <span className="field-bird field-bird-one"><svg viewBox="0 0 62 28" fill="none"><path d="M2 20 Q9 11 17 19 Q25 11 32 20 M29 9 Q35 2 41 9 Q48 2 54 10" /></svg></span><span className="field-bird field-bird-two"><svg viewBox="0 0 62 28" fill="none"><path d="M2 21 Q15 2 30 17 Q45 2 60 21" /></svg></span>
-  </div><section className="app-shell farmer-today" aria-label={bn ? "আজকের কাজ" : "Today's work"}>
+  </div><section className="app-shell farmer-today" aria-label={bn ? "আজকের কাজ" : "Today's tasks"}>
     <div className="today-titlebar">
-      <div className="farmer-greeting"><div><p className="today-date">{dateLabel}</p><h1>{bn ? "আজকের কাজ" : "Today's work"}</h1><p>{bn ? "কাজ করুন, শেষ হলে টিক দিন।" : "Tick off each task as you finish."}</p></div></div>
+      <div className="farmer-greeting"><div><p className="today-date">{dateLabel}</p><h1>{bn ? "আজকের কাজ" : "Today's tasks"}</h1><p>{bn ? "কাজ করুন, শেষ হলে টিক দিন।" : "Tick off each task as you finish."}</p></div></div>
     <div className="today-field-context">
-      <div className="today-location"><span><Sprout size={18} />{bn ? "আমার জমি" : "My field"}</span><strong>{districts[district] || district} · {number(Number(area.value))} {({decimal:bn ? "শতক" : "shotok",acre:bn ? "একর" : "acres",hectare:bn ? "হেক্টর" : "ha",bigha:bn ? "বিঘা" : "bigha"})[area.unit]}</strong></div>
+      <div className="today-location"><span><Sprout size={18} />{bn ? "আমার জমি" : "My field"}</span><strong>{districts[district] || district} · {number(Number(area.value))} {({decimal:bn ? "শতক" : "shatak",acre:bn ? "একর" : "acres",hectare:bn ? "হেক্টর" : "ha",bigha:bn ? "বিঘা" : "bigha"})[area.unit]}</strong></div>
       <div className="today-crop-context"><span>{bn ? "চাষের সময়" : "Crop stage"}</span><strong>{stage || (bn ? "বয়স দেওয়া হয়নি" : "Crop age not added")}</strong></div>
       {stage && bn && voice && <button className="farmer-listen" onClick={() => { speechSynthesis.cancel(); const utterance = new SpeechSynthesisUtterance([stage, ...tasks.map(item => item.text)].join("। ")); utterance.voice = voice; utterance.lang = voice.lang; speechSynthesis.speak(utterance); }}><Volume2 size={17} />শুনুন</button>}
-      {age === null && <details className="today-age-editor"><summary>{hasPlanting ? (bn ? "বয়স বদলান" : "Change age") : (bn ? "গাছের বয়স দিন" : "Add crop age")}</summary><fieldset className="planting-choices"><legend>{stale ? (bn ? "এখন গাছের বয়স কত?" : "How old is the crop now?") : (bn ? "কবে আলু লাগিয়েছেন?" : "When did you plant?")}</legend>{plantingAges.map(value => { const AgeIcon = ageIcons[value]; return <button type="button" key={value} aria-pressed={currentBand === value} onClick={event => { choose(value); event.currentTarget.closest("details")?.removeAttribute("open"); }}><AgeIcon size={17} />{rangeGuidance(value, bn).stage.replace(bn ? "প্রায় " : "Approximately ", "")}</button>; })}</fieldset></details>}
+      {age === null && <details className="today-age-editor"><summary>{hasPlanting ? (bn ? "বয়স বদলান" : "Change age") : (bn ? "গাছের বয়স দিন" : "Add crop age")}</summary><fieldset className="planting-choices"><legend>{stale ? (bn ? "এখন গাছের বয়স কত?" : "How old is the crop now?") : (bn ? "কবে আলু লাগিয়েছেন?" : "When did you plant?")}</legend>{plantingAges.map(value => { const AgeIcon = ageIcons[value]; return <button type="button" key={value} aria-pressed={currentBand === value} onClick={event => { choose(value); event.currentTarget.closest("details")?.removeAttribute("open"); }}><AgeIcon size={17} />{rangeGuidance(value, bn).stage.replace(bn ? "প্রায় " : "About ", "")}</button>; })}</fieldset></details>}
     </div>
     </div>
 
     <section className="today-ai-insight" aria-labelledby="today-observation-title">
       <h2 id="today-observation-title" className="today-observation-heading"><Sparkles size={22} aria-hidden="true" />{bn ? "আলুসাথী AI পর্যবেক্ষণ" : "AluSathi AI observation"}</h2>
       {photo ? <div className="today-observation-content">
-        {sample?.image || photo.thumbnail ? <img src={sample?.image || photo.thumbnail} alt={bn ? "নির্বাচিত আলুর ছবি" : "Selected potato photo"} /> : <Camera size={28} aria-label={bn ? "ছবির থাম্বনেইল নেই" : "No thumbnail available"} />}
-        <div><strong>{photo.modelResult ? (bn ? "ছবির মডেলের ফল" : "Photo model result") : (bn ? "ছবির নোট" : "Photo notes")}</strong><p>{observation ? `${observation.title}। ${observation.body}` : photo.body || photo.title}</p></div>
+        {sample?.image || photo.thumbnail ? <img src={sample?.image || photo.thumbnail} alt={bn ? "নির্বাচিত আলুর ছবি" : "Selected potato photo"} /> : <Camera size={28} aria-label={bn ? "ছবির থাম্বনেইল নেই" : "Small photo not available"} />}
+        <div><strong>{photo.modelResult ? (bn ? "ছবির মডেলের ফল" : "Photo check result") : (bn ? "ছবির নোট" : "Photo notes")}</strong><p>{observation ? `${observation.title}। ${observation.body}` : photo.body || photo.title}</p></div>
         <div><strong>{bn ? "যা করবেন" : "What to do"}</strong><p>{photoTask?.text}</p></div>
       </div> : <p>{bn ? "আলুর ছবি বেছে নিলে এখানে ফল ও করণীয় দেখাবে।" : "Select a potato photo to see findings and suggested actions here."}</p>}
     </section>
@@ -162,7 +162,7 @@ export default function FarmerToday({ weather, loading, district, districts, pla
           <button type="button" className="today-task-toggle" aria-expanded={open} aria-controls={`task-details-${index}`} onClick={() => setExpanded(open ? null : item.key)}>{open ? (bn ? "বন্ধ করুন" : "Close details") : (bn ? "বিস্তারিত দেখুন" : "See details")} <ChevronDown size={17} aria-hidden="true" /></button>
           <div id={`task-details-${index}`} className="today-task-details" hidden={!open}><p><b>{bn ? "কীভাবে করবেন" : "How to do it"}</b><br />{item.how}</p><p><b>{bn ? "কেন দেখাচ্ছে" : "Why this task"}</b><br />{item.why}</p>{item.key === actionKey(item) && ((item.id.startsWith("photo-") && candidate.photo?.title) || (item.id === "treatment-review" && candidate.lastTreatment) || (["early-growth", "growing-leaves", "soil-check", "harvest-check"].includes(item.id) && stage)) && <p><b>{source}</b><br />{item.id.startsWith("photo-") ? candidate.photo?.title : item.id === "treatment-review" ? candidate.lastTreatment : stage}</p>}</div>
         </article>; })}</div>
-        {tasks.length === 0 && <p className="today-no-tasks">{bn ? "এখন কী কাজ করবেন, তা বোঝা যাচ্ছে না। গাছের বয়স লিখুন বা জমির নতুন খবর যোগ করুন।" : "There is not enough context for a task yet. Add crop age or a new observation."}</p>}
+        {tasks.length === 0 && <p className="today-no-tasks">{bn ? "এখন কী কাজ করবেন, তা বোঝা যাচ্ছে না। গাছের বয়স লিখুন বা জমির নতুন খবর যোগ করুন।" : "There is not enough information to suggest a task yet. Add your crop's age or new field notes."}</p>}
         {tasks.length > 0 && completedCount === tasks.length && <p className="today-all-done" role="status"><Check size={18} />{bn ? "আজকের তালিকার সব কাজ শেষ।" : "All tasks on today's list are complete."}</p>}
         {saveError && <p role="alert">{saveError}</p>}
       </div>

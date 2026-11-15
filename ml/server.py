@@ -38,19 +38,19 @@ LABELS = {
 }
 NEXT_STEPS = {
     "early_blight": {
-        "en": ["Mark the leaf with visible spots.", "Do not water over the leaves; watch the nearby plants for 48 hours.", "Call 16123 or ask an agricultural officer before using any chemical."],
+        "en": ["Mark the leaf with visible spots.", "Do not water over the leaves. Watch nearby plants for 48 hours.", "Before using chemicals, call 16123 or ask an agriculture officer."],
         "bn": ["দাগওয়ালা পাতাটি চিহ্ন দিয়ে রাখুন।", "পাতার উপর পানি দেবেন না; পাশের গাছগুলো ৪৮ ঘণ্টা দেখুন।", "ওষুধ দেওয়ার আগে ১৬১২৩-এ কল করুন বা কৃষি কর্মকর্তাকে জিজ্ঞেস করুন।"],
     },
     "late_blight": {
-        "en": ["Do not carry wet leaves or plants to another field.", "Open blocked drainage and photograph nearby plants.", "Call 16123 or ask an agricultural officer before using any chemical."],
+        "en": ["Do not carry wet leaves or plants to another field.", "Open blocked drains and take photos of nearby plants.", "Before using chemicals, call 16123 or ask an agriculture officer."],
         "bn": ["ভেজা পাতা বা গাছ অন্য জমিতে নেবেন না।", "জমির পানি বের হওয়ার পথ খুলে দিন এবং পাশের গাছের ছবি তুলুন।", "ওষুধ দেওয়ার আগে ১৬১২৩-এ কল করুন বা কৃষি কর্মকর্তাকে জিজ্ঞেস করুন।"],
     },
     "healthy": {
-        "en": ["This photograph shows no clear early- or late-blight pattern.", "Check the same field places again next week.", "Call 16123 or ask an agricultural officer if spots spread or plants weaken."],
+        "en": ["This photo shows no clear signs of early or late blight.", "Check the same field places again next week.", "If marks spread or plants weaken, call 16123. You can also ask an agriculture officer."],
         "bn": ["এই ছবিতে আগাম বা নাবি ধসার পরিষ্কার চিহ্ন পাওয়া যায়নি।", "আগামী সপ্তাহে জমির একই জায়গাগুলো আবার দেখুন।", "দাগ ছড়ালে বা গাছ দুর্বল হলে ১৬১২৩-এ কল করুন বা কৃষি কর্মকর্তাকে জানান।"],
     },
     "unknown": {
-        "en": ["Retake two close, clear photographs in daylight.", "Photograph both sides of the same leaf.", "Do not use a chemical from this result; call 16123 or ask an agricultural officer."],
+        "en": ["Take 2 clear close-up photos again in daylight.", "Photograph both sides of the same leaf.", "Do not use a chemical based on this result. Call 16123 or ask an agriculture officer."],
         "bn": ["দিনের আলোতে কাছ থেকে দুটি পরিষ্কার ছবি তুলুন।", "একই পাতার দুই পাশের ছবি দিন।", "এই ফল দেখে ওষুধ দেবেন না; ১৬১২৩-এ কল করুন বা কৃষি কর্মকর্তাকে জিজ্ঞেস করুন।"],
     },
 }
@@ -110,7 +110,7 @@ async def security_headers(request, call_next):
 
 @app.exception_handler(Exception)
 async def safe_error(_, __):
-    return JSONResponse(status_code=500, content={"detail": "Analysis failed safely. Please try another image."})
+    return JSONResponse(status_code=500, content={"detail": "We could not check this photo. Please try another photo."})
 
 
 @app.get("/health")
@@ -133,31 +133,31 @@ def health() -> dict:
 @app.post("/disease/predict")
 async def predict(request: Request, file: UploadFile = File(...)) -> dict:
     if model is None:
-        raise HTTPException(503, "The disease-screening model is unavailable.")
+        raise HTTPException(503, "The disease photo check is not available now. Please try again later.")
     client = request.client.host if request.client else "unknown"
     now = time.monotonic()
     recent = request_times[client]
     while recent and recent[0] < now - 60:
         recent.popleft()
     if len(recent) >= 20:
-        raise HTTPException(429, "Too many scans. Please wait one minute.")
+        raise HTTPException(429, "Too many photo checks. Please wait 1 minute.")
     recent.append(now)
     if file.content_type not in ALLOWED_TYPES:
-        raise HTTPException(415, "Upload a JPEG, PNG, or WebP image.")
+        raise HTTPException(415, "Add a JPG, PNG or WebP photo.")
     content = await file.read(MAX_UPLOAD_BYTES + 1)
     if len(content) > MAX_UPLOAD_BYTES:
-        raise HTTPException(413, "Image must be 8 MB or smaller.")
+        raise HTTPException(413, "Choose a photo up to 8 MB.")
     try:
         with Image.open(io.BytesIO(content)) as source:
             if source.format not in ALLOWED_FORMATS:
-                raise HTTPException(400, "The file content does not match an allowed image type.")
+                raise HTTPException(400, "This file is not an allowed photo type. Choose a JPG, PNG or WebP photo.")
             if min(source.size) < 128 or max(source.size) > 8000:
-                raise HTTPException(400, "Image dimensions must be between 128 and 8,000 pixels.")
+                raise HTTPException(400, "Use a photo between 128 and 8,000 pixels wide and tall.")
             source.verify()
         with Image.open(io.BytesIO(content)) as source:
             image = source.convert("RGB")
     except (UnidentifiedImageError, OSError, Image.DecompressionBombError):
-        raise HTTPException(400, "The uploaded file is not a safe, readable image.")
+        raise HTTPException(400, "We could not safely open this photo. Please choose another photo.")
     quality = image_quality(image)
     quality_warning = bool(quality["issues"])
 
@@ -190,8 +190,8 @@ async def predict(request: Request, file: UploadFile = File(...)) -> dict:
         "needs_expert_review": True,
         "probabilities": {class_names[index]: round(float(probabilities[index]), 4) for index in range(len(class_names))},
         "next_steps": NEXT_STEPS[label],
-        "model_scope": "PlantVillage-trained research model; regional testing did not meet the field-use threshold.",
-        "treatment_status": "Screening guidance only—confirm chemical decisions with an agricultural expert.",
+        "model_scope": "This research model was trained using PlantVillage. Regional tests did not meet the standard for field use.",
+        "treatment_status": "This is photo-check guidance only. Ask an agriculture expert before choosing chemicals.",
     }
 
 
@@ -206,19 +206,19 @@ async def tuber_inspection(request: Request, file: UploadFile = File(...)) -> di
         raise HTTPException(429, "Please wait one minute.")
     recent.append(now)
     if file.content_type not in ALLOWED_TYPES:
-        raise HTTPException(415, "Upload a JPEG, PNG or WebP image.")
+        raise HTTPException(415, "Add a JPG, PNG or WebP photo.")
     content = await file.read(MAX_UPLOAD_BYTES + 1)
     if len(content) > MAX_UPLOAD_BYTES:
-        raise HTTPException(413, "Image must be 8 MB or smaller.")
+        raise HTTPException(413, "Choose a photo up to 8 MB.")
     try:
         with Image.open(io.BytesIO(content)) as image:
             if image.format not in ALLOWED_FORMATS or min(image.size) < 128 or max(image.size) > 8000:
-                raise HTTPException(400, "Use a readable image between 128 and 8,000 pixels.")
+                raise HTTPException(400, "Choose a photo that opens, between 128 and 8,000 pixels wide and tall.")
             image.verify()
         with Image.open(io.BytesIO(content)) as image:
             return await asyncio.to_thread(inspect_tubers, image)
     except (UnidentifiedImageError, OSError, Image.DecompressionBombError):
-        raise HTTPException(400, "The image could not be read safely.")
+        raise HTTPException(400, "We could not safely open this photo. Please choose another photo.")
 
 
 load_model()

@@ -14,11 +14,11 @@ const stages: Record<"bn" | "en", Stage[]> = {
     { day: 90, duration: "প্রায় ১২–১৩ সপ্তাহ", title: "তোলার সময়", body: "পাতা শুকোতে শুরু করলে আলু পরিপক্ব হয়। মাটি শুকনো থাকলে তুলুন।" },
   ],
   en: [
-    { day: 15, duration: "about 2 weeks", title: "Sprouting eyes", body: "The seed potato wakes up. The first roots spread through the soil." },
-    { day: 35, duration: "about 5 weeks", title: "Leaf growth", body: "Green leaves make food from sunlight while roots take in water." },
-    { day: 55, duration: "about 8 weeks", title: "Tuber formation", body: "Small new potatoes begin forming on stems below the soil." },
-    { day: 80, duration: "about 11 weeks", title: "Maturity", body: "The plant sends its energy below the soil as potatoes grow quickly." },
-    { day: 90, duration: "about 12–13 weeks", title: "Harvest ready", body: "As foliage starts to dry, mature potatoes are ready to be lifted." },
+    { day: 15, duration: "about 2 weeks", title: "Sprouts appearing", body: "The seed potato wakes up. The first roots spread through the soil." },
+    { day: 35, duration: "about 5 weeks", title: "Leaf growth", body: "Green plants make food from light. Roots take in water and nutrients." },
+    { day: 55, duration: "about 8 weeks", title: "Potato formation", body: "Small new potatoes begin forming on stems below the soil." },
+    { day: 80, duration: "about 11 weeks", title: "Maturity", body: "The plant sends energy below the soil. Potatoes grow quickly." },
+    { day: 90, duration: "about 12–13 weeks", title: "Harvest ready", body: "Potatoes mature as the leaves start to dry. Harvest when the soil is dry." },
   ],
 };
 
@@ -55,7 +55,7 @@ export default function PotatoLifeCycle({ compact = false, showExploreLink = tru
   const endDay = compact ? 72 : 90;
   const playLabel = playing ? (language === "bn" ? "থামান" : "Pause")
     : compact ? day >= endDay ? (language === "bn" ? "আবার দেখুন" : "Replay") : (language === "bn" ? "চালান" : "Play")
-    : (language === "bn" ? "পুরো সময় দেখুন" : "Play the whole life");
+    : (language === "bn" ? "পুরো সময় দেখুন" : "Play full life cycle");
   const Container = compact ? "section" : "main";
   const StageHeading = compact ? "h2" : "h1";
 
@@ -99,7 +99,7 @@ export default function PotatoLifeCycle({ compact = false, showExploreLink = tru
   }, [playing, endDay]);
 
   const chooseDay = (next: number) => { dayRef.current = next; setDay(next); setPlaying(false); };
-  const label = language === "bn" ? "আলুর জীবনচক্র" : "Potato underground life";
+  const label = language === "bn" ? "আলুর জীবনচক্র" : "Potato life cycle";
   const growthStyle = {
     "--foliage-scale": (0.025 + 0.635 * grow(day, 8, 66)).toFixed(3),
     "--canopy-width": (0.2 + 0.8 * grow(day, 10, 48)).toFixed(3),
@@ -119,7 +119,7 @@ export default function PotatoLifeCycle({ compact = false, showExploreLink = tru
   return <Container className={`${compact ? "life-hero-illustration" : "potato-life-page"} ${language === "bn" ? "font-bangla" : ""}`} aria-label={compact ? label : undefined}>
     {!compact && <header className="life-page-header">
       <Link to="/" className="life-back"><ArrowLeft size={18} /><span>{language === "bn" ? "আলুসাথী" : "AluSathi"}</span></Link>
-      <div className="life-brand" aria-label={label}><strong>{language === "bn" ? "আলু" : "Potato"}</strong><span>{language === "bn" ? "মাটির নিচের জীবন" : "UNDERGROUND LIFE"}</span><Sprout aria-hidden="true" size={22} /></div>
+      <div className="life-brand" aria-label={label}><strong>{language === "bn" ? "আলু" : "Potato"}</strong><span>{language === "bn" ? "মাটির নিচের জীবন" : "Life below the soil"}</span><Sprout aria-hidden="true" size={22} /></div>
       <div className="life-header-actions"><span className="life-crop-chip"><b>{language === "bn" ? "আলু" : "Potato"}</b></span><button className="life-language" type="button" onClick={() => setLanguage(language === "bn" ? "en" : "bn")} aria-label={language === "bn" ? "ভাষা বদলান" : "Change language"}>{language === "bn" ? "EN" : "বাংলা"}</button></div>
     </header>}
 
@@ -171,11 +171,11 @@ export default function PotatoLifeCycle({ compact = false, showExploreLink = tru
       {!compact && <div className="life-timeline" aria-label={language === "bn" ? "ধাপ বাছুন" : "Choose a stage"}>
         {copy.map((item, index) => <button disabled={artState !== "ready"} key={item.title} className={index === stage ? "active" : ""} onClick={() => chooseDay(item.day)} aria-label={`${language === "bn" ? "দিন" : "Day"} ${dayLabel(item.day)}: ${item.title}`} aria-current={index === stage ? "step" : undefined}><i /><span className="sr-only">{item.title}</span></button>)}
       </div>}
-      <div className="life-scrubber"><span>{language === "bn" ? "বীজ আলু" : "SEED"}</span><input disabled={artState !== "ready"} type="range" min="0" max={endDay} step="0.1" value={day} onChange={(event) => chooseDay(Number(event.target.value))} aria-label={language === "bn" ? "আলুর বৃদ্ধির সময়" : "Time in the potato life"} /><span>{compact ? (language === "bn" ? "আলু বড় হয়" : "GROWTH") : (language === "bn" ? "ফসল তোলা" : "HARVEST")}</span></div>
+      <div className="life-scrubber"><span>{language === "bn" ? "বীজ আলু" : "Seed potato"}</span><input disabled={artState !== "ready"} type="range" min="0" max={endDay} step="0.1" value={day} onChange={(event) => chooseDay(Number(event.target.value))} aria-label={language === "bn" ? "আলুর বৃদ্ধির সময়" : "Potato growing time"} /><span>{compact ? (language === "bn" ? "আলু বড় হয়" : "Growth") : (language === "bn" ? "ফসল তোলা" : "Harvest")}</span></div>
       <div className="life-action-row"><button disabled={artState !== "ready"} type="button" className="life-play" onClick={() => { if (dayRef.current >= endDay) { dayRef.current = 0; setDay(0); } setPlaying(value => !value); }} aria-pressed={playing}>{playing ? <Pause fill="currentColor" size={15} /> : <Play fill="currentColor" size={15} />}{playLabel}</button>{compact ? showExploreLink && <Link to="/life-cycle">{language === "bn" ? "পুরো জীবনচক্র দেখুন" : "Explore the full life cycle"} <span aria-hidden="true">↗</span></Link> : <span>{language === "bn" ? `আলুর মৌসুম · ${active.duration}` : `Potato season · ${active.duration}`}</span>}</div>
       {artState !== "ready" && <p role="status" className="life-timing-note">{artState === "error" ? (language === "bn" ? "ছবি আসেনি। পাতাটি আবার খুলুন।" : "Illustration could not load. Refresh the page.") : (language === "bn" ? "ছবি আসছে…" : "Loading illustration…")}</p>}
       {!compact && <><p className="life-caption">{active.body}</p>
-      <small className="life-timing-note">{language === "bn" ? "বোঝানোর জন্য সময় দেখানো হয়েছে। জাত ও আবহাওয়ায় সময় বদলাবে।" : "Illustrative timing. Actual growth varies with variety and weather."}</small></>}
+      <small className="life-timing-note">{language === "bn" ? "বোঝানোর জন্য সময় দেখানো হয়েছে। জাত ও আবহাওয়ায় সময় বদলাবে।" : "These times are examples. Actual growth depends on the variety and weather."}</small></>}
     </section>
   </Container>;
 }

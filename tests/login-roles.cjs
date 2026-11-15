@@ -39,7 +39,7 @@ assert.ok(vercel.rewrites.some(route => route.source === '/account' && route.des
         await page.evaluate(() => scrollTo(0, 0));
         if (bn && width === 390) await page.screenshot({ path: 'test-results/farmer-home-mobile.png', fullPage: true });
         if (bn && width === 1280) await page.screenshot({ path: 'test-results/farmer-home-desktop.png' });
-        await page.locator('.farmer-more summary').click(); await page.locator('.farmer-more').getByRole('button', { name: bn ? 'মূল পাতায় ফিরুন' : 'Return to main page' }).click();
+        await page.locator('.farmer-more summary').click(); await page.locator('.farmer-more').getByRole('button', { name: bn ? 'মূল পাতায় ফিরুন' : 'Go to home' }).click();
         await page.waitForURL(`${base}/`);
         assert.equal(await page.evaluate(() => sessionStorage.getItem('alusathi-role')), '');
         assert.equal(await page.locator('.role-badge').count(), 0);

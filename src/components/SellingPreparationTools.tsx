@@ -9,12 +9,12 @@ function readChecks(): string[] {
 }
 const packing = [
   ["sort", "খারাপ আলু আলাদা করেছি", "Damaged potatoes separated"],
-  ["bag", "শুকনো, বাতাস চলার বস্তা নিয়েছি", "Dry, ventilated bags ready"],
-  ["weight", "বস্তার ওজন মেপেছি", "Bags weighed"],
+  ["bag", "শুকনো, বাতাস চলার বস্তা নিয়েছি", "Dry sacks that let air through are ready"],
+  ["weight", "বস্তার ওজন মেপেছি", "Sacks weighed"],
   ["label", "জাত ও অবস্থা লিখে চিহ্ন দিয়েছি", "Variety and condition labelled"],
 ];
 const visit = [
-  ["example", "বিভিন্ন বস্তা থেকে দেখানোর আলু রেখেছি", "Potatoes from different bags ready to show"],
+  ["example", "বিভিন্ন বস্তা থেকে দেখানোর আলু রেখেছি", "Potatoes from different sacks are ready to show"],
   ["scales", "ওজন মাপার ব্যবস্থা রেখেছি", "Weighing arrangement ready"],
 ];
 
@@ -31,7 +31,7 @@ export default function SellingPreparationTools() {
       const previous=saved.draft && typeof saved.draft==="object" && !Array.isArray(saved.draft)?saved.draft:{};
       localStorage.setItem(prepKey,JSON.stringify({...saved,draft:{...previous,checks:next}}));
       setChecks(next);setCheckMessage(t("সেভ হয়েছে।", "Saved."));
-    } catch {setCheckMessage(t("সেভ হয়নি। আবার চেষ্টা করুন।", "Could not save. Please retry."));}
+    } catch {setCheckMessage(t("সেভ হয়নি। আবার চেষ্টা করুন।", "Could not save. Please try again."));}
   }
   function checklist(items: string[][], title: string, icon: React.ReactNode) {
     const symbols = { sort: ScanEye, bag: ShoppingBag, weight: Scale, label: Tag, example: Layers, scales: Scale };

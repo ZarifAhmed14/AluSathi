@@ -13,7 +13,7 @@ export default function Index({ farmerHome = false }: { farmerHome?: boolean }) 
     <>
       <Helmet>
         <title>আলুসাথী — আলুর রোগ বুঝুন, সহজে</title>
-        <meta name="description" content="Bangla-first field support and potato trade tools for farmers and businesses in Bangladesh." />
+        <meta name="description" content="Field care and potato trading tools for Farmers and Buyers in Bangladesh. Bangla comes first." />
         <meta name="theme-color" content="#112a20" />
       </Helmet>
       {farmerHome ? <AluSathiDashboard key={`${user?.id || 'guest'}-${farmerHome}`} farmerHome /> : <PublicLanding />}

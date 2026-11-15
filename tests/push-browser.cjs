@@ -11,9 +11,9 @@ const users=JSON.parse(fs.readFileSync('test-results/auth-fixtures.json','utf8')
   await page.reload({waitUntil:'networkidle'});
   await page.getByRole('button',{name:'Sign out',exact:true}).waitFor();
   await page.locator('.reminder-tool > summary').click();
-  await page.getByRole('button',{name:'Enable background alerts',exact:true}).click();
+  await page.getByRole('button',{name:'Turn on device reminders',exact:true}).click();
   try {
-    await page.getByRole('button',{name:'Disable device alerts',exact:true}).waitFor({timeout:25000});
+    await page.getByRole('button',{name:'Turn off device reminders',exact:true}).waitFor({timeout:25000});
     console.log('LIVE_PUSH_SUBSCRIPTION_OK');
     await page.getByLabel('What task?').fill('QA push delivery');
     await page.getByLabel('When?').fill(new Date(Date.now()+120000-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16));

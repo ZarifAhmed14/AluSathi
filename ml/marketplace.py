@@ -23,7 +23,7 @@ ALLOWED_OFFER_FIELDS = {"quantity_kg", "price_kg", "pickup_date", "pickup_respon
 
 def api(path: str, *, token: str | None = None, method: str = "GET", body: Any = None, prefer: str = "return=representation") -> Any:
     if not URL or not KEY:
-        raise HTTPException(503, "Marketplace service is not configured")
+        raise HTTPException(503, "The marketplace is not connected yet. Please try again later.")
     headers = {"apikey": KEY, "Accept": "application/json", "Prefer": prefer}
     if token:
         headers["Authorization"] = f"Bearer {token}"
@@ -41,12 +41,12 @@ def api(path: str, *, token: str | None = None, method: str = "GET", body: Any =
         if not isinstance(error_data, dict):
             error_data = {}
         if error.code in {401, 403, 404}:
-            raise HTTPException(404, "Record not found") from None
+            raise HTTPException(404, "This record was not found. Refresh and try again.") from None
         if error.code == 409 or (error.code == 400 and (error_data.get("code") in {"40001", "23505"} or (error_data.get("code") == "P0001" and error_data.get("message") in {"stale offer", "lot unavailable"}))):
-            raise HTTPException(409, "This record changed. Refresh and try again.") from None
-        raise HTTPException(503, "Marketplace service unavailable") from None
+            raise HTTPException(409, "This record has changed. Refresh and try again.") from None
+        raise HTTPException(503, "The marketplace is not available now. Please try again later.") from None
     except (OSError, ValueError):
-        raise HTTPException(503, "Marketplace service unavailable") from None
+        raise HTTPException(503, "The marketplace is not available now. Please try again later.") from None
 
 
 async def current_user(request: Request) -> tuple[dict[str, Any], str]:
@@ -59,7 +59,7 @@ async def current_user(request: Request) -> tuple[dict[str, Any], str]:
         raise HTTPException(401, "Sign in to continue")
     rotated = session.get("refresh_token")
     if not isinstance(rotated, str) or not rotated:
-        raise HTTPException(503, "Account service unavailable")
+        raise HTTPException(503, "Account services are not available now. Please try again later.")
     request.state.market_refresh_token = rotated
     return user, token
 
@@ -87,7 +87,7 @@ def number(value: Any, low: float, high: float, field: str) -> float:
 
 def costs(value: Any) -> dict[str, float | None]:
     if not isinstance(value, dict) or set(value) - ALLOWED_COSTS:
-        raise HTTPException(400, "Invalid buyer costs")
+        raise HTTPException(400, "Please check the Buyer's costs.")
     result: dict[str, float | None] = {}
     for key in ALLOWED_COSTS:
         item = value.get(key)
@@ -127,7 +127,7 @@ async def publish_lot(request: Request):
     photos = data.get("photos", [])
     allowed_prefix = URL.rstrip("/") + "/storage/v1/object/public/"
     if not isinstance(photos, list) or len(photos) > 3 or any(not URL.startswith("https://") or not isinstance(p, str) or len(p) > 2048 or not p.startswith(allowed_prefix) or any(c in p for c in "\r\n\\?#") for p in photos):
-        raise HTTPException(400, "Invalid photos")
+        raise HTTPException(400, "Please check the photos and try again.")
     if not isinstance(data.get("published", False), bool):
         raise HTTPException(400, "Invalid published status")
     payload = {
@@ -142,7 +142,7 @@ async def publish_lot(request: Request):
         if not isinstance(payload["ready_date"], str) or date.fromisoformat(payload["ready_date"]).isoformat() != payload["ready_date"]:
             raise ValueError()
     except ValueError:
-        raise HTTPException(400, "Invalid ready date") from None
+        raise HTTPException(400, "Please check the date when potatoes will be ready.") from None
     return await asyncio.to_thread(api, "market_lots", token=token, method="POST", body=payload)
 
 

@@ -20,7 +20,7 @@ export default function PotatoDetailsDialog() {
   function change(field:keyof typeof details,value:string) { setDetails({...details,[field]:value});setError("");setSaved(false); }
   function save(event:React.FormEvent) {
     event.preventDefault();
-    if (details.harvestDate && (!validDay(details.harvestDate) || details.harvestDate>notebookToday())) {setError(t("আলু তোলার সঠিক তারিখ দিন। ভবিষ্যতের তারিখ নয়।", "Enter a valid harvest date, not a future date."));return;}
+    if (details.harvestDate && (!validDay(details.harvestDate) || details.harvestDate>notebookToday())) {setError(t("আলু তোলার সঠিক তারিখ দিন। ভবিষ্যতের তারিখ নয়।", "Please check the harvest date. It cannot be in the future."));return;}
     try {
       const raw=localStorage.getItem(draftKey), formRaw=localStorage.getItem(formDraftKey);
       const draft=JSON.parse(raw || "{}"), form=JSON.parse(formRaw || "{}");
@@ -32,7 +32,7 @@ export default function PotatoDetailsDialog() {
       } catch (failure) { if(raw===null)localStorage.removeItem(draftKey);else localStorage.setItem(draftKey,raw);throw failure; }
       setSaved(true);setOpen(false);
       if ((event.nativeEvent as SubmitEvent).submitter?.getAttribute("value")==="market") navigate("/farmer#market");
-    } catch {setError(t("সেভ হয়নি। আপনার লেখা এখানেই আছে—আবার চেষ্টা করুন।", "Could not save. Your entries are still here—please retry."));}
+    } catch {setError(t("সেভ হয়নি। আপনার লেখা এখানেই আছে—আবার চেষ্টা করুন।", "Could not save. Your details are still here. Please try again."));}
   }
   return <section id="potato-details" className="prep-certificate-card" aria-labelledby="prep-certificate-title">
     <div><FileText size={25}/><h2 id="prep-certificate-title">{t("আলুর পরিচিতি", "Potato details")}</h2></div>
@@ -43,17 +43,17 @@ export default function PotatoDetailsDialog() {
         <div className="potato-certificate-heading"><FileText size={25}/><DialogTitle>{t("আলুর পরিচিতি", "Potato details")}</DialogTitle></div>
         <DialogDescription>{t("যা জানেন, শুধু সেটাই লিখুন। বাকি ঘর খালি রাখতে পারেন।", "Fill in what you know. You can leave the other fields blank.")}</DialogDescription>
         <form className="potato-details-form" onSubmit={save}>
-          <label>{t("কী কাজে লাগবে?", "Intended use")}<select name="potatoPurpose" value={details.purpose} onChange={e=>change("purpose",e.target.value)}><option value="">{t("বাছুন", "Choose")}</option><option value="table">{t("খাওয়ার আলু", "Table potatoes")}</option><option value="seed">{t("বীজ আলু", "Seed potatoes")}</option><option value="processing">{t("চিপস বা অন্য খাবার তৈরি", "Processing")}</option></select></label>
+          <label>{t("কী কাজে লাগবে?", "Use")}<select name="potatoPurpose" value={details.purpose} onChange={e=>change("purpose",e.target.value)}><option value="">{t("বাছুন", "Choose")}</option><option value="table">{t("খাওয়ার আলু", "Potatoes for eating")}</option><option value="seed">{t("বীজ আলু", "Seed potatoes")}</option><option value="processing">{t("চিপস বা অন্য খাবার তৈরি", "For processing")}</option></select></label>
           <label>{t("জাত (জানা থাকলে)", "Variety (if known)")}<input name="potatoVariety" value={details.variety} maxLength={60} onChange={e=>change("variety",e.target.value)} /></label>
-          <label>{t("কোন দেশে ফলিয়েছেন?", "Country grown in")}<input name="potatoCountry" value={details.country} maxLength={60} onChange={e=>change("country",e.target.value)} /></label>
+          <label>{t("কোন দেশে ফলিয়েছেন?", "Country of origin")}<input name="potatoCountry" value={details.country} maxLength={60} onChange={e=>change("country",e.target.value)} /></label>
           <label>{t("প্যাক করার মাস", "Packing month")}<input name="potatoPackedMonth" type="month" max={notebookToday().slice(0,7)} value={details.packedMonth} onChange={e=>change("packedMonth",e.target.value)} /></label>
           <label>{t("বস্তার চিহ্ন বা নম্বর", "Bag mark or batch number")}<input name="potatoBatch" value={details.batchCode} maxLength={40} onChange={e=>change("batchCode",e.target.value)} /></label>
           <label>{t("আলু তোলার তারিখ (জানা থাকলে)", "Harvest date (if known)")}<input name="potatoHarvest" type="date" max={notebookToday()} value={details.harvestDate} onChange={e=>change("harvestDate",e.target.value)} /></label>
           <label className="certificate-wide">{t("আকার ও অবস্থা", "Size and condition")}<input name="potatoCondition" placeholder={t("যেমন: মাঝারি আকার, শুকনো আলু", "e.g. medium size, dry potatoes")} value={details.notes} maxLength={300} onChange={e=>change("notes",e.target.value)} /></label>
           <label className="certificate-wide">{t("কোথায় আছে? (ঐচ্ছিক)", "Where is it kept? (optional)")}<input name="potatoStorage" value={details.storageDescription} maxLength={200} onChange={e=>change("storageDescription",e.target.value)} /></label>
           {error && <p role="alert" className="certificate-wide">{error}</p>}
-          <p className="potato-certificate-note certificate-wide">{t("এই তথ্য বাজারে দিন পাতায় কাজে লাগবে। এটি মান যাচাইয়ের সনদ নয়।", "These details carry into Showcase. This is not a quality certificate.")}</p>
-          <div className="potato-details-actions certificate-wide"><button type="submit" className="potato-certificate-done">{t("সেভ করুন", "Save")}</button><button type="submit" value="market" className="potato-certificate-done">{t("সেভ করে বাজারে যান", "Save and continue to Showcase")}</button></div>
+          <p className="potato-certificate-note certificate-wide">{t("এই তথ্য বাজারে দিন পাতায় কাজে লাগবে। এটি মান যাচাইয়ের সনদ নয়।", "These details appear on List for sale. This is not a quality certificate.")}</p>
+          <div className="potato-details-actions certificate-wide"><button type="submit" className="potato-certificate-done">{t("সেভ করুন", "Save")}</button><button type="submit" value="market" className="potato-certificate-done">{t("সেভ করে বাজারে যান", "Save and prepare listing")}</button></div>
         </form>
       </DialogContent>
     </Dialog>

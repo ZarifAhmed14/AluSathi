@@ -60,7 +60,7 @@ const note = (check, evidence) => { results.push({ check, evidence }); console.l
         await page.locator('#tuber input[type=file]').setInputFiles(path.resolve('public/pwa-192x192.png'));
         await page.locator('#tuber [role=status]').waitFor({ timeout: 90000 });
         note('unrelated-image-tuber', await page.locator('#tuber [role=status]').innerText());
-        await page.getByRole('button', { name: 'Logout', exact: true }).click();
+        await page.getByRole('button', { name: 'Sign out', exact: true }).click();
         note('logout-hides-history', await page.locator('#diary').count() === 0);
       }
       note('browser-errors-' + width, errors);

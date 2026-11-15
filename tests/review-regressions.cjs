@@ -45,7 +45,7 @@ const path = require('node:path');
       }
       assert.equal(scans, 3);
       assert.equal(await page.locator('#diary').count(), 0);
-      await page.getByRole('button', { name: 'New scan', exact: true }).click();
+      await page.getByRole('button', { name: 'New photo', exact: true }).click();
       assert.equal(await input.isDisabled(), false);
       assert.equal(await page.locator('.field-path .done').count(), 0);
       await context.route('**/api/disease/predict', r => r.fulfill({ json: {

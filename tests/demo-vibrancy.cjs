@@ -36,7 +36,7 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:4175';
       assert.equal(await first.locator('.catalogue-row-gallery-slide img').count(), 1);
       assert(await first.locator('img').first().evaluate(img => img.complete && img.naturalWidth > 0));
       await first.locator('[data-action="view-lot"]').click();
-      assert(await page.locator('.catalogue-detail-copy dl').innerText().then(text => text.includes(language === 'bn' ? 'প্যাকিং' : 'Packing')));
+      assert(await page.locator('.catalogue-detail-copy dl').innerText().then(text => text.includes(language === 'bn' ? 'প্যাকিং' : 'Packaging')));
       await page.locator('.catalogue-detail-dialog [data-action="close-lot"]').click();
       await first.locator('[data-action="contact-lot"]').click();
       assert(await page.locator('.catalogue-contact-dialog').innerText().then(text => text.includes(language === 'bn' ? 'নমুনা' : 'example')));

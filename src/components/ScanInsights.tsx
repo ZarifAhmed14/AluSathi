@@ -31,7 +31,7 @@ function SeverityMeasure({ image, onMeasure }: { image: string; onMeasure: (perc
     onMeasure(leafPixels >= 1000 ? Math.round(damagedPixels / leafPixels * 1000) / 10 : null);
   }
   const point = (e: React.PointerEvent<SVGSVGElement>): Point => { const rect = e.currentTarget.getBoundingClientRect(); return [Math.max(0, Math.min(512, (e.clientX - rect.left) / rect.width * 512)), Math.max(0, Math.min(512, (e.clientY - rect.top) / rect.height * 512))]; };
-  return <details className="farmer-tool severity-tool"><summary>{bn ? "পাতার কতটা অংশে দাগ?" : "How much leaf area is marked?"}</summary><div className="tool-body">
+  return <details className="farmer-tool severity-tool"><summary>{bn ? "পাতার কতটা অংশে দাগ?" : "How much of the leaf has marks?"}</summary><div className="tool-body">
     <p>{bn ? "প্রথমে একটি পাতার চারপাশে আঙুল ঘুরিয়ে দাগ দিন। তারপর ক্ষতিগ্রস্ত অংশ ঘিরুন। একাধিক দাগ ঘেরা যাবে।" : "First trace around one leaf. Then trace each damaged area. You can mark several spots."}</p>
     <strong>{outline.length ? (bn ? "২. এবার ক্ষতিগ্রস্ত অংশ ঘিরুন" : "2. Trace damaged areas") : (bn ? "১. পাতার চারপাশ ঘিরুন" : "1. Trace the leaf outline")}</strong>
     <svg className="severity-canvas" viewBox="0 0 512 512" aria-label={bn ? "পাতা ও দাগ চিহ্নিত করার ছবি" : "Mark leaf and damaged areas"} onPointerDown={e => { e.currentTarget.setPointerCapture(e.pointerId); active.current = [point(e)]; setStroke(active.current); }} onPointerMove={e => { if (active.current.length) { active.current = [...active.current, point(e)]; setStroke(active.current); } }} onPointerUp={finish} onPointerCancel={() => { active.current = []; setStroke([]); }}>
@@ -41,7 +41,7 @@ function SeverityMeasure({ image, onMeasure }: { image: string; onMeasure: (perc
       <polyline points={stroke.map(p => p.join(",")).join(" ")} fill="none" stroke={outline.length ? "#ff755d" : "#4aff9b"} strokeWidth="3" />
     </svg>
     <button className="text-button" onClick={() => { setOutline([]); setLesions([]); onMeasure(null); }}><Undo2 size={16} />{bn ? "মুছে আবার আঁকুন" : "Clear and redraw"}</button>
-    <small>{bn ? "এটি আপনার আঁকা দাগের মাপ। AI দিয়ে রোগের তীব্রতা মাপা নয়; পুরো জমির অবস্থাও নয়।" : "This measures your marked area. It is an assisted image measurement, not automated disease severity or whole-field damage."}</small>
+    <small>{bn ? "এটি আপনার আঁকা দাগের মাপ। AI দিয়ে রোগের তীব্রতা মাপা নয়; পুরো জমির অবস্থাও নয়।" : "This measures the area you draw around. AI does not measure disease severity here. It does not show damage across the whole field."}</small>
   </div></details>;
 }
 
@@ -55,12 +55,12 @@ export default function ScanInsights({ results, weather, district, image, cropAg
   const [phone, setPhone] = useState("");
   const createdAt = useRef(new Date());
   const outlook = useMemo(() => spreadOutlook(weather), [weather]);
-  const outlookText = !outlook ? (bn ? "নতুন আবহাওয়ার তথ্য পেলে ছড়ানোর অনুকূল অবস্থা দেখা যাবে।" : "Fresh weather data is needed to check conditions for spread.")
-    : outlook.high ? (bn ? "সামনের দুই দিনে ঠান্ডা ও দীর্ঘ সময় আর্দ্র আবহাওয়া নাবি ধসা বাড়াতে পারে। কাছের গাছও দেখুন এবং কৃষি বিশেষজ্ঞকে জানান।" : "Two consecutive forecast days meet weather conditions that can favour late blight. Inspect nearby plants and consult an agricultural expert.")
-    : (bn ? "পরবর্তী ৩ দিনে এই নিয়মে একটানা অনুকূল আবহাওয়া ধরা পড়েনি। তবু রোগ ছড়াতে পারে—গাছ দেখা চালিয়ে যান।" : "The next three days do not meet this consecutive-day weather rule. Spread is still possible; keep inspecting plants.");
+  const outlookText = !outlook ? (bn ? "নতুন আবহাওয়ার তথ্য পেলে ছড়ানোর অনুকূল অবস্থা দেখা যাবে।" : "New weather information is needed to check conditions for disease spread.")
+    : outlook.high ? (bn ? "সামনের দুই দিনে ঠান্ডা ও দীর্ঘ সময় আর্দ্র আবহাওয়া নাবি ধসা বাড়াতে পারে। কাছের গাছও দেখুন এবং কৃষি বিশেষজ্ঞকে জানান।" : "Cold, humid weather over the next 2 days may help late blight spread. Check nearby plants and tell an agriculture expert.")
+    : (bn ? "পরবর্তী ৩ দিনে এই নিয়মে একটানা অনুকূল আবহাওয়া ধরা পড়েনি। তবু রোগ ছড়াতে পারে—গাছ দেখা চালিয়ে যান।" : "This rule found no continuous favourable weather in the next 3 days. Disease can still spread. Keep checking plants.");
   const questions = [
     { id: "shape", bn: "দাগ কেমন দেখায়?", en: "What shape are the marks?", options: [["round", "গোল বা ছোপ ছোপ", "Round or patchy"], ["irregular", "এলোমেলো কিনারা", "Irregular edges"], ["none", "দাগ নেই", "No marks"], ["unsure", "বুঝতে পারছি না", "Not sure"]] },
-    { id: "wet", bn: "দাগের কিনারা কি ভেজা মনে হয়?", en: "Do the mark edges look water-soaked?", options: [["yes", "হ্যাঁ", "Yes"], ["no", "না", "No"], ["unsure", "বুঝতে পারছি না", "Not sure"]] },
+    { id: "wet", bn: "দাগের কিনারা কি ভেজা মনে হয়?", en: "Do the edges of the marks look wet?", options: [["yes", "হ্যাঁ", "Yes"], ["no", "না", "No"], ["unsure", "বুঝতে পারছি না", "Not sure"]] },
     { id: "white", bn: "পাতার নিচে সাদা আস্তরণ আছে?", en: "Is there white growth under the leaf?", options: [["yes", "হ্যাঁ", "Yes"], ["no", "না", "No"], ["unsure", "বুঝতে পারছি না", "Not sure"]] },
     { id: "spread", bn: "গত ১–২ দিনে দাগ কি ছড়িয়েছে?", en: "Have the marks spread in the last 1–2 days?", options: [["fast", "দ্রুত ছড়িয়েছে", "Spread quickly"], ["slow", "একটু ছড়িয়েছে", "Spread a little"], ["no", "ছড়ায়নি", "No spread"], ["unsure", "জানি না", "Don't know"]] },
   ];
@@ -73,8 +73,8 @@ export default function ScanInsights({ results, weather, district, image, cropAg
     cropAgeDays !== null && `${bn ? "লাগানোর পর" : "Days since planting"}: ${cropAgeDays} ${bn ? "দিন" : "days"}`,
     phone.trim() && `${bn ? "যোগাযোগ" : "Contact"}: ${phone.trim()}`, `${bn ? "ছবি" : "Photos"}: ${results.length}`, ...symptomLines,
     severity === null ? (bn ? "পাতার ক্ষতির পরিমাণ মাপা হয়নি।" : "Damaged area has not been measured.") : `${bn ? "চিহ্নিত পাতার ক্ষতি" : "Manually marked leaf damage"}: ${severity}%`,
-    outlookText, bn ? "একই রকম দাগ পুষ্টির ঘাটতি, পোকার ক্ষতি বা অন্য রোগেও হয়।" : "Similar marks can come from nutrient stress, pests or other diseases.",
-    bn ? "এই রিপোর্ট নিশ্চিত রোগ নির্ণয় নয়। ওষুধ ব্যবহারের আগে কৃষি বিশেষজ্ঞের পরামর্শ নিন। ১৬১২৩।" : "This report is not a confirmed diagnosis. Confirm treatment with an agricultural expert. 16123."].filter(Boolean).join("\n\n");
+    outlookText, bn ? "একই রকম দাগ পুষ্টির ঘাটতি, পোকার ক্ষতি বা অন্য রোগেও হয়।" : "Similar marks can come from low nutrients, pests or other diseases.",
+    bn ? "এই রিপোর্ট নিশ্চিত রোগ নির্ণয় নয়। ওষুধ ব্যবহারের আগে কৃষি বিশেষজ্ঞের পরামর্শ নিন। ১৬১২৩।" : "This report is not a confirmed diagnosis. Ask an agriculture expert before using chemicals. 16123."].filter(Boolean).join("\n\n");
   async function share() {
     try {
       if (navigator.share) {
@@ -95,13 +95,13 @@ export default function ScanInsights({ results, weather, district, image, cropAg
     </section>
     <section className="symptom-check" aria-labelledby="symptom-title"><p className="section-kicker">{bn ? "বিশেষজ্ঞকে জানানোর আগে" : "Before talking to an expert"}</p><h3 id="symptom-title">{bn ? "পাতায় কী দেখছেন?" : "What do you see on the leaf?"}</h3><p>{bn ? "যা দেখেছেন শুধু সেটাই বাছুন। নিশ্চিত না হলে ‘বুঝতে পারছি না’ দিন।" : "Choose only what you can see. Select ‘Not sure’ when unclear."}</p>
       {questions.map(q => <fieldset key={q.id}><legend>{bn ? q.bn : q.en}</legend><div className="symptom-options">{q.options.map(([value, bangla, english]) => <label key={value} className={answers[q.id] === value ? "selected" : ""}><input type="radio" name={`symptom-${q.id}`} value={value} checked={answers[q.id] === value} onChange={() => setAnswers(previous => ({ ...previous, [q.id]: value }))} />{bn ? bangla : english}</label>)}</div></fieldset>)}
-      <small>{bn ? "এই উত্তর দেখে আলুসাথী রোগের নাম বা ওষুধ বলে না।" : "These answers do not produce a disease name or treatment."}</small>
+      <small>{bn ? "এই উত্তর দেখে আলুসাথী রোগের নাম বা ওষুধ বলে না।" : "AluSathi does not name a disease or suggest treatment from these answers."}</small>
     </section>
-    <article className="lookalike-warning"><AlertTriangle /><div><h3>{bn ? "একই রকম দাগ মানেই একই রোগ নয়" : "Similar marks can have different causes"}</h3><p>{bn ? "পুষ্টির ঘাটতি, পোকার ক্ষতি, রোদে পোড়া বা অন্য রোগেও এমন দাগ হয়। পাতার নিচে ও গোড়ায় দেখুন। নিশ্চিত না হয়ে ওষুধ দেবেন না।" : "Nutrient stress, pests, sun damage and other diseases can look alike. Check the leaf underside and plant base. Confirm the cause before treatment."}</p></div></article>
+    <article className="lookalike-warning"><AlertTriangle /><div><h3>{bn ? "একই রকম দাগ মানেই একই রোগ নয়" : "Similar marks can have different causes"}</h3><p>{bn ? "পুষ্টির ঘাটতি, পোকার ক্ষতি, রোদে পোড়া বা অন্য রোগেও এমন দাগ হয়। পাতার নিচে ও গোড়ায় দেখুন। নিশ্চিত না হয়ে ওষুধ দেবেন না।" : "Low nutrients, pests, sun damage and other diseases can cause similar marks. Check under the leaf and at the plant's base. Do not use treatment before confirming the cause."}</p></div></article>
     {image && <SeverityMeasure image={image} onMeasure={setSeverity} />}
     {severity !== null && <p className="tool-result" role="status">{bn ? "আপনার চিহ্নিত পাতার" : "Of your outlined leaf,"} {severity}% {bn ? "অংশে দাগ চিহ্নিত হয়েছে।" : "is marked as damaged."}</p>}
-    <article className="spread-outlook"><CloudRain /><div><h3>{bn ? "আবহাওয়ায় রোগের ঝুঁকি" : "Disease-favouring weather"}</h3><p>{outlookText}</p><small>{bn ? "নাবি ধসার Hutton আবহাওয়া-নিয়ম; বাংলাদেশের মাঠে যাচাই হয়নি। এটি রোগ নির্ণয় বা ছড়ানোর শতাংশ নয়।" : "Hutton late-blight weather rule; not validated for Bangladesh fields. It is neither a diagnosis nor a probability."} <a href="https://potatoes.ahdb.org.uk/development-and-implementation-of-a-new-national-warning-system-for-potato-late-blight-in-great-britain-hutton-criteria" target="_blank" rel="noreferrer">AHDB</a></small></div></article>
-    <p>{bn ? "ছবি ও উত্তর স্থানীয় কৃষি কর্মকর্তাকে পাঠান। জরুরি পরামর্শের জন্য ১৬১২৩-এ কল করুন।" : "Share the photo and answers with a local agricultural officer. Call 16123 for advice."}</p><a className="expert-call" href="tel:16123">{bn ? "কৃষি পরামর্শ · ১৬১২৩" : "Agricultural advice · 16123"}</a>
+    <article className="spread-outlook"><CloudRain /><div><h3>{bn ? "আবহাওয়ায় রোগের ঝুঁকি" : "Disease risk from weather"}</h3><p>{outlookText}</p><small>{bn ? "নাবি ধসার Hutton আবহাওয়া-নিয়ম; বাংলাদেশের মাঠে যাচাই হয়নি। এটি রোগ নির্ণয় বা ছড়ানোর শতাংশ নয়।" : "Uses the Hutton weather rule for late blight. It has not been checked in Bangladesh's fields. It does not diagnose disease or give a spread percentage."} <a href="https://potatoes.ahdb.org.uk/development-and-implementation-of-a-new-national-warning-system-for-potato-late-blight-in-great-britain-hutton-criteria" target="_blank" rel="noreferrer">AHDB</a></small></div></article>
+    <p>{bn ? "ছবি ও উত্তর স্থানীয় কৃষি কর্মকর্তাকে পাঠান। জরুরি পরামর্শের জন্য ১৬১২৩-এ কল করুন।" : "Send the photo and answers to a local agriculture officer. Call 16123 for urgent advice."}</p><a className="expert-call" href="tel:16123">{bn ? "কৃষি পরামর্শ · ১৬১২৩" : "Agricultural advice · 16123"}</a>
     <div className="report-actions"><button className="secondary-main" onClick={share}><Share2 size={18} />{bn ? "রিপোর্ট পাঠান" : "Share report"}</button><button className="secondary-main" onClick={() => window.print()}><Printer size={18} />{bn ? "PDF / প্রিন্ট" : "PDF / print"}</button><button className="text-button" onClick={() => downloadFile("AluSathi-report.txt", report)}>{bn ? "ডাউনলোড" : "Download"}</button></div>
     {shareError && <p role="alert">{shareError}</p>}
     <section id="farmer-report" aria-label="Printable farmer report"><h1>আলুসাথী · AluSathi</h1><pre>{report}</pre></section>
