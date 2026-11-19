@@ -22,6 +22,7 @@ export default function ColdStorage() {
   async function search(area = district) {
     if (busy.current) return;
     busy.current = true; setLoading(true); setError(false); setProviders(null); setSearched(area);
+    const minimumLoading = new Promise(resolve => window.setTimeout(resolve, 1000));
     try {
       const response = await fetch("/marketplace/providers.json", { signal: AbortSignal.timeout(8000) });
       if (!response.ok) throw new Error("Unavailable");
@@ -36,23 +37,23 @@ export default function ColdStorage() {
         const a = Math.sin((end.lat-origin.lat)*rad/2)**2 + Math.cos(origin.lat*rad)*Math.cos(end.lat*rad)*Math.sin((end.lon-origin.lon)*rad/2)**2;
         return 6371 * 2 * Math.asin(Math.sqrt(Math.min(1,a)));
       };
-      setProviders(data.filter(validProvider).sort((a,b) => distance(a)-distance(b) || a.name.localeCompare(b.name)));
-    } catch { setError(true); }
+      const results = data.filter(validProvider).sort((a,b) => distance(a)-distance(b) || a.name.localeCompare(b.name)).slice(0, 2);
+      await minimumLoading;
+      setProviders(results);
+    } catch { await minimumLoading; setError(true); }
     finally { busy.current = false; setLoading(false); }
   }
   return <section id="cold-storage" className="storage-search" aria-labelledby="storage-title">
     <header><span className="storage-symbol"><Snowflake size={27}/></span><div><h2 id="storage-title">{t("হিমাগারে রাখতে চান?", "Want to use cold storage?")}</h2><p>{t("আপনার এলাকা:", "Your area:")} {bn ? DISTRICT_NAMES[district] || district : district}</p></div></header>
     <p className="storage-directory-note">{t("এটি যোগাযোগের তালিকা। আপনার কাছের সব হিমাগার এখানে নাও থাকতে পারে।", "This is a contact directory. It may not include stores near you.")}</p>
     <form className="storage-search-form" onSubmit={e => { e.preventDefault(); void search(); }}>
-      <label>{t("এলাকা", "Area")}<select value={district} onChange={event => { setDistrict(event.target.value); setProviders(null); setError(false); }}>{Object.entries(DISTRICT_NAMES).filter(([key])=>key!=="Other").map(([key,label])=><option key={key} value={key}>{bn ? label : key}</option>)}</select></label>
+      <label>{t("এলাকা", "Area")}<select disabled={loading} value={district} onChange={event => { setDistrict(event.target.value); setProviders(null); setError(false); }}>{Object.entries(DISTRICT_NAMES).filter(([key])=>key!=="Other").map(([key,label])=><option key={key} value={key}>{bn ? label : key}</option>)}</select></label>
       <button type="submit" disabled={loading}>{loading ? <Loader2 className="storage-spinner" size={19}/> : <Search size={19}/>} {loading ? t("তালিকায় খোঁজা হচ্ছে…", "Searching the directory…") : t("হিমাগার খুঁজুন", "Find cold storage")}</button>
     </form>
     <div aria-live="polite" aria-busy={loading}>
       {error && <p className="storage-empty" role="alert">{t("তালিকা খোলা যায়নি। আবার ‘হিমাগার খুঁজুন’ চাপুন।", "Could not load the list. Press Find cold storage to try again.")}</p>}
       {providers && <div className="storage-results-layout">
         <div><p className="storage-result-label">{t("যেখান থেকে খোঁজা হচ্ছে:", "Search area:")} {bn ? DISTRICT_NAMES[searched] || searched : searched} · {providers.length.toLocaleString(bn ? "bn-BD" : "en-GB")} {t("টি যোগাযোগ", providers.length === 1 ? "contact" : "contacts")}</p>
-          <p className="storage-result-label">{t("তালিকার যোগাযোগগুলো জেলার আনুমানিক কাছাকাছি অনুযায়ী সাজানো। জমির সঠিক দূরত্ব নয়; আরও কাছের হিমাগার থাকতে পারে।", "Contacts are listed by how near their districts are. This is not the exact distance from your field. Some nearer stores may be missing.")}</p>
-          {providers.length>0 && !providers.some(p=>p.area.split(",").at(-1)?.trim()===searched) && <p className="storage-no-local">{t("আপনার জেলার কোনো যোগাযোগ এই তালিকায় নেই। নিচেরগুলো অন্য জেলার—কাছের হিমাগার বলে দেখানো হচ্ছে না।", `No ${searched} contacts in the directory. Showing ${providers.length === 1 ? "a contact from another district" : "contacts from other districts"}.`)}</p>}
           {!providers.length && <div className="storage-empty"><MapPin size={25}/><h3>{t("তালিকায় কোনো যোগাযোগ নেই", "No contacts in the directory")}</h3><p>{t("পরে আবার খুঁজে দেখুন।", "Please try again later.")}</p></div>}
           {providers.map(p => <article key={p.name} className="storage-contact"><span className="storage-provider-label">{p.area.split(",").at(-1)?.trim()===searched?t("আপনার জেলার যোগাযোগ", "In your district"):t("অন্য জেলার যোগাযোগ", "In another district")}</span><h3>{bn ? p.nameBn : p.name}</h3><p className="storage-location"><MapPin size={18}/>{bn ? p.areaBn : p.area}</p><p>{t("জায়গা আছে কি না ও মোট ভাড়া ফোনে জেনে নিন।", "Call to confirm space and the full price.")}</p><a className="storage-call" href={`tel:${p.phone}`}><Phone size={21}/>{t("ফোন করুন", "Call now")}</a><p className="storage-number">{p.phone}</p><small>{t("নম্বরটি আলাদাভাবে যাচাই করা হয়নি।", "This number has not been independently checked.")}</small><details><summary>{t("আরও তথ্য", "More information")}</summary><p>{t("প্রকাশিত তালিকা থেকে নেওয়া। আলুসাথী জায়গা বা ভাড়া নিশ্চিত করেনি।", "From a published directory. AluSathi has not confirmed space or charges.")}</p><a href={p.source} target="_blank" rel="noopener noreferrer">{t("নম্বরের উৎস দেখুন", "View contact source")} <ExternalLink size={15}/></a></details></article>)}
         </div>

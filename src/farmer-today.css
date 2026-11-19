@@ -186,7 +186,14 @@
 .farmer-v2[data-view="today"] .farmer-today .today-weather-card { overflow:hidden; align-self:start; background:linear-gradient(145deg,#fff 10%,var(--home-sky)); }
 .today-weather-card header { display:flex; justify-content:space-between; align-items:center; gap:10px; }
 .today-weather-card header h2 { font-size:21px; font-weight:700; }
-.today-weather-card header > span { display:flex; align-items:center; gap:5px; color:var(--home-muted); font-size:15px; }
+.weather-location-picker { position:relative; display:flex; align-items:center; min-width:0; max-width:60%; color:var(--home-green); }
+.weather-location-picker select { width:100%; min-width:0; min-height:44px; padding:8px 28px 8px 30px; border:1px solid #78a99c; border-radius:10px; background:#e0f0ea; color:inherit; font:inherit; font-size:15px; font-weight:700; box-shadow:0 2px 0 #bdd7ce; cursor:pointer; appearance:none; text-overflow:ellipsis; }
+.weather-location-picker > svg { position:absolute; pointer-events:none; }
+.weather-location-picker > svg:first-child { left:9px; }
+.weather-location-picker > svg:last-child { right:9px; }
+.weather-location-picker select:hover { background:#cce5db; border-color:var(--home-green); }
+.weather-location-picker select:focus-visible { outline:3px solid var(--home-green); outline-offset:2px; }
+.farmer-v2[data-view="today"] .today-weather-card > .weather-location-note { margin-top:12px; color:var(--home-muted); font-size:13px; }
 .weather-current { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:22px 0; }
 .weather-current strong { font-size:60px; font-weight:600; line-height:1.1; letter-spacing:-3px; font-variant-numeric:tabular-nums; }
 .weather-current p { margin-top:8px; color:var(--home-muted); font-size:17px; }
@@ -307,6 +314,7 @@
 .today-observation-content img { width:80px; height:70px; object-fit:cover; border-radius:10px; }
 .today-observation-content p { margin:4px 0 0; overflow-wrap:anywhere; }
 .today-task-instruction { margin:0; color:var(--home-muted); font-size:14px; }
+.farmer-v2[data-view="season"][data-home-theme] { background:var(--home-sky); }
 .app-shell.season-progress { --season-neutral:#f4f4f4; --season-border:#e7e7e7; max-width:1440px; padding-block:24px 36px; }
 .season-main, .season-side { display:grid; gap:16px; min-width:0; }
 .season-main { align-items:start; margin-bottom:16px; }
@@ -346,14 +354,18 @@
 .season-activity svg { flex:none; align-self:center; color:var(--home-green); }
 .season-safety { color:var(--home-muted); font-size:14px; }
 .season-upcoming-heading { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:4px 12px; }
-.season-upcoming-heading h2 { display:flex; align-items:center; gap:8px; }
+.season-upcoming-heading h2 { display:flex; flex:1 1 180px; align-items:center; gap:8px; }
 .season-upcoming-heading svg { color:var(--home-green); flex:none; }
 .season-upcoming-heading > span, .season-upcoming li small { color:var(--home-muted); font-size:13px; }
+.season-upcoming-heading .season-today-badge { display:flex; flex:none; align-items:center; gap:8px; margin-inline-start:auto; padding:7px 12px; border:1px solid #e3c883; border-radius:12px; background:#fff3d1; color:#624610; }
+.season-today-badge small { font-size:12px; }
+.season-today-badge strong { font-size:20px; line-height:1.3; white-space:nowrap; }
 .season-upcoming ol { position:relative; display:grid; gap:4px; margin:10px 0 0; padding:0 0 0 20px; list-style:none; }
 .season-upcoming ol::before { content:""; position:absolute; inset:20px auto 20px 5px; width:1px; background:var(--home-green); opacity:.4; }
 .season-upcoming li { position:relative; display:grid; grid-template-columns:6.5rem minmax(0,1fr); gap:2px 8px; align-items:baseline; padding:9px 10px; border-radius:12px; }
 .season-upcoming li::before { content:""; position:absolute; top:16px; left:-20px; width:11px; height:11px; border:2px solid var(--home-soft); border-radius:50%; background:var(--home-green); }
-.season-upcoming li:has([aria-current="step"]) { background:var(--home-soft); }
+.season-upcoming li:has([aria-current="step"]) { background:#fff8e8; box-shadow:inset 3px 0 #c28c20; }
+.season-upcoming li:has([aria-current="step"])::before { background:#bd861b; border-color:#fff3d1; }
 .season-upcoming li small { display:block; margin-top:2px; }
 .season-week ul { grid-template-columns:repeat(7,minmax(76px,1fr)); margin:8px -4px 0; list-style:none; }
 .season-week button { width:100%; height:100%; border-radius:10px; font-size:14px; }
@@ -363,15 +375,18 @@
 .season-day-details h3 { margin:0; font-size:16px; font-weight:700; }
 .season-calendar { margin-top:16px; overflow:hidden; }
 .season-calendar-head, .season-calendar-controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
-.season-calendar-head { justify-content:space-between; gap:14px; padding:16px; border-radius:16px; color:white; background:radial-gradient(ellipse at 100% 0%,#2d7255,transparent 65%),repeating-linear-gradient(128deg,#ffffff09 0 1px,transparent 1px 15px),#123e31; }
-.season-calendar-title { display:flex; align-items:center; gap:10px; }
-.season-calendar-emblem { display:grid; place-items:center; width:44px; height:44px; border-radius:12px; background:#ffffff20; }
-.season-calendar-head h2 { color:white; font-size:clamp(20px,2vw,28px); }
-.season-calendar-head p { margin:2px 0 0; color:#dbefe3; }
-.season-calendar-controls button { width:auto; min-height:38px; padding:5px 10px; border-color:#ffffff55; background:#ffffff15; color:white; }
-.season-calendar-controls button:not(:disabled):hover { background:#ffffff30; }
-.season-calendar-controls button:nth-child(2) { background:#eff8ef; color:#174936; }
-.season-calendar-controls button:nth-child(2):hover { background:white; }
+.season-calendar-head { position:relative; isolation:isolate; overflow:clip; justify-content:space-between; gap:24px; padding:26px; border:1px solid #e6d2ae; border-radius:20px; color:var(--home-ink); background:#fffaf0 url("/banners/season-calendar-warm-field.png") center bottom / 100% 100% no-repeat; }
+.season-calendar-title { display:flex; align-items:center; gap:18px; }
+.season-calendar-emblem { display:flex; flex-direction:column; align-items:center; justify-content:start; flex:none; width:72px; min-height:82px; border:1px solid #decbb1; border-radius:13px; overflow:hidden; background:#fff; color:var(--home-ink); box-shadow:0 4px 0 #e9ddca,0 9px 18px #76552b12; transform:rotate(-4deg); }
+.season-calendar-emblem > span { display:flex; align-items:center; justify-content:center; gap:5px; width:100%; padding:5px; background:#a94f31; color:white; font-size:12px; font-weight:700; }
+.season-calendar-emblem > strong { padding:4px 8px 6px; font-size:34px; line-height:1.15; font-variant-numeric:tabular-nums; }
+.season-calendar-head h2 { color:var(--home-ink); font-size:clamp(20px,2vw,28px); }
+.season-calendar-head p { margin:4px 0 0; color:#645941; }
+.season-calendar-head p strong { color:var(--home-green); }
+.season-calendar-title p:last-child { display:inline-flex; padding:2px 10px; border:1px solid #dcc99e; border-radius:20px; background:#fffdf7; font-size:13px; }
+.season-calendar-controls { padding:6px; border:1px solid #e7dac2; border-radius:18px; background:#ffffffb3; box-shadow:0 5px 16px #76552b08; }
+.season-calendar-controls button { width:auto; min-height:44px; padding:7px 12px; border-color:transparent; border-radius:12px; background:transparent; color:var(--home-ink); }
+.season-calendar-controls button:not(:disabled):hover { background:#f9edd7; }
 .season-calendar-controls button:disabled { opacity:.5; cursor:default; }
 .season-week .season-calendar-grid { grid-template-columns:repeat(7,minmax(88px,1fr)); gap:0; padding:0; margin:12px 0 0; border:1px solid var(--season-border); border-radius:12px; }
 .season-week .season-calendar-compact { grid-template-columns:repeat(3,minmax(88px,1fr)); }
@@ -439,9 +454,17 @@
 .season-calendar-grid .season-calendar-event { font-size:11px; }
 @media(max-width:760px) { .season-week .season-calendar-grid { grid-template-columns:repeat(7,minmax(88px,1fr)); }.season-week .season-calendar-compact { grid-template-columns:repeat(3,minmax(88px,1fr)); }.season-calendar-head { padding:12px; }.season-calendar-controls { gap:6px; }.season-week .season-calendar-grid button { min-height:142px; padding:8px; } }
 
-.season-week .season-calendar-controls button { display:inline-flex; align-items:center; justify-content:center; min-height:40px; padding:6px 10px; font-size:14px; }
+.season-week .season-calendar-controls button { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:6px 10px; font-size:14px; }
 
-.season-calendar-controls .season-return-today { background:#e4f1e7; color:#114f39; border:1px solid #b9d8c2; font-weight:750; box-shadow:0 2px 6px #0e392620; }
-.season-calendar-controls .season-return-today:hover { background:#fff; color:#114f39; }
+.season-calendar-controls .season-return-today { background:#a94f31; color:white; border:1px solid #a94f31; font-weight:750; box-shadow:0 3px 7px #a94f3120; }
+.season-calendar-controls button.season-return-today:not(:disabled):hover { background:#883d24; color:white; }
+@media(max-width:760px) {
+ .season-calendar-head { gap:18px; padding:18px 14px; }
+ .season-calendar-title { gap:13px; }
+ .season-calendar-emblem { width:58px; min-height:72px; }
+ .season-calendar-emblem > strong { font-size:29px; }
+ .season-calendar-controls { display:grid; grid-template-columns:1fr 1fr; width:100%; gap:5px; }
+ .season-calendar-head { background-position:right bottom; }
+}
 .season-calendar-grid .season-completed { width:26px; height:26px; padding:3px; border-radius:50%; color:#fff; background:#15803d; stroke-width:3; box-shadow:0 0 0 3px #dcf2e3; margin:5px 0 2px; }
 .season-tips-title { margin:14px 0 6px; font-size:18px; font-weight:750; color:var(--home-green); }

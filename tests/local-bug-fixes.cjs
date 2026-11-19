@@ -127,17 +127,40 @@ const screenshotFolder = 'test-results/local-bug-fixes';
         await noOverflow(page);await context.close();
       }
       // The first 90-day plan never labels an old date as today's crop day.
-      for (const [planting,day] of [['2026-11-11',8],['2026-08-21',90],['2026-08-20',91],['2026-07-01',141]]) {
+      for (const [planting,day] of [['2026-11-18',1],['2026-11-11',8],['2026-11-10',9],['2026-11-04',15],['2026-08-21',90],['2026-08-20',91],['2026-07-01',141]]) {
         const {context,page} = await session(width,lang,{[profileKey]:{name:'Existing Farmer'},'alusathi-planting-date':planting});
         await page.goto(base+'/farmer#season');await page.locator('.season-calendar-title').waitFor();
         assert.ok((await page.locator('.season-calendar-title').innerText()).includes(format(day)));
         assert.equal(await page.locator('.season-track progress').getAttribute('value'),String(Math.min(day,90)));
+        const timeline = page.locator('.season-upcoming');
+        assert.equal(await timeline.locator('h2').innerText(),bn ? 'আলু চাষের টাইমলাইন' : 'Potato growing timeline');
+        assert.equal(await timeline.locator('li').count(),7);
+        assert.equal(await timeline.locator('.season-upcoming-jump').first().innerText(),bn ? 'দিন ১–১৫' : 'Days 1–15');
+        assert.equal(await timeline.locator('.season-today-badge strong').innerText(),bn ? `${format(day)}ম দিন` : `Day ${format(day)}`);
+        const currentWork = timeline.locator('[aria-current=step]');
+        if (day<=90) {
+          assert.equal(await currentWork.count(),1);
+          if (day<=15) assert.equal(await currentWork.innerText(),day<15 ? (bn ? 'দিন ১–১৫' : 'Days 1–15') : (bn ? 'দিন ১৫–৩০' : 'Days 15–30'));
+        } else assert.equal(await currentWork.count(),0);
         const current = page.locator('.season-calendar-grid [aria-current=date]');
         if (day<=90) {assert.equal(await current.count(),1);assert.equal(await current.locator('time').getAttribute('datetime'),today);}
         else {
           assert.equal(await current.count(),0);assert.equal(await page.locator('.season-calendar-grid').getByText(/Today ·|আজ ·/).count(),0);
           await page.locator('.season-return-today').click();assert.equal(await page.locator('.season-calendar-grid [aria-pressed=true]').getAttribute('data-day'),'90');
           await page.screenshot({path:`${screenshotFolder}/season-${lang}-${width}.png`});
+        }
+        if (day===9) {
+          const plantingBefore = await page.evaluate(() => localStorage.getItem('alusathi-planting-date'));
+          await timeline.locator('.season-upcoming-jump').last().press('Enter');
+          assert.equal(await page.locator('.season-calendar-grid [aria-pressed=true]').getAttribute('data-day'),'71');
+          assert.equal(await timeline.locator('.season-today-badge strong').innerText(),bn ? '৯ম দিন' : 'Day 9');
+          assert.equal(await currentWork.innerText(),bn ? 'দিন ১–১৫' : 'Days 1–15');
+          assert.equal(await page.evaluate(() => localStorage.getItem('alusathi-planting-date')),plantingBefore);
+          await page.locator('.season-return-today').click();
+          assert.equal(await page.locator('.season-calendar-grid [aria-pressed=true]').getAttribute('data-day'),'9');
+          await timeline.screenshot({path:`${screenshotFolder}/timeline-${lang}-${width}.png`});
+          await page.locator('.season-calendar-head').screenshot({path:`${screenshotFolder}/calendar-header-${lang}-${width}.png`});
+          assert.equal(await page.locator('.season-calendar-head').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(255, 250, 240)');
         }
         await noOverflow(page);await context.close();
       }

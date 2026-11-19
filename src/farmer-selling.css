@@ -47,13 +47,10 @@
 .storage-empty button { margin-top: 18px; }
 .selling-next { display: flex; justify-content: space-between; align-items:center; flex-wrap: wrap; gap: 18px; margin-top: 24px; font-size:16px; }
 .selling-next a { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding:12px 20px; border-radius:10px; color:white; background:var(--home-green); font-size: 17px; font-weight:700; }
-.selling-prep-tools { display:grid; grid-template-columns:minmax(0,1fr) minmax(260px,320px); align-items:start; gap:22px; margin:28px 0; color:var(--home-ink); }
+.selling-prep-tools { display:grid; grid-template-columns:minmax(0,1fr); align-items:start; gap:22px; margin:28px 0; color:var(--home-ink); }
 .prep-lot-heading { display:flex; align-items:start; justify-content:space-between; gap:16px; flex-wrap:wrap; }
 .prep-certificate-trigger { display:inline-flex; align-items:center; gap:8px; border:1px solid var(--home-line); padding:10px 13px; border-radius:10px; font-size:16px; font-weight:600; color:var(--home-green); background:var(--home-soft); cursor:pointer; }
 .prep-main-column,.prep-side-column { display:grid; gap:20px; min-width:0; }
-.prep-side-column .storage-search { min-width:0; padding:20px; }
-.prep-side-column .storage-results-layout { grid-template-columns:minmax(0,1fr); gap:18px; }
-.prep-side-column .storage-call-guide { padding:18px 0 0; border-left:0; border-top:1px solid var(--home-line); }
 .prep-certificate-card { padding:22px 24px; border:1px solid var(--home-line); border-radius:20px; background:white; }
 .prep-certificate-card>div:first-child { display:flex; align-items:center; gap:10px; }
 .prep-details-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin:18px 0; padding-block:14px; border-block:1px solid var(--home-line); }
@@ -142,7 +139,7 @@
 .selling-page .prep-signs strong { padding:6px 2px; font-size:15px; line-height:1.5; }
 .selling-page .prep-guidance { padding:12px; gap:8px; }
 .selling-page .prep-lot h2 { font-size:24px; margin-top:0; }
-.selling-page .prep-checks { grid-template-columns:1fr; gap:22px; }
+.selling-page .prep-checks { grid-template-columns:repeat(2,minmax(0,1fr)); gap:30px; }
 .selling-page .prep-checklist h3 { font-size:19px; }
 .selling-page .prep-checklist label { font-size:17px; padding:10px 0; }
 .prep-chosen { position:absolute; right:10px; top:10px; padding:2px; border-radius:50%; background:var(--home-green); color:#fff; }
@@ -158,6 +155,7 @@
 .prep-audio button { display:inline-flex; align-items:center; gap:8px; min-height:44px; border:1px solid var(--home-line); border-radius:9px; padding:8px 12px; color:var(--home-green); background:var(--home-soft); }
 @media(max-width:700px) {
  .selling-page .selling-prep-tools { grid-template-columns:1fr; }
+ .selling-page .prep-checks { grid-template-columns:minmax(0,1fr); gap:22px; }
  .selling-page .prep-signs { grid-template-columns:repeat(4,minmax(0,1fr)); }
  .selling-page .prep-signs img { height:72px; }
  .prep-storage-form { grid-template-columns:1fr; }

@@ -30,6 +30,7 @@ const milestones = [
 ] as const;
 
 const upcoming = [
+  { start: 1, end: 15, bn: "কয়েক সারিতে অঙ্কুর উঠেছে কি না দেখুন", en: "Check for emerging shoots in several rows" },
   { start: 15, end: 30, bn: "আগাছা আছে কি না ও গাছ কেমন বাড়ছে দেখুন", en: "Check for weeds and watch plant growth" },
   { start: 30, end: 35, bn: "গোড়ায় মাটি দেওয়ার সময় মিলিয়ে নিন", en: "Check when to earth up the plants", note: ["মাটি দিয়ে আলু ঢেকে রাখলে সবুজ হওয়ার ঝুঁকি কমে।", "Covering potatoes with soil helps prevent them turning green."] },
   { start: 35, end: 48, bn: "পাতায় নতুন দাগ আর গোড়ায় মাটি সরে গেছে কি না দেখুন", en: "Check for new leaf spots and soil washed away from the plant bases" },
@@ -106,6 +107,7 @@ export default function SeasonProgress({ bn, district, weather }: { bn: boolean;
   const activeAlerts = activeDay.weatherDay ? weather?.alerts?.filter(alert => alert.date === activeDay.date) ?? [] : [];
   const isToday = preview === actual;
   const plannedWork = upcoming.filter(item => preview >= item.start && preview <= item.end).pop();
+  const currentWork = upcoming.filter(item => actual >= item.start && actual <= item.end).pop();
 
   return <div className="app-shell season-progress">
     <div className="season-main">
@@ -134,10 +136,11 @@ export default function SeasonProgress({ bn, district, weather }: { bn: boolean;
     <div className="season-side">
     <section className="season-card season-upcoming" aria-labelledby="season-upcoming-title">
       <div className="season-upcoming-heading">
-        <h2 id="season-upcoming-title"><CalendarDays size={21} aria-hidden="true" />{t("সামনে গুরুত্বপূর্ণ কাজ", "Important work ahead")}</h2>
+        <h2 id="season-upcoming-title"><CalendarDays size={21} aria-hidden="true" />{t("আলু চাষের টাইমলাইন", "Potato growing timeline")}</h2>
+        <span className="season-today-badge"><small>{t("আজ", "Today")}</small><strong>{t(`${fmt(actual)}ম দিন`, `Day ${fmt(actual)}`)}</strong></span>
       </div>
       <ol>{upcoming.map(item => <li key={item.start}>
-        <button type="button" className="season-upcoming-jump" aria-current={actual >= item.start && actual <= item.end ? "step" : undefined} aria-controls="season-stage" aria-pressed={preview >= item.start && preview <= item.end} onClick={() => setSelected(item.start)}>{range(item)}</button>
+        <button type="button" className="season-upcoming-jump" aria-current={currentWork === item ? "step" : undefined} aria-controls="season-stage" aria-pressed={plannedWork === item} onClick={() => setSelected(item.start)}>{range(item)}</button>
         <div>{bn ? item.bn : item.en}{"note" in item && <small>{item.note[bn ? 0 : 1]}</small>}</div>
       </li>)}</ol>
     </section>
@@ -146,7 +149,7 @@ export default function SeasonProgress({ bn, district, weather }: { bn: boolean;
     <section className="season-card season-week season-calendar" aria-labelledby="season-calendar-title">
       <header className="season-calendar-head">
         <div className="season-calendar-title">
-          <span className="season-calendar-emblem"><CalendarDays size={24} aria-hidden="true" /></span>
+          <span className="season-calendar-emblem" aria-hidden="true"><span><CalendarDays size={13}/>{t("দিন", "Day")}</span><strong>{fmt(actual)}</strong></span>
           <div>
             <h2 id="season-calendar-title">{t("মৌসুমের ক্যালেন্ডার", "Season calendar")}</h2>
             <p><strong>{t(`আজ আপনার আলু চাষের ${fmt(actual)}ম দিন`, `Day ${fmt(actual)}`)}</strong></p>

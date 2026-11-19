@@ -2,7 +2,6 @@
 .buyer-plan-page { padding-top: 22px; padding-bottom: 38px; max-width: 1440px; }
 .practice-note { display: flex; align-items: baseline; gap: 14px; border-left: 3px solid var(--home-green); padding: 10px 14px; margin: 12px 0 16px; background: var(--home-soft); color: var(--home-ink); font-size: 16px; line-height: 1.5; }
 .practice-note strong { flex-shrink: 0; }
-.buyer-practice .buyer-offers-banner { height: 112px; min-height: 0; }
 .buyer-practice .buyer-purchases-banner { height: 112px; margin-top: 12px; }
 .buyer-practice .buyer-purchases-banner img { height: 112px; object-fit: cover; }
 .buyer-practice .section-header { margin-bottom: 12px; }
@@ -181,11 +180,19 @@
 .buyer-plan-page .market-page-heading h1 { font-size:clamp(30px,2.6vw,42px); letter-spacing:-.025em; margin-bottom:6px; color:#103e32; }
 .retail-market-grid { gap:24px; align-items:start; }
 .retail-market-section { border:1px solid #bfd6cd; border-radius:20px; overflow:hidden; background:#fff; box-shadow:0 10px 28px #143f3410,0 1px 3px #143f3408; }
-.retail-market-section > .market-panel-heading { justify-content:flex-start; display:flex; flex-direction:row; align-items:center; gap:14px; margin:0; padding:22px; color:#fff; background:linear-gradient(115deg,#103e32,#22644f); position:relative; }
-.retail-market-section:nth-child(2) > .market-panel-heading { background:linear-gradient(115deg,#244b3c,#386951); }
-.retail-market-section .market-panel-heading h2 { font-size:clamp(20px,1.6vw,26px); color:#fff; line-height:1.45; }
-.retail-market-section > .market-panel-heading p { margin-top:5px; color:#e1eee5; font-size:13px; line-height:1.6; }
+.retail-market-section > .market-panel-heading { justify-content:flex-start; display:flex; flex-direction:row; align-items:center; gap:14px; margin:0; min-height:154px; padding:22px 190px 22px 22px; border-bottom:1px solid #c7dce0; color:#103e32; background:radial-gradient(circle,#668db52b .8px,transparent 1px) 0 0 / 14px 14px,linear-gradient(110deg,#fbfdff,#e8f1fc); position:relative; }
+.retail-market-section:nth-child(2) > .market-panel-heading { border-bottom-color:#c7dce0; background:repeating-linear-gradient(35deg,#668db512 0 1px,transparent 1px 11px),repeating-linear-gradient(-35deg,#668db50d 0 1px,transparent 1px 11px),linear-gradient(110deg,#fbfdff,#e8f1fc); }
+.retail-market-section > .market-panel-heading::after { content:""; position:absolute; inset:14px 12px 14px auto; width:154px; pointer-events:none; background:url("/marketplace/banners/online-price-illustration.png") center / contain no-repeat; }
+.retail-market-section:nth-child(2) > .market-panel-heading::after { background-image:url("/marketplace/banners/market-price-illustration.png"); }
+.retail-market-section .market-panel-heading h2 { font-size:clamp(20px,1.6vw,26px); color:#103e32; line-height:1.45; }
+.retail-market-section > .market-panel-heading p { margin-top:5px; color:#3e6458; font-size:13px; line-height:1.6; }
 .market-channel-icon { display:grid; place-items:center; flex:0 0 46px; height:46px; border:1px solid #ffffff50; border-radius:13px; background:#ffffff14; color:#f5d89d; box-shadow:inset 0 1px #ffffff30; }
+.retail-market-section .market-channel-icon { color:#80571e; background:#fffaf0; border-color:#dfcfae; box-shadow:0 3px 0 #e6dcc8; }
+.retail-market-section .market-panel-heading > div { min-width:0; }
+@media(max-width:760px) {
+ .retail-market-section > .market-panel-heading { flex-direction:column; align-items:flex-start; gap:10px; min-height:0; padding:18px 16px 110px; }
+ .retail-market-section > .market-panel-heading::after { inset:auto 12px 10px auto; width:calc(100% - 24px); height:90px; }
+}
 .retail-market-section > .plan-chart-panel { margin:0; border:0; border-radius:0; padding:20px; box-shadow:none; }
 .retail-market-section .retail-toolbar { justify-content:flex-start; }
 .retail-market-section .retail-refresh { color:white; background:linear-gradient(120deg,#135941,#287552); border:1px solid #176346; box-shadow:0 3px 8px #15543d20,inset 0 1px #ffffff30; min-height:40px; padding:8px 15px; border-radius:10px; transition:box-shadow .18s,background .18s; }

@@ -163,7 +163,7 @@ export default function FarmerToday({ weather, loading, district, districts, pla
       </div>
     </div>
 
-    <TodayWeather weather={weather} rainNote={rainNote} loading={loading} district={bn ? districts[district] || district : district} bn={bn} online={online}/></div>
+    <TodayWeather weather={weather} rainNote={rainNote} loading={loading} district={district} districtLabel={bn ? districts[district] || district : district} bn={bn} online={online}/></div>
     {photo && <section className="today-ai-insight" aria-labelledby="today-observation-title">
       <h2 id="today-observation-title" className="today-observation-heading"><Sparkles size={22} aria-hidden="true" />{bn ? "AI-এর সহায়তায় ছবির ফল দেখুন" : "View AI-assisted photo results"}</h2>
       <div className="today-observation-content">
